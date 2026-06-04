@@ -12,6 +12,7 @@ app.use(express.json());
 app.use(express.static('public'));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+console.log("OPENAI_API_KEY:", process.env.OPENAI_API_KEY ? "CONFIGURADA" : "NO CONFIGURADA");
 
 // ── Scraper de URL ──────────────────────────────────────────────
 async function scrapeProduct(url) {
