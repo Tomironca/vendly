@@ -1,1 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vendly — Copies para tu tienda en segundos</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07070E;--bg2:#0F0F1A;--bg3:#16161F;
+  --accent:#7C5CFC;--accent2:#A688FA;--accent3:#C4B5FD;
+  --text:#F0EEF8;--muted:#8B89A0;--border:rgba(124,92,252,0.18);
+  --green:#34D399;--red:#F87171;--gold:#F5C842;
+}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,92,252,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(124,92,252,0.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
 
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(7,7,14,0.9);backdrop-filter:blur(12px);z-index:100}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text)}
+.logo span{color:var(--accent2)}
+.nav-badge{font-size:12px;color:var(--accent3);background:rgba(124,92,252,0.12);border:1px solid var(--border);padding:5px 12px;border-radius:100px}
+
+/* HERO */
+.hero{text-align:center;padding:60px 24px 48px;position:relative;z-index:1}
+.hero-tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--gold);background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.2);padding:6px 14px;border-radius:100px;margin-bottom:24px}
+.hero h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(32px,6vw,56px);letter-spacing:-1.5px;line-height:1.08;margin-bottom:16px}
+.hero h1 em{font-style:normal;color:var(--accent2)}
+.hero p{font-size:17px;color:var(--muted);font-weight:300;max-width:480px;margin:0 auto;line-height:1.6}
+
+/* MAIN CARD */
+.main{max-width:860px;margin:0 auto;padding:0 20px 60px;position:relative;z-index:1}
+
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:28px;margin-bottom:20px}
+.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--accent3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';display:inline-block;width:6px;height:6px;background:var(--accent);border-radius:50%}
+
+/* TABS */
+.tabs{display:flex;gap:8px;margin-bottom:24px}
+.tab{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center}
+.tab.active{background:rgba(124,92,252,0.15);color:var(--accent3);border-color:rgba(124,92,252,0.4)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* FORM */
+.form-group{margin-bottom:16px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:400}
+input,textarea,select{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .15s;resize:vertical}
+input:focus,textarea:focus,select:focus{border-color:rgba(124,92,252,0.5)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+select option{background:var(--bg2)}
+textarea{min-height:80px}
+
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:540px){.form-row{grid-template-columns:1fr}}
+
+/* BUTTON */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:all .2s;margin-top:8px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#6B4EE8;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--bg2);color:var(--muted);border:1px solid var(--border);font-size:13px;padding:10px}
+.btn-secondary:hover{color:var(--text);border-color:var(--accent)}
+
+/* URL RESULT */
+.url-result{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;display:none}
+.url-result.show{display:block}
+.url-product-name{font-weight:500;font-size:15px;margin-bottom:4px}
+.url-product-desc{font-size:13px;color:var(--muted);line-height:1.5}
+.url-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green);margin-bottom:8px}
+
+/* LOADING */
+.loading{display:none;text-align:center;padding:40px}
+.loading.show{display:block}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:var(--muted);font-size:14px}
+
+/* ERROR */
+.error-msg{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:10px;padding:12px 16px;color:var(--red);font-size:13px;margin-bottom:16px;display:none}
+.error-msg.show{display:block}
+
+/* RESULTS */
+.results{display:none}
+.results.show{display:block}
+
+.result-section{margin-bottom:20px}
+.result-section-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--accent3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.result-item{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;position:relative}
+.result-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.result-text{font-size:14px;color:var(--text);line-height:1.65;white-space:pre-wrap}
+.copy-btn{position:absolute;top:12px;right:12px;background:rgba(124,92,252,0.15);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--accent3);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.copy-btn:hover{background:rgba(124,92,252,0.3)}
+.copy-btn.copied{background:rgba(52,211,153,0.15);color:var(--green);border-color:rgba(52,211,153,0.3)}
+
+.bullet-list{list-style:none;padding:0}
+.bullet-list li{display:flex;align-items:flex-start;gap:8px;font-size:14px;color:var(--text);line-height:1.6;margin-bottom:6px}
+.bullet-list li::before{content:'✓';color:var(--accent);font-weight:700;flex-shrink:0;margin-top:1px}
+
+.hooks-grid{display:grid;grid-template-columns:1fr;gap:8px}
+.hook-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--text);position:relative;line-height:1.5}
+
+/* TABS RESULTS */
+.result-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.result-tab{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.result-tab.active{background:rgba(124,92,252,0.15);color:var(--accent3);border-color:rgba(124,92,252,0.4)}
+.result-panel{display:none}
+.result-panel.active{display:block}
+
+/* BADGE NUEVO */
+.new-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:100px;background:rgba(245,200,66,0.12);color:var(--gold);border:1px solid rgba(245,200,66,0.2);margin-left:6px}
+
+/* FOOTER */
+footer{text-align:center;padding:32px;border-top:1px solid var(--border);color:var(--muted);font-size:13px;position:relative;z-index:1}
+footer span{color:var(--accent2)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Vend<span>ly</span></div>
+  <span class="nav-badge">✦ Powered by GPT-4o</span>
+</nav>
+
+<div class="hero">
+  <div class="hero-tag">⚡ Copies listos en 30 segundos</div>
+  <h1>Generá copies que<br><em>venden más</em></h1>
+  <p>Pegá la URL de tu producto o cargalo a mano y obtené anuncios de Meta, fichas de producto y posts de Instagram listos para usar.</p>
+</div>
+
+<div class="main">
+
+  <!-- INPUT CARD -->
+  <div class="card">
+    <div class="card-title">Tu producto</div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('url')">🔗 Desde URL</button>
+      <button class="tab" onclick="switchTab('manual')">✏️ Carga manual</button>
+    </div>
+
+    <!-- TAB URL -->
+    <div class="tab-content active" id="tab-url">
+      <div class="form-group">
+        <label>URL del producto (Tiendanube, MercadoShops, Shopify, etc.)</label>
+        <div style="display:flex;gap:8px">
+          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/ejemplo">
+          <button class="btn btn-secondary" style="width:auto;white-space:nowrap;margin:0" onclick="scrapeUrl()">Leer →</button>
+        </div>
+      </div>
+      <div class="error-msg" id="scrape-error"></div>
+      <div class="url-result" id="url-result">
+        <div class="url-status">✓ Producto leído correctamente</div>
+        <div class="url-product-name" id="url-product-name"></div>
+        <div class="url-product-desc" id="url-product-desc"></div>
+      </div>
+    </div>
+
+    <!-- TAB MANUAL -->
+    <div class="tab-content" id="tab-manual">
+      <div class="form-group">
+        <label>Nombre del producto *</label>
+        <input type="text" id="manual-name" placeholder="Ej: Zapatillas running Nike Air Max 2024">
+      </div>
+      <div class="form-group">
+        <label>Descripción del producto</label>
+        <textarea id="manual-desc" placeholder="Describí las características, materiales, para quién es ideal..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Precio</label>
+          <input type="text" id="manual-price" placeholder="Ej: $89.990 ARS">
+        </div>
+        <div class="form-group">
+          <label>URL de tu tienda (opcional)</label>
+          <input type="text" id="manual-url" placeholder="https://tutienda.com">
+        </div>
+      </div>
+    </div>
+
+    <!-- OPCIONES -->
+    <div class="form-row" style="margin-top:8px">
+      <div class="form-group">
+        <label>País y variante del español</label>
+        <select id="country">
+          <option value="argentina">🇦🇷 Argentina (voseo)</option>
+          <option value="mexico">🇲🇽 México</option>
+          <option value="colombia">🇨🇴 Colombia</option>
+          <option value="espana">🇪🇸 España</option>
+          <option value="general">🌎 Español neutro (LATAM)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tono del copy</label>
+        <select id="tone">
+          <option value="profesional">Profesional y confiable</option>
+          <option value="casual">Casual y cercano</option>
+          <option value="divertido">Divertido y energético</option>
+          <option value="urgente">Urgente y persuasivo</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="error-msg" id="generate-error"></div>
+    <button class="btn btn-primary" id="generate-btn" onclick="generate()">
+      ⚡ Generar copies
+    </button>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Generando copies con GPT-4o...<br><span style="font-size:12px;opacity:.6">Esto tarda entre 10 y 20 segundos</span></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results" id="results">
+    <div class="card">
+      <div class="card-title">Copies generados</div>
+
+      <div class="result-tabs">
+        <button class="result-tab active" onclick="switchResultTab('meta')">📢 Meta Ads</button>
+        <button class="result-tab" onclick="switchResultTab('ficha')">🛍️ Ficha de producto</button>
+        <button class="result-tab" onclick="switchResultTab('instagram')">📱 Instagram</button>
+      </div>
+
+      <!-- META ADS -->
+      <div class="result-panel active" id="panel-meta">
+        <div class="result-item">
+          <div class="result-label">Titular 1</div>
+          <div class="result-text" id="r-headline1"></div>
+          <button class="copy-btn" onclick="copyText(this, 'r-headline1')">Copiar</button>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Titular 2</div>
+          <div class="result-text" id="r-headline2"></div>
+          <button class="copy-btn" onclick="copyText(this, 'r-headline2')">Copiar</button>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Titular 3</div>
+          <div class="result-text" id="r-headline3"></div>
+          <button class="copy-btn" onclick="copyText(this, 'r-headline3')">Copiar</button>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Texto principal del anuncio</div>
+          <div class="result-text" id="r-primary"></div>
+          <button class="copy-btn" onclick="copyText(this, 'r-primary')">Copiar</button>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Descripción del anuncio</div>
+          <div class="result-text" id="r-desc-ad"></div>
+          <button class="copy-btn" onclick="copyText(this, 'r-desc-ad')">Copiar</button>
+        </div>
+      </div>
+
+      <!-- FICHA PRODUCTO -->
+      <div class="result-panel" id="panel-ficha">
+        <div class="result-item">
+          <div class="result-label">Título SEO</div>
+          <div class="result-text" id="r-titulo"></div>
+          <button class="copy-btn" onclick="copyText(this, 'r-titulo')">Copiar</button>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Descripción corta (para listado)</div>
+          <div class="result-text" id="r-desc-corta"></div>
+          <button class="copy-btn" onclick="copyText(this, 'r-desc-corta')">Copiar</button>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Descripción larga (para la página del producto)</div>
+          <div class="result-text" id="r-desc-larga"></div>
+          <button class="copy-btn" onclick="copyText(this, 'r-desc-larga')">Copiar</button>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Puntos destacados (bullet points)</div>
+          <ul class="bullet-list" id="r-bullets"></ul>
+        </div>
+      </div>
+
+      <!-- INSTAGRAM -->
+      <div class="result-panel" id="panel-instagram">
+        <div class="result-item">
+          <div class="result-label">Caption para post</div>
+          <div class="result-text" id="r-caption-post"></div>
+          <button class="copy-btn" onclick="copyText(this, 'r-caption-post')">Copiar</button>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Texto para story</div>
+          <div class="result-text" id="r-caption-story"></div>
+          <button class="copy-btn" onclick="copyText(this, 'r-caption-story')">Copiar</button>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Ganchos para Reels y Carruseles</div>
+          <div class="hooks-grid" id="r-hooks"></div>
+        </div>
+      </div>
+
+      <button class="btn btn-secondary" onclick="resetForm()" style="margin-top:8px">← Generar otro producto</button>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Hecho con ❤️ por <span>Vendly</span> — Copies que venden más
+</footer>
+
+<script>
+let currentProduct = null;
+let activeInputTab = 'url';
+
+function switchTab(tab) {
+  activeInputTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  currentProduct = null;
+  document.getElementById('url-result').classList.remove('show');
+}
+
+function switchResultTab(tab) {
+  document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.result-panel').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+async function scrapeUrl() {
+  const url = document.getElementById('product-url').value.trim();
+  if (!url) return showError('scrape-error', 'Ingresá una URL válida');
+  hideError('scrape-error');
+
+  const btn = event.target;
+  btn.textContent = 'Leyendo...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    currentProduct = data.product;
+    document.getElementById('url-product-name').textContent = data.product.name || 'Producto sin nombre';
+    document.getElementById('url-product-desc').textContent = data.product.description ? data.product.description.slice(0, 150) + '...' : 'Sin descripción disponible';
+    document.getElementById('url-result').classList.add('show');
+  } catch (e) {
+    showError('scrape-error', e.message || 'Error al leer la URL');
+  } finally {
+    btn.textContent = 'Leer →';
+    btn.disabled = false;
+  }
+}
+
+async function generate() {
+  hideError('generate-error');
+
+  let product;
+
+  if (activeInputTab === 'url') {
+    if (!currentProduct) {
+      const url = document.getElementById('product-url').value.trim();
+      if (!url) return showError('generate-error', 'Pegá una URL o leéla primero');
+      product = { url, name: url, description: '', price: '' };
+    } else {
+      product = currentProduct;
+    }
+  } else {
+    const name = document.getElementById('manual-name').value.trim();
+    if (!name) return showError('generate-error', 'El nombre del producto es obligatorio');
+    product = {
+      name,
+      description: document.getElementById('manual-desc').value.trim(),
+      price: document.getElementById('manual-price').value.trim(),
+      url: document.getElementById('manual-url').value.trim()
+    };
+  }
+
+  const country = document.getElementById('country').value;
+  const tone = document.getElementById('tone').value;
+
+  document.getElementById('generate-btn').disabled = true;
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('results').classList.remove('show');
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product, country, tone })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    renderResults(data.copies);
+  } catch (e) {
+    showError('generate-error', e.message || 'Error generando copies. Intentá de nuevo.');
+  } finally {
+    document.getElementById('generate-btn').disabled = false;
+    document.getElementById('loading').classList.remove('show');
+  }
+}
+
+function renderResults(copies) {
+  const ma = copies.meta_ads;
+  const fp = copies.ficha_producto;
+  const ig = copies.instagram;
+
+  setText('r-headline1', ma.headline_1);
+  setText('r-headline2', ma.headline_2);
+  setText('r-headline3', ma.headline_3);
+  setText('r-primary', ma.primary_text);
+  setText('r-desc-ad', ma.description);
+
+  setText('r-titulo', fp.titulo);
+  setText('r-desc-corta', fp.descripcion_corta);
+  setText('r-desc-larga', fp.descripcion_larga);
+
+  const bullets = document.getElementById('r-bullets');
+  bullets.innerHTML = '';
+  (fp.bullet_points || []).forEach(b => {
+    const li = document.createElement('li');
+    li.textContent = b;
+    bullets.appendChild(li);
+  });
+
+  setText('r-caption-post', ig.caption_post);
+  setText('r-caption-story', ig.caption_story);
+
+  const hooks = document.getElementById('r-hooks');
+  hooks.innerHTML = '';
+  (ig.hooks || []).forEach(h => {
+    const div = document.createElement('div');
+    div.className = 'hook-item';
+    div.textContent = '"' + h + '"';
+    hooks.appendChild(div);
+  });
+
+  document.getElementById('results').classList.add('show');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setText(id, text) {
+  document.getElementById(id).textContent = text || '';
+}
+
+function copyText(btn, id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function resetForm() {
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('product-url').value = '';
+  document.getElementById('url-result').classList.remove('show');
+  document.getElementById('manual-name').value = '';
+  document.getElementById('manual-desc').value = '';
+  document.getElementById('manual-price').value = '';
+  document.getElementById('manual-url').value = '';
+  currentProduct = null;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function hideError(id) {
+  document.getElementById(id).classList.remove('show');
+}
+</script>
+</body>
+</html>
