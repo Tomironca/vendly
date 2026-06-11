@@ -8,39 +8,67 @@ const path = require('path');
 const crypto = require('crypto');
 
 const app = express();
+
+// Raw body for webhook verification
+app.use('/api/webhook', express.raw({ type: 'application/json' }));
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static('public'));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// ── Config ────────────────────────────────────────────────────
+const LS_API_KEY = process.env.LEMONSQUEEZY_API_KEY;
+const LS_BASIC_VARIANT = process.env.LEMONSQUEEZY_BASIC_VARIANT_ID || '1776746';
+const LS_PRO_VARIANT = process.env.LEMONSQUEEZY_PRO_VARIANT_ID || '1776774';
+const LS_STORE_URL = process.env.LEMONSQUEEZY_STORE_URL || 'https://vendly-app.lemonsqueezy.com';
+const WEBHOOK_SECRET = process.env.LEMONSQUEEZY_WEBHOOK_SECRET || '';
+
 // ── In-memory stores ──────────────────────────────────────────
+const subscribers = new Map();  // email -> { plan, status, customerId, subscriptionId, auditsUsed, auditsLimit }
+const sessions = new Map();     // sessionToken -> { email, plan, expiresAt }
 const sharedReports = new Map(); // token -> { audit, product, createdAt }
-const usageMap = new Map();      // ip -> count (free tier: 3 audits)
+const ipUsage = new Map();      // ip -> count (free tier)
+
+// ── Helpers ───────────────────────────────────────────────────
+function getSubscriber(email) {
+  return subscribers.get(email?.toLowerCase());
+}
+
+function setSubscriber(email, data) {
+  subscribers.set(email.toLowerCase(), data);
+}
+
+function createSession(email) {
+  const token = crypto.randomBytes(24).toString('hex');
+  sessions.set(token, {
+    email: email.toLowerCase(),
+    createdAt: new Date(),
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+  });
+  return token;
+}
+
+function getSession(token) {
+  if (!token) return null;
+  const s = sessions.get(token);
+  if (!s) return null;
+  if (new Date() > new Date(s.expiresAt)) { sessions.delete(token); return null; }
+  return s;
+}
 
 // ── Scraper ───────────────────────────────────────────────────
 async function scrapeProduct(url) {
   try {
     const { data } = await axios.get(url, {
       timeout: 10000,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Vendly/3.0)' }
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Vendly/4.0)' }
     });
     const $ = cheerio.load(data);
-    const name =
-      $('h1').first().text().trim() ||
-      $('meta[property="og:title"]').attr('content') ||
-      $('title').text().trim() || '';
-    const description =
-      $('meta[property="og:description"]').attr('content') ||
-      $('meta[name="description"]').attr('content') ||
-      $('[class*="description"]').first().text().trim().slice(0, 800) ||
-      $('p').first().text().trim() || '';
-    const price =
-      $('[class*="price"]').first().text().trim() ||
-      $('[itemprop="price"]').attr('content') || '';
-    const image =
-      $('meta[property="og:image"]').attr('content') ||
-      $('img').first().attr('src') || '';
+    const name = $('h1').first().text().trim() || $('meta[property="og:title"]').attr('content') || $('title').text().trim() || '';
+    const description = $('meta[property="og:description"]').attr('content') || $('meta[name="description"]').attr('content') || $('[class*="description"]').first().text().trim().slice(0, 800) || '';
+    const price = $('[class*="price"]').first().text().trim() || $('[itemprop="price"]').attr('content') || '';
+    const image = $('meta[property="og:image"]').attr('content') || $('img').first().attr('src') || '';
     const bodyText = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 2000);
     return { name, description, price, image, url, bodyText };
   } catch (e) {
@@ -50,110 +78,27 @@ async function scrapeProduct(url) {
 
 // ── Audit generator ───────────────────────────────────────────
 async function generateAudit(product, country, tone, competitorProduct) {
-  const countryMap = {
-    argentina: 'Argentina (voseo: vos, tenés, podés)',
-    mexico: 'México (tuteo: tú, tienes, puedes)',
-    colombia: 'Colombia (tuteo formal)',
-    espana: 'España (tuteo de España)',
-    general: 'Latinoamérica (español neutro)'
-  };
-  const toneMap = {
-    profesional: 'profesional y confiable',
-    casual: 'casual y cercano',
-    divertido: 'divertido y energético',
-    urgente: 'urgente y persuasivo'
-  };
+  const countryMap = { argentina: 'Argentina (voseo)', mexico: 'México', colombia: 'Colombia', espana: 'España', general: 'Latinoamérica' };
+  const toneMap = { profesional: 'profesional y confiable', casual: 'casual y cercano', divertido: 'divertido y energético', urgente: 'urgente y persuasivo' };
 
   const competitorSection = competitorProduct ? `
-COMPETIDOR ANALIZADO:
-Nombre: ${competitorProduct.name || 'No disponible'}
-Descripción: ${competitorProduct.description || 'No disponible'}
-Precio: ${competitorProduct.price || 'No disponible'}
-URL: ${competitorProduct.url || 'No disponible'}
-` : '';
+COMPETIDOR: Nombre: ${competitorProduct.name}, Descripción: ${competitorProduct.description}, Precio: ${competitorProduct.price}` : '';
 
-  const competitorJson = competitorProduct ? `
-  "analisis_competidor": {
-    "ventajas_vs_competidor": ["ventaja 1 de tu producto vs el competidor", "ventaja 2", "ventaja 3"],
-    "desventajas_vs_competidor": ["desventaja 1 vs el competidor", "desventaja 2"],
-    "oportunidades": ["oportunidad de diferenciación 1", "oportunidad 2", "oportunidad 3"],
-    "score_competidor": {
-      "conversion": 65,
-      "confianza": 70,
-      "seo": 55
-    },
-    "conclusion": "párrafo de 2-3 oraciones sobre cómo posicionarse vs el competidor"
+  const competitorJson = competitorProduct ? `"analisis_competidor": {
+    "ventajas_vs_competidor": ["ventaja 1","ventaja 2","ventaja 3"],
+    "desventajas_vs_competidor": ["desventaja 1","desventaja 2"],
+    "oportunidades": ["oportunidad 1","oportunidad 2","oportunidad 3"],
+    "conclusion": "conclusión de 2-3 oraciones"
   },` : '"analisis_competidor": null,';
 
-  const prompt = `Sos un consultor senior de e-commerce y conversión para el mercado de ${countryMap[country] || 'Latinoamérica'}.
-
-Analizá este producto y generá una auditoría profesional completa.
-
-PRODUCTO:
-Nombre: ${product.name || 'No disponible'}
-Descripción: ${product.description || 'No disponible'}
-Precio: ${product.price || 'No disponible'}
-URL: ${product.url || 'No disponible'}
-Texto de la página: ${product.bodyText ? product.bodyText.slice(0, 1000) : 'No disponible'}
+  const prompt = `Sos consultor senior de e-commerce para ${countryMap[country] || 'Latinoamérica'}.
+Analizá este producto y generá auditoría profesional completa.
+PRODUCTO: Nombre: ${product.name}, Descripción: ${product.description}, Precio: ${product.price}, URL: ${product.url}
+Texto página: ${(product.bodyText || '').slice(0, 800)}
 ${competitorSection}
-TONO PARA COPIES: ${toneMap[tone] || 'profesional'}
-
-Respondé SOLO con JSON puro válido, sin markdown ni backticks:
-
-{
-  "resumen_ejecutivo": "diagnóstico general del producto en 3-4 oraciones con potencial de ventas",
-  "scores": {
-    "conversion": 72,
-    "confianza": 65,
-    "seo": 58,
-    "conversion_explicacion": "explicación de 2 oraciones",
-    "confianza_explicacion": "explicación de 2 oraciones",
-    "seo_explicacion": "explicación de 2 oraciones"
-  },
-  ${competitorJson}
-  "fortalezas": ["fortaleza 1","fortaleza 2","fortaleza 3","fortaleza 4"],
-  "debilidades": ["debilidad 1","debilidad 2","debilidad 3","debilidad 4"],
-  "mejoras_recomendadas": [
-    {"titulo":"título","descripcion":"descripción detallada de qué hacer","impacto":"ALTO"},
-    {"titulo":"título","descripcion":"descripción","impacto":"ALTO"},
-    {"titulo":"título","descripcion":"descripción","impacto":"MEDIO"},
-    {"titulo":"título","descripcion":"descripción","impacto":"MEDIO"},
-    {"titulo":"título","descripcion":"descripción","impacto":"BAJO"}
-  ],
-  "descripcion_optimizada": {
-    "titulo_seo": "título SEO optimizado (60-80 caracteres)",
-    "descripcion_corta": "descripción de 1-2 oraciones para listado (máximo 160 caracteres)",
-    "descripcion_larga": "descripción completa optimizada de 300-400 palabras",
-    "bullet_points": ["beneficio 1","beneficio 2","beneficio 3","beneficio 4","beneficio 5"]
-  },
-  "meta_ads": [
-    {"nombre":"Ad 1 — Beneficio principal","headline":"titular (máx 40 chars)","texto_principal":"texto 150-200 palabras con gancho, valor y CTA","descripcion":"descripción corta (máx 90 chars)","objetivo":"Conversión"},
-    {"nombre":"Ad 2 — Problema/Solución","headline":"titular","texto_principal":"texto","descripcion":"descripción","objetivo":"Conversión"},
-    {"nombre":"Ad 3 — Prueba social","headline":"titular","texto_principal":"texto","descripcion":"descripción","objetivo":"Reconocimiento"},
-    {"nombre":"Ad 4 — Urgencia","headline":"titular","texto_principal":"texto","descripcion":"descripción","objetivo":"Conversión"},
-    {"nombre":"Ad 5 — Retargeting","headline":"titular","texto_principal":"texto","descripcion":"descripción","objetivo":"Retargeting"}
-  ],
-  "instagram_posts": [
-    {"tipo":"Post educativo","caption":"caption completo 150-200 palabras con CTA y hashtags","hook":"primera línea gancho"},
-    {"tipo":"Post de producto","caption":"caption completo","hook":"primera línea gancho"},
-    {"tipo":"Historia de éxito","caption":"caption completo","hook":"primera línea gancho"}
-  ],
-  "plan_accion": [
-    {"prioridad":1,"plazo":"Esta semana","accion":"acción concreta específica","impacto_esperado":"resultado esperado"},
-    {"prioridad":2,"plazo":"Esta semana","accion":"acción","impacto_esperado":"resultado"},
-    {"prioridad":3,"plazo":"Próximas 2 semanas","accion":"acción","impacto_esperado":"resultado"},
-    {"prioridad":4,"plazo":"Próximas 2 semanas","accion":"acción","impacto_esperado":"resultado"},
-    {"prioridad":5,"plazo":"Próximo mes","accion":"acción","impacto_esperado":"resultado"}
-  ],
-  "preguntas_frecuentes": [
-    {"pregunta":"pregunta frecuente que haría un comprador 1","respuesta":"respuesta optimizada para conversión"},
-    {"pregunta":"pregunta 2","respuesta":"respuesta"},
-    {"pregunta":"pregunta 3","respuesta":"respuesta"},
-    {"pregunta":"pregunta 4","respuesta":"respuesta"}
-  ],
-  "estrategia_precio": "análisis de 2-3 oraciones sobre si el precio es competitivo y qué estrategia de precio recomendar",
-  "keywords_seo": ["keyword 1","keyword 2","keyword 3","keyword 4","keyword 5","keyword 6","keyword 7","keyword 8"]
-}`;
+TONO: ${toneMap[tone] || 'profesional'}
+Respondé SOLO JSON puro sin markdown:
+{"resumen_ejecutivo":"3-4 oraciones diagnóstico","scores":{"conversion":72,"confianza":65,"seo":58,"conversion_explicacion":"2 oraciones","confianza_explicacion":"2 oraciones","seo_explicacion":"2 oraciones"},${competitorJson}"fortalezas":["f1","f2","f3","f4"],"debilidades":["d1","d2","d3","d4"],"mejoras_recomendadas":[{"titulo":"t","descripcion":"d","impacto":"ALTO"},{"titulo":"t","descripcion":"d","impacto":"ALTO"},{"titulo":"t","descripcion":"d","impacto":"MEDIO"},{"titulo":"t","descripcion":"d","impacto":"MEDIO"},{"titulo":"t","descripcion":"d","impacto":"BAJO"}],"descripcion_optimizada":{"titulo_seo":"60-80 chars","descripcion_corta":"160 chars","descripcion_larga":"300-400 palabras","bullet_points":["b1","b2","b3","b4","b5"]},"meta_ads":[{"nombre":"Ad 1 Beneficio","headline":"40 chars","texto_principal":"150-200 palabras","descripcion":"90 chars","objetivo":"Conversión"},{"nombre":"Ad 2 Problema","headline":"h","texto_principal":"t","descripcion":"d","objetivo":"Conversión"},{"nombre":"Ad 3 Prueba social","headline":"h","texto_principal":"t","descripcion":"d","objetivo":"Reconocimiento"},{"nombre":"Ad 4 Urgencia","headline":"h","texto_principal":"t","descripcion":"d","objetivo":"Conversión"},{"nombre":"Ad 5 Retargeting","headline":"h","texto_principal":"t","descripcion":"d","objetivo":"Retargeting"}],"instagram_posts":[{"tipo":"Post educativo","caption":"150-200 palabras con hashtags","hook":"primera línea"},{"tipo":"Post producto","caption":"caption","hook":"hook"},{"tipo":"Historia éxito","caption":"caption","hook":"hook"}],"plan_accion":[{"prioridad":1,"plazo":"Esta semana","accion":"acción","impacto_esperado":"resultado"},{"prioridad":2,"plazo":"Esta semana","accion":"acción","impacto_esperado":"resultado"},{"prioridad":3,"plazo":"Próximas 2 semanas","accion":"acción","impacto_esperado":"resultado"},{"prioridad":4,"plazo":"Próximas 2 semanas","accion":"acción","impacto_esperado":"resultado"},{"prioridad":5,"plazo":"Próximo mes","accion":"acción","impacto_esperado":"resultado"}],"preguntas_frecuentes":[{"pregunta":"p1","respuesta":"r1"},{"pregunta":"p2","respuesta":"r2"},{"pregunta":"p3","respuesta":"r3"},{"pregunta":"p4","respuesta":"r4"}],"estrategia_precio":"2-3 oraciones sobre precio y estrategia","keywords_seo":["k1","k2","k3","k4","k5","k6","k7","k8"]}`;
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o',
@@ -162,9 +107,8 @@ Respondé SOLO con JSON puro válido, sin markdown ni backticks:
     max_tokens: 5000
   });
 
-  const raw = completion.choices[0].message.content.trim();
-  const cleaned = raw.replace(/```json|```/g, '').trim();
-  return JSON.parse(cleaned);
+  const raw = completion.choices[0].message.content.trim().replace(/```json|```/g, '').trim();
+  return JSON.parse(raw);
 }
 
 // ── ROUTES ────────────────────────────────────────────────────
@@ -174,39 +118,160 @@ app.post('/api/scrape', async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: 'URL requerida' });
   try {
-    const product = await scrapeProduct(url);
-    res.json({ success: true, product });
+    res.json({ success: true, product: await scrapeProduct(url) });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
+// Check session
+app.get('/api/session', (req, res) => {
+  const token = req.headers['x-session-token'];
+  const session = getSession(token);
+  if (!session) return res.json({ authenticated: false });
+  const sub = getSubscriber(session.email);
+  res.json({
+    authenticated: true,
+    email: session.email,
+    plan: sub?.plan || 'free',
+    status: sub?.status || 'active',
+    auditsUsed: sub?.auditsUsed || 0,
+    auditsLimit: sub?.auditsLimit || 20
+  });
+});
+
 // Audit
 app.post('/api/audit', async (req, res) => {
   const { product, country, tone, competitorProduct } = req.body;
-  if (!product || !product.name) {
-    return res.status(400).json({ error: 'Datos del producto requeridos' });
-  }
+  if (!product || !product.name) return res.status(400).json({ error: 'Datos del producto requeridos' });
 
-  // Free tier check
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const usage = usageMap.get(ip) || 0;
-  if (usage >= 3) {
-    return res.status(403).json({
-      error: 'Agotaste tus 3 auditorías gratuitas. Suscribite para continuar.',
-      upgrade: true,
-      remaining: 0
-    });
+  const token = req.headers['x-session-token'];
+  const session = getSession(token);
+
+  if (session) {
+    // Authenticated user
+    const sub = getSubscriber(session.email);
+    if (!sub || sub.status !== 'active') {
+      return res.status(403).json({ error: 'Tu suscripción no está activa.', upgrade: true });
+    }
+    if (sub.plan === 'basic' && sub.auditsUsed >= sub.auditsLimit) {
+      return res.status(403).json({ error: `Alcanzaste el límite de ${sub.auditsLimit} auditorías del Plan Básico.`, upgrade: true });
+    }
+    try {
+      const audit = await generateAudit(product, country || 'general', tone || 'profesional', competitorProduct || null);
+      sub.auditsUsed = (sub.auditsUsed || 0) + 1;
+      setSubscriber(session.email, sub);
+      res.json({ success: true, audit, plan: sub.plan, auditsUsed: sub.auditsUsed, auditsLimit: sub.auditsLimit });
+    } catch (e) {
+      res.status(500).json({ error: 'Error generando la auditoría.' });
+    }
+  } else {
+    // Free tier — by IP
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const usage = ipUsage.get(ip) || 0;
+    if (usage >= 3) {
+      return res.status(403).json({ error: 'Agotaste tus 3 auditorías gratuitas.', upgrade: true, remaining: 0 });
+    }
+    try {
+      const audit = await generateAudit(product, country || 'general', tone || 'profesional', competitorProduct || null);
+      ipUsage.set(ip, usage + 1);
+      res.json({ success: true, audit, remaining: 2 - usage, plan: 'free' });
+    } catch (e) {
+      res.status(500).json({ error: 'Error generando la auditoría.' });
+    }
   }
+});
+
+// Get checkout URLs
+app.get('/api/checkout', (req, res) => {
+  const { plan, email } = req.query;
+  const variantId = plan === 'pro' ? LS_PRO_VARIANT : LS_BASIC_VARIANT;
+  const checkoutUrl = `${LS_STORE_URL}/checkout/buy/${variantId}${email ? `?checkout[email]=${encodeURIComponent(email)}` : ''}`;
+  res.json({ url: checkoutUrl });
+});
+
+// Verify subscription manually (user enters email after payment)
+app.post('/api/verify-subscription', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email requerido' });
 
   try {
-    const audit = await generateAudit(product, country || 'general', tone || 'profesional', competitorProduct || null);
-    usageMap.set(ip, usage + 1);
-    const remaining = 2 - usage;
-    res.json({ success: true, audit, remaining });
+    // Check Lemon Squeezy for active subscription
+    const response = await axios.get('https://api.lemonsqueezy.com/v1/subscriptions', {
+      headers: {
+        'Authorization': `Bearer ${LS_API_KEY}`,
+        'Accept': 'application/vnd.api+json'
+      },
+      params: { 'filter[user_email]': email.toLowerCase() }
+    });
+
+    const subscriptions = response.data?.data || [];
+    const active = subscriptions.find(s => s.attributes.status === 'active' || s.attributes.status === 'on_trial');
+
+    if (!active) {
+      return res.status(404).json({ error: 'No encontramos una suscripción activa para ese email. Si acabás de pagar, esperá unos segundos e intentá de nuevo.' });
+    }
+
+    const variantId = String(active.attributes.variant_id);
+    const plan = variantId === String(LS_PRO_VARIANT) ? 'pro' : 'basic';
+    const auditsLimit = plan === 'pro' ? 999999 : 20;
+
+    const existingSub = getSubscriber(email);
+    setSubscriber(email, {
+      plan,
+      status: 'active',
+      subscriptionId: active.id,
+      auditsUsed: existingSub?.auditsUsed || 0,
+      auditsLimit
+    });
+
+    const sessionToken = createSession(email);
+    res.json({ success: true, sessionToken, plan, auditsLimit });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Error generando la auditoría. Verificá tu API key de OpenAI.' });
+    console.error('Verify error:', e.response?.data || e.message);
+    res.status(500).json({ error: 'Error verificando la suscripción. Intentá de nuevo.' });
+  }
+});
+
+// Webhook from Lemon Squeezy
+app.post('/api/webhook', (req, res) => {
+  try {
+    const rawBody = req.body;
+    const signature = req.headers['x-signature'];
+
+    if (WEBHOOK_SECRET && signature) {
+      const hmac = crypto.createHmac('sha256', WEBHOOK_SECRET);
+      hmac.update(rawBody);
+      const digest = hmac.digest('hex');
+      if (digest !== signature) return res.status(401).json({ error: 'Invalid signature' });
+    }
+
+    const event = JSON.parse(rawBody.toString());
+    const eventName = event.meta?.event_name;
+    const attrs = event.data?.attributes;
+    const email = attrs?.user_email?.toLowerCase();
+
+    if (!email) return res.status(200).json({ received: true });
+
+    const variantId = String(attrs?.variant_id);
+    const plan = variantId === String(LS_PRO_VARIANT) ? 'pro' : 'basic';
+    const auditsLimit = plan === 'pro' ? 999999 : 20;
+
+    if (eventName === 'subscription_created' || eventName === 'subscription_resumed') {
+      const existing = getSubscriber(email);
+      setSubscriber(email, { plan, status: 'active', subscriptionId: event.data?.id, auditsUsed: existing?.auditsUsed || 0, auditsLimit });
+    } else if (eventName === 'subscription_cancelled' || eventName === 'subscription_expired') {
+      const existing = getSubscriber(email);
+      if (existing) setSubscriber(email, { ...existing, status: 'cancelled' });
+    } else if (eventName === 'subscription_updated') {
+      const existing = getSubscriber(email);
+      if (existing) setSubscriber(email, { ...existing, plan, auditsLimit, status: attrs?.status === 'active' ? 'active' : existing.status });
+    }
+
+    res.status(200).json({ received: true });
+  } catch (e) {
+    console.error('Webhook error:', e);
+    res.status(200).json({ received: true });
   }
 });
 
@@ -216,27 +281,21 @@ app.post('/api/share', async (req, res) => {
   if (!audit) return res.status(400).json({ error: 'Datos requeridos' });
   const token = crypto.randomBytes(16).toString('hex');
   sharedReports.set(token, { audit, product, createdAt: new Date() });
-  // Clean up reports older than 7 days
   for (const [k, v] of sharedReports) {
-    if (Date.now() - new Date(v.createdAt) > 7 * 24 * 60 * 60 * 1000) {
-      sharedReports.delete(k);
-    }
+    if (Date.now() - new Date(v.createdAt) > 7 * 24 * 60 * 60 * 1000) sharedReports.delete(k);
   }
   res.json({ success: true, token, url: `/informe/${token}` });
 });
 
-// Get shared report
 app.get('/api/report/:token', (req, res) => {
   const report = sharedReports.get(req.params.token);
   if (!report) return res.status(404).json({ error: 'Informe no encontrado o expirado' });
   res.json({ success: true, ...report });
 });
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '3.0.0' }));
+app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '4.0.0' }));
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Vendly v3 corriendo en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`Vendly v4 corriendo en puerto ${PORT}`));
