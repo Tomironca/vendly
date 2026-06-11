@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vendly — Auditoría de e-commerce con IA</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -20,81 +21,109 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,92,252,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(124,92,252,0.025) 1px,transparent 1px);background-size:56px 56px;pointer-events:none;z-index:0}
 
 /* NAV */
-nav{display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(7,7,14,0.92);backdrop-filter:blur(16px);z-index:100}
+nav{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(7,7,14,0.94);backdrop-filter:blur(16px);z-index:100}
 .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text);display:flex;align-items:center;gap:8px}
-.logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent)}
+.logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 10px var(--accent)}
 .logo span{color:var(--accent2)}
-.nav-right{display:flex;align-items:center;gap:12px}
+.nav-right{display:flex;align-items:center;gap:10px}
 .nav-badge{font-size:12px;color:var(--accent3);background:rgba(124,92,252,0.1);border:1px solid var(--border);padding:5px 12px;border-radius:100px}
 .nav-version{font-size:11px;color:var(--muted);background:var(--bg3);border:1px solid var(--border);padding:4px 10px;border-radius:100px}
 
 /* HERO */
-.hero{text-align:center;padding:56px 24px 40px;position:relative;z-index:1}
-.hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--gold);background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.2);padding:6px 14px;border-radius:100px;margin-bottom:20px}
-.hero h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(30px,5.5vw,52px);letter-spacing:-1.5px;line-height:1.08;margin-bottom:14px}
+.hero{text-align:center;padding:52px 24px 36px;position:relative;z-index:1}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--gold);background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.2);padding:6px 14px;border-radius:100px;margin-bottom:18px}
+.hero h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,5vw,50px);letter-spacing:-1.5px;line-height:1.08;margin-bottom:12px}
 .hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent2),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero p{font-size:16px;color:var(--muted);font-weight:300;max-width:520px;margin:0 auto;line-height:1.65}
+.hero p{font-size:16px;color:var(--muted);font-weight:300;max-width:500px;margin:0 auto 20px;line-height:1.6}
+.hero-features{display:flex;justify-content:center;gap:20px;flex-wrap:wrap}
+.hf{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.hf-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0}
 
-/* MAIN */
-.wrap{max-width:900px;margin:0 auto;padding:0 20px 80px;position:relative;z-index:1}
+/* WRAP */
+.wrap{max-width:920px;margin:0 auto;padding:0 20px 80px;position:relative;z-index:1}
+
+/* FREE BANNER */
+.free-banner{background:linear-gradient(135deg,rgba(52,211,153,0.08),rgba(52,211,153,0.04));border:1px solid rgba(52,211,153,0.2);border-radius:14px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.free-text{font-size:13px;color:var(--green)}
+.free-count{font-size:12px;color:var(--muted)}
 
 /* INPUT CARD */
-.input-card{background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:28px;margin-bottom:20px}
-.card-label{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--accent3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.input-card{background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:26px;margin-bottom:16px}
+.card-label{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--accent3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .card-label::before{content:'';width:5px;height:5px;background:var(--accent);border-radius:50%;flex-shrink:0}
 
 /* TABS */
-.tabs{display:flex;gap:6px;margin-bottom:20px;background:var(--bg2);padding:4px;border-radius:12px;border:1px solid var(--border)}
-.tab{flex:1;padding:9px 12px;border-radius:9px;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center}
-.tab.active{background:var(--bg3);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.tabs{display:flex;gap:4px;margin-bottom:18px;background:var(--bg2);padding:4px;border-radius:12px;border:1px solid var(--border)}
+.tab{flex:1;padding:9px 10px;border-radius:9px;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center}
+.tab.active{background:var(--bg3);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.4)}
 .tab-content{display:none}
 .tab-content.active{display:block}
 
 /* FORM */
-.form-group{margin-bottom:14px}
-label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500;letter-spacing:.02em}
-input,textarea,select{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .15s;resize:vertical}
-input:focus,textarea:focus,select:focus{border-color:rgba(124,92,252,0.5);background:rgba(15,15,26,0.8)}
+.form-group{margin-bottom:12px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:500}
+input,textarea,select{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .15s;resize:vertical}
+input:focus,textarea:focus,select:focus{border-color:rgba(124,92,252,0.5)}
 input::placeholder,textarea::placeholder{color:var(--muted)}
-select option{background:var(--bg2)}
-textarea{min-height:80px;line-height:1.5}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:540px){.form-row{grid-template-columns:1fr}}
-
+textarea{min-height:72px;line-height:1.5}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.form-row{grid-template-columns:1fr}}
 .url-row{display:flex;gap:8px}
 .url-row input{flex:1}
 
+/* COMPETITOR TOGGLE */
+.comp-toggle{display:flex;align-items:center;gap:8px;margin:12px 0;cursor:pointer;font-size:13px;color:var(--muted);user-select:none}
+.comp-toggle:hover{color:var(--text)}
+.toggle-switch{width:36px;height:20px;background:var(--border);border-radius:100px;position:relative;transition:background .2s;flex-shrink:0}
+.toggle-switch.on{background:var(--accent)}
+.toggle-knob{width:14px;height:14px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:left .2s}
+.toggle-switch.on .toggle-knob{left:19px}
+.comp-section{display:none;margin-top:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px}
+.comp-section.show{display:block}
+.comp-title{font-size:12px;font-weight:600;color:var(--accent3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
 /* BUTTONS */
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s}
-.btn-primary{background:linear-gradient(135deg,var(--accent),#6344E0);color:#fff;width:100%;margin-top:6px;font-size:15px;padding:14px}
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,92,252,0.3)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;width:100%;margin-top:8px;font-size:15px;padding:14px}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(124,92,252,0.35)}
 .btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
-.btn-sm{background:var(--bg2);color:var(--muted);border:1px solid var(--border);font-size:12px;padding:8px 14px;border-radius:8px;white-space:nowrap}
+.btn-sm{background:var(--bg2);color:var(--muted);border:1px solid var(--border);font-size:12px;padding:8px 13px;border-radius:8px;white-space:nowrap}
 .btn-sm:hover{color:var(--text);border-color:var(--accent)}
+.btn-outline{background:transparent;color:var(--accent3);border:1px solid rgba(124,92,252,0.35);padding:9px 16px;border-radius:10px;font-size:13px}
+.btn-outline:hover{background:rgba(124,92,252,0.08)}
+.btn-ghost{background:var(--bg3);color:var(--muted);border:1px solid var(--border);padding:10px 16px;border-radius:10px;font-size:13px}
+.btn-ghost:hover{color:var(--text);border-color:var(--accent)}
 
 /* URL RESULT */
-.url-result{background:var(--bg2);border:1px solid rgba(52,211,153,0.2);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:none}
+.url-result{background:var(--bg2);border:1px solid rgba(52,211,153,0.2);border-radius:12px;padding:12px 14px;margin-bottom:12px;display:none}
 .url-result.show{display:block}
-.url-ok{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green);margin-bottom:6px;font-weight:500}
-.url-name{font-size:14px;font-weight:500;margin-bottom:3px}
+.url-ok{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green);margin-bottom:5px;font-weight:500}
+.url-name{font-size:14px;font-weight:500;margin-bottom:2px}
 .url-desc{font-size:12px;color:var(--muted);line-height:1.4}
 
 /* ERROR */
-.error-msg{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);border-radius:10px;padding:11px 14px;color:var(--red);font-size:13px;margin-bottom:14px;display:none}
+.error-msg{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);border-radius:10px;padding:10px 13px;color:var(--red);font-size:13px;margin-bottom:12px;display:none}
 .error-msg.show{display:block}
 
+/* UPGRADE BANNER */
+.upgrade-banner{background:linear-gradient(135deg,rgba(124,92,252,0.15),rgba(166,136,250,0.08));border:1px solid rgba(124,92,252,0.35);border-radius:16px;padding:20px 24px;text-align:center;display:none;margin-bottom:16px}
+.upgrade-banner.show{display:block}
+.ub-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:6px}
+.ub-sub{font-size:13px;color:var(--muted);margin-bottom:16px}
+
 /* LOADING */
-.loading{display:none;text-align:center;padding:60px 20px}
+.loading{display:none;text-align:center;padding:56px 20px}
 .loading.show{display:block}
-.loader{width:48px;height:48px;margin:0 auto 20px;position:relative}
-.loader-ring{width:48px;height:48px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.loader-ring{width:48px;height:48px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite;margin:0 auto 18px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px}
 .loading-sub{font-size:13px;color:var(--muted);line-height:1.6}
-.loading-steps{margin-top:20px;display:flex;flex-direction:column;gap:8px;max-width:280px;margin-left:auto;margin-right:auto}
+.loading-steps{margin-top:20px;display:flex;flex-direction:column;gap:7px;max-width:280px;margin-left:auto;margin-right:auto}
 .loading-step{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);padding:8px 14px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)}
-.step-dot{width:6px;height:6px;border-radius:50%;background:var(--border);flex-shrink:0;animation:pulse 1.5s ease infinite}
-.loading-step.active .step-dot{background:var(--accent)}
+.step-dot{width:6px;height:6px;border-radius:50%;background:var(--border);flex-shrink:0}
+.loading-step.done .step-dot{background:var(--green)}
+.loading-step.done{color:var(--green);border-color:rgba(52,211,153,0.2)}
+.loading-step.active .step-dot{background:var(--accent);animation:pulse 1s ease infinite}
 .loading-step.active{color:var(--text);border-color:rgba(124,92,252,0.3)}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
 
@@ -102,141 +131,179 @@ textarea{min-height:80px;line-height:1.5}
 .results{display:none}
 .results.show{display:block}
 
+/* ACTION BAR */
+.action-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;justify-content:space-between}
+.action-bar-left{display:flex;gap:8px;flex-wrap:wrap}
+.share-link{display:none;background:var(--bg3);border:1px solid rgba(52,211,153,0.3);border-radius:10px;padding:8px 14px;font-size:12px;color:var(--green);align-items:center;gap:8px}
+.share-link.show{display:flex}
+.share-url{font-family:monospace;font-size:11px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* REPORT HEADER */
-.report-header{background:linear-gradient(135deg,rgba(124,92,252,0.12),rgba(166,136,250,0.06));border:1px solid rgba(124,92,252,0.25);border-radius:20px;padding:28px;margin-bottom:16px}
-.report-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
-.report-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.5px}
-.report-date{font-size:12px;color:var(--muted);background:var(--bg3);padding:5px 12px;border-radius:100px;border:1px solid var(--border)}
-.report-product{font-size:14px;color:var(--muted);margin-bottom:16px}
+.report-header{background:linear-gradient(135deg,rgba(124,92,252,0.1),rgba(166,136,250,0.05));border:1px solid rgba(124,92,252,0.2);border-radius:20px;padding:24px;margin-bottom:14px}
+.report-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.report-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.5px}
+.report-date{font-size:12px;color:var(--muted);background:var(--bg3);padding:4px 12px;border-radius:100px;border:1px solid var(--border)}
+.report-product{font-size:13px;color:var(--muted);margin-bottom:14px}
 .report-product strong{color:var(--text)}
-.resumen-text{font-size:15px;line-height:1.7;color:var(--text);font-weight:300}
+.resumen-text{font-size:14px;line-height:1.7;color:var(--text);font-weight:300}
 
 /* SCORES */
-.scores-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
-@media(max-width:540px){.scores-grid{grid-template-columns:1fr}}
-.score-card{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;position:relative;overflow:hidden}
-.score-card::before{content:'';position:absolute;inset:0;opacity:.04;border-radius:16px}
-.score-card.conversion::before{background:var(--accent)}
-.score-card.confianza::before{background:var(--green)}
-.score-card.seo::before{background:var(--gold)}
-.score-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px}
-.score-circle{width:72px;height:72px;margin:0 auto 10px;position:relative}
+.scores-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:520px){.scores-grid{grid-template-columns:1fr}}
+.score-card{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:18px;text-align:center}
+.score-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px}
+.score-circle{width:68px;height:68px;margin:0 auto 8px;position:relative}
 .score-svg{transform:rotate(-90deg)}
-.score-bg{fill:none;stroke:var(--border);stroke-width:6}
-.score-fill{fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset 1s ease}
-.score-conversion .score-fill{stroke:var(--accent)}
-.score-confianza .score-fill{stroke:var(--green)}
-.score-seo .score-fill{stroke:var(--gold)}
-.score-number{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Syne',sans-serif;font-weight:800;font-size:20px}
-.score-conversion .score-number{color:var(--accent2)}
-.score-confianza .score-number{color:var(--green)}
-.score-seo .score-number{color:var(--gold)}
-.score-explain{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px}
+.score-bg-ring{fill:none;stroke:var(--border);stroke-width:6}
+.score-fill-ring{fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset 1.2s ease}
+.sc-conv .score-fill-ring{stroke:var(--accent2)}
+.sc-conf .score-fill-ring{stroke:var(--green)}
+.sc-seo .score-fill-ring{stroke:var(--gold)}
+.score-num{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Syne',sans-serif;font-weight:800;font-size:19px}
+.sc-conv .score-num{color:var(--accent2)}
+.sc-conf .score-num{color:var(--green)}
+.sc-seo .score-num{color:var(--gold)}
+.score-exp{font-size:12px;color:var(--muted);line-height:1.5}
 
-/* GENERIC CARD */
-.report-card{background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:24px;margin-bottom:14px}
-.rc-header{display:flex;align-items:center;gap:10px;margin-bottom:18px}
-.rc-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.rc-icon-green{background:var(--green-bg);border:1px solid rgba(52,211,153,0.2)}
-.rc-icon-red{background:var(--red-bg);border:1px solid rgba(248,113,113,0.2)}
-.rc-icon-blue{background:var(--blue-bg);border:1px solid rgba(96,165,250,0.2)}
-.rc-icon-gold{background:var(--gold-bg);border:1px solid rgba(245,200,66,0.2)}
-.rc-icon-purple{background:rgba(124,92,252,0.1);border:1px solid var(--border)}
-.rc-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;letter-spacing:-.3px}
-.rc-count{font-size:12px;color:var(--muted);background:var(--bg2);padding:2px 8px;border-radius:100px;margin-left:auto}
+/* REPORT CARD */
+.rc{background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:22px;margin-bottom:12px}
+.rc-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.rc-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.ico-g{background:var(--green-bg);border:1px solid rgba(52,211,153,0.2)}
+.ico-r{background:var(--red-bg);border:1px solid rgba(248,113,113,0.2)}
+.ico-b{background:var(--blue-bg);border:1px solid rgba(96,165,250,0.2)}
+.ico-o{background:var(--gold-bg);border:1px solid rgba(245,200,66,0.2)}
+.ico-p{background:rgba(124,92,252,0.1);border:1px solid var(--border)}
+.rc-tit{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;letter-spacing:-.3px}
+.rc-ct{font-size:12px;color:var(--muted);background:var(--bg2);padding:2px 8px;border-radius:100px;margin-left:auto}
 
-/* LISTS */
+/* CHECK LIST */
 .check-list{list-style:none;display:flex;flex-direction:column;gap:8px}
-.check-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.55;color:var(--text)}
-.check-icon{flex-shrink:0;margin-top:2px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
-.check-green{background:rgba(52,211,153,0.15);color:var(--green)}
-.check-red{background:rgba(248,113,113,0.15);color:var(--red)}
+.check-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.55}
+.ci{flex-shrink:0;margin-top:2px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.ci-g{background:rgba(52,211,153,0.15);color:var(--green)}
+.ci-r{background:rgba(248,113,113,0.15);color:var(--red)}
 
 /* MEJORAS */
-.mejora-list{display:flex;flex-direction:column;gap:10px}
-.mejora-item{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
-.mejora-impact{flex-shrink:0;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;margin-top:1px;letter-spacing:.04em}
-.impact-alto{background:rgba(248,113,113,0.12);color:var(--red);border:1px solid rgba(248,113,113,0.2)}
-.impact-medio{background:rgba(245,200,66,0.12);color:var(--gold);border:1px solid rgba(245,200,66,0.2)}
-.impact-bajo{background:rgba(96,165,250,0.12);color:var(--blue);border:1px solid rgba(96,165,250,0.2)}
-.mejora-content .mt{font-size:14px;font-weight:500;margin-bottom:4px}
-.mejora-content .md{font-size:13px;color:var(--muted);line-height:1.55}
+.mejoras{display:flex;flex-direction:column;gap:8px}
+.mej{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;display:flex;gap:10px;align-items:flex-start}
+.mej-imp{flex-shrink:0;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;margin-top:1px;letter-spacing:.04em}
+.imp-a{background:rgba(248,113,113,0.1);color:var(--red);border:1px solid rgba(248,113,113,0.2)}
+.imp-m{background:rgba(245,200,66,0.1);color:var(--gold);border:1px solid rgba(245,200,66,0.2)}
+.imp-b{background:rgba(96,165,250,0.1);color:var(--blue);border:1px solid rgba(96,165,250,0.2)}
+.mej-tit{font-size:14px;font-weight:500;margin-bottom:3px}
+.mej-desc{font-size:13px;color:var(--muted);line-height:1.5}
 
-/* DESCRIPCION */
-.desc-section{margin-bottom:14px}
-.desc-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
-.desc-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative}
-.desc-text{font-size:14px;line-height:1.65;color:var(--text);white-space:pre-wrap}
+/* COMPETITOR */
+.comp-compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+@media(max-width:520px){.comp-compare{grid-template-columns:1fr}}
+.comp-col{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px}
+.comp-col-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.cc-yours{color:var(--accent3)}
+.cc-comp{color:var(--red)}
+
+/* DESC */
+.desc-sec{margin-bottom:12px}
+.desc-sec-tit{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:7px}
+.desc-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 15px;position:relative}
+.desc-txt{font-size:14px;line-height:1.65;color:var(--text);white-space:pre-wrap}
 .copy-btn{position:absolute;top:10px;right:10px;background:rgba(124,92,252,0.1);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--accent3);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
 .copy-btn:hover{background:rgba(124,92,252,0.2)}
-.copy-btn.copied{background:rgba(52,211,153,0.12);color:var(--green);border-color:rgba(52,211,153,0.2)}
-.bullet-list{list-style:none;display:flex;flex-direction:column;gap:6px}
-.bullet-list li{display:flex;align-items:flex-start;gap:8px;font-size:14px;line-height:1.55}
-.bullet-list li::before{content:'→';color:var(--accent);flex-shrink:0;margin-top:1px;font-weight:600}
+.copy-btn.copied{background:rgba(52,211,153,0.1);color:var(--green);border-color:rgba(52,211,153,0.2)}
+.bul-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.bul-list li{display:flex;align-items:flex-start;gap:8px;font-size:14px;line-height:1.55}
+.bul-list li::before{content:'→';color:var(--accent);flex-shrink:0;font-weight:600}
 
-/* META ADS */
-.ads-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+/* ADS */
+.ads-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}
 .ad-tab{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;font-weight:500}
-.ad-tab.active{background:rgba(124,92,252,0.12);color:var(--accent3);border-color:rgba(124,92,252,0.3)}
+.ad-tab.active{background:rgba(124,92,252,0.1);color:var(--accent3);border-color:rgba(124,92,252,0.3)}
 .ad-panel{display:none}
 .ad-panel.active{display:block}
 .ad-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.ad-card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.ad-objetivo{font-size:11px;font-weight:600;padding:3px 8px;border-radius:100px;background:rgba(124,92,252,0.1);color:var(--accent3);border:1px solid var(--border)}
-.ad-headline{font-size:16px;font-weight:700;font-family:'Syne',sans-serif;padding:14px 16px 0}
-.ad-field{padding:12px 16px;border-top:1px solid var(--border);position:relative}
-.ad-field-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
-.ad-field-text{font-size:13px;line-height:1.6;color:var(--text)}
+.ad-ch{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ad-obj{font-size:11px;font-weight:600;padding:3px 8px;border-radius:100px;background:rgba(124,92,252,0.1);color:var(--accent3);border:1px solid var(--border)}
+.ad-hl{font-size:15px;font-weight:700;font-family:'Syne',sans-serif;padding:12px 15px 0}
+.ad-f{padding:12px 15px;border-top:1px solid var(--border);position:relative}
+.ad-fl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
+.ad-ft{font-size:13px;line-height:1.6}
 
 /* INSTAGRAM */
-.ig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.ig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
 .ig-post{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-.ig-post-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.ig-ph{padding:11px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .ig-tipo{font-size:11px;font-weight:600;color:var(--accent3);background:rgba(124,92,252,0.1);padding:3px 8px;border-radius:100px;border:1px solid var(--border)}
-.ig-hook{padding:12px 14px;font-size:13px;font-weight:500;color:var(--gold);border-bottom:1px solid var(--border);line-height:1.4;font-style:italic}
-.ig-caption{padding:12px 14px;font-size:13px;line-height:1.65;color:var(--muted);position:relative;max-height:160px;overflow:hidden}
-.ig-caption.expanded{max-height:none}
-.ig-expand{display:block;text-align:center;font-size:12px;color:var(--accent3);padding:8px;cursor:pointer;border-top:1px solid var(--border);background:var(--bg3)}
-.ig-expand:hover{color:var(--accent2)}
+.ig-hook{padding:11px 13px;font-size:13px;font-weight:500;color:var(--gold);border-bottom:1px solid var(--border);line-height:1.4;font-style:italic}
+.ig-cap{padding:11px 13px;font-size:13px;line-height:1.65;color:var(--muted);max-height:120px;overflow:hidden;position:relative}
+.ig-cap.expanded{max-height:none}
+.ig-exp{display:block;text-align:center;font-size:12px;color:var(--accent3);padding:8px;cursor:pointer;border-top:1px solid var(--border);background:var(--bg3)}
+
+/* FAQ */
+.faq-list{display:flex;flex-direction:column;gap:8px}
+.faq-item{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.faq-q{display:flex;align-items:flex-start;gap:10px;padding:13px 15px;font-size:14px;font-weight:500}
+.faq-q::before{content:'Q';flex-shrink:0;width:20px;height:20px;background:rgba(124,92,252,0.15);color:var(--accent3);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-top:1px}
+.faq-a{padding:0 15px 13px 15px;font-size:13px;color:var(--muted);line-height:1.6;padding-left:45px}
+
+/* KEYWORDS */
+.kw-grid{display:flex;flex-wrap:wrap;gap:8px}
+.kw{background:rgba(124,92,252,0.08);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:13px;color:var(--accent3);cursor:pointer;transition:all .15s}
+.kw:hover{background:rgba(124,92,252,0.15);color:var(--accent2)}
+.kw.copied{background:rgba(52,211,153,0.1);color:var(--green);border-color:rgba(52,211,153,0.2)}
 
 /* PLAN */
-.plan-list{display:flex;flex-direction:column;gap:10px}
-.plan-item{display:flex;gap:14px;align-items:flex-start;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
-.plan-num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#6344E0);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;margin-top:1px}
-.plan-content .pt{font-size:14px;font-weight:500;margin-bottom:4px}
-.plan-content .pd{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:6px}
-.plan-plazo{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:100px;background:rgba(124,92,252,0.1);color:var(--accent3);border:1px solid var(--border)}
-.plan-impacto{display:inline-block;font-size:11px;color:var(--muted);margin-left:6px}
+.plan-list{display:flex;flex-direction:column;gap:8px}
+.plan-item{display:flex;gap:12px;align-items:flex-start;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:13px 15px}
+.plan-n{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#5D3FD3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;margin-top:1px}
+.plan-t{font-size:14px;font-weight:500;margin-bottom:3px}
+.plan-d{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:6px}
+.plan-pl{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:100px;background:rgba(124,92,252,0.1);color:var(--accent3);border:1px solid var(--border)}
 
-/* RESET BTN */
-.reset-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;margin-top:16px}
+/* PRECIO */
+.precio-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-size:14px;line-height:1.65;color:var(--text)}
+
+/* RESET */
+.reset-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;margin-top:14px}
 .reset-btn:hover{color:var(--text);border-color:var(--accent)}
 
-/* FOOTER */
-footer{text-align:center;padding:28px;border-top:1px solid var(--border);color:var(--muted);font-size:13px;position:relative;z-index:1}
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg3);border:1px solid rgba(52,211,153,0.3);border-radius:12px;padding:12px 20px;font-size:13px;color:var(--green);transition:transform .3s;z-index:9999;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+footer{text-align:center;padding:24px;border-top:1px solid var(--border);color:var(--muted);font-size:13px;position:relative;z-index:1}
 footer span{color:var(--accent2)}
 </style>
 </head>
 <body>
 
+<div class="toast" id="toast"></div>
+
 <nav>
-  <div class="logo">
-    <div class="logo-dot"></div>
-    Vend<span>ly</span>
-  </div>
+  <div class="logo"><div class="logo-dot"></div>Vend<span>ly</span></div>
   <div class="nav-right">
-    <span class="nav-version">v2.0 Auditoría</span>
+    <span class="nav-version">v3.0</span>
     <span class="nav-badge">✦ GPT-4o</span>
   </div>
 </nav>
 
 <div class="hero">
-  <div class="hero-badge">📊 Auditoría completa en 30 segundos</div>
+  <div class="hero-badge">📊 Auditoría profesional en 30 segundos</div>
   <h1>Auditá tu producto<br>y <em>vendé más</em></h1>
-  <p>Pegá la URL de tu producto y obtené un informe completo con scores, fortalezas, debilidades, copies optimizados y un plan de acción.</p>
+  <p>Scores de conversión, copies optimizados, análisis de competidores, FAQ automático y plan de acción. Todo en un solo informe.</p>
+  <div class="hero-features">
+    <span class="hf"><span class="hf-dot"></span>Exportar a PDF</span>
+    <span class="hf"><span class="hf-dot"></span>Comparar competidor</span>
+    <span class="hf"><span class="hf-dot"></span>Compartir por link</span>
+    <span class="hf"><span class="hf-dot"></span>FAQ automático</span>
+  </div>
 </div>
 
 <div class="wrap">
+
+  <div class="free-banner">
+    <span class="free-text">✦ 3 auditorías gratuitas — sin tarjeta de crédito</span>
+    <span class="free-count" id="remaining-count">Auditorías restantes: 3</span>
+  </div>
 
   <!-- INPUT -->
   <div class="input-card">
@@ -244,61 +311,67 @@ footer span{color:var(--accent2)}
 
     <div class="tabs">
       <button class="tab active" onclick="switchTab('url',this)">🔗 Desde URL</button>
-      <button class="tab" onclick="switchTab('manual',this)">✏️ Carga manual</button>
+      <button class="tab" onclick="switchTab('manual',this)">✏️ Manual</button>
     </div>
 
-    <!-- URL -->
     <div class="tab-content active" id="tab-url">
       <div class="form-group">
-        <label>URL del producto (Tiendanube, MercadoShops, Shopify, WooCommerce...)</label>
+        <label>URL del producto (Tiendanube, MercadoShops, Shopify...)</label>
         <div class="url-row">
           <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre">
-          <button class="btn btn-sm" onclick="scrapeUrl()">Leer →</button>
+          <button class="btn btn-sm" onclick="scrapeUrl('product','url-result','url-name','url-desc','scrape-error')">Leer →</button>
         </div>
       </div>
       <div class="error-msg" id="scrape-error"></div>
       <div class="url-result" id="url-result">
-        <div class="url-ok">✓ Producto leído correctamente</div>
+        <div class="url-ok">✓ Producto leído</div>
         <div class="url-name" id="url-name"></div>
         <div class="url-desc" id="url-desc"></div>
       </div>
     </div>
 
-    <!-- MANUAL -->
     <div class="tab-content" id="tab-manual">
-      <div class="form-group">
-        <label>Nombre del producto *</label>
-        <input type="text" id="manual-name" placeholder="Ej: Zapatillas running Nike Air Max 2024">
-      </div>
-      <div class="form-group">
-        <label>Descripción</label>
-        <textarea id="manual-desc" placeholder="Describí el producto: materiales, características, para quién es..."></textarea>
-      </div>
+      <div class="form-group"><label>Nombre *</label><input type="text" id="manual-name" placeholder="Ej: Zapatillas Nike Air Max 2024"></div>
+      <div class="form-group"><label>Descripción</label><textarea id="manual-desc" placeholder="Materiales, características, para quién es..."></textarea></div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Precio</label>
-          <input type="text" id="manual-price" placeholder="Ej: $89.990 ARS">
-        </div>
-        <div class="form-group">
-          <label>URL de tu tienda (opcional)</label>
-          <input type="text" id="manual-url" placeholder="https://tutienda.com">
-        </div>
+        <div class="form-group"><label>Precio</label><input type="text" id="manual-price" placeholder="$89.990 ARS"></div>
+        <div class="form-group"><label>URL (opcional)</label><input type="text" id="manual-url" placeholder="https://tutienda.com"></div>
       </div>
     </div>
 
-    <div class="form-row" style="margin-top:6px">
+    <!-- COMPETITOR -->
+    <div class="comp-toggle" onclick="toggleComp()">
+      <div class="toggle-switch" id="comp-switch"><div class="toggle-knob"></div></div>
+      <span>Comparar con un competidor</span>
+      <span style="font-size:12px;color:var(--accent3);background:rgba(124,92,252,0.1);padding:2px 7px;border-radius:100px;border:1px solid var(--border);margin-left:4px">NUEVO</span>
+    </div>
+    <div class="comp-section" id="comp-section">
+      <div class="comp-title">🏆 URL del competidor</div>
       <div class="form-group">
-        <label>País</label>
+        <div class="url-row">
+          <input type="url" id="comp-url" placeholder="https://competidor.com/producto">
+          <button class="btn btn-sm" onclick="scrapeUrl('comp','comp-result','comp-name','comp-desc','comp-error')">Leer →</button>
+        </div>
+      </div>
+      <div class="error-msg" id="comp-error"></div>
+      <div class="url-result" id="comp-result">
+        <div class="url-ok">✓ Competidor leído</div>
+        <div class="url-name" id="comp-name"></div>
+        <div class="url-desc" id="comp-desc"></div>
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-top:8px">
+      <div class="form-group"><label>País</label>
         <select id="country">
           <option value="argentina">🇦🇷 Argentina (voseo)</option>
           <option value="mexico">🇲🇽 México</option>
           <option value="colombia">🇨🇴 Colombia</option>
           <option value="espana">🇪🇸 España</option>
-          <option value="general">🌎 Español neutro (LATAM)</option>
+          <option value="general">🌎 LATAM neutro</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Tono</label>
+      <div class="form-group"><label>Tono</label>
         <select id="tone">
           <option value="profesional">Profesional y confiable</option>
           <option value="casual">Casual y cercano</option>
@@ -309,169 +382,181 @@ footer span{color:var(--accent2)}
     </div>
 
     <div class="error-msg" id="audit-error"></div>
-    <button class="btn btn-primary" id="audit-btn" onclick="runAudit()">
-      📊 Generar auditoría completa
-    </button>
+    <div class="upgrade-banner" id="upgrade-banner">
+      <div class="ub-title">Agotaste tus auditorías gratuitas</div>
+      <div class="ub-sub">Suscribite para auditorías ilimitadas, PDF export y más.</div>
+      <button class="btn btn-outline" onclick="showToast('Próximamente — suscripciones en camino!')">Ver planes →</button>
+    </div>
+    <button class="btn btn-primary" id="audit-btn" onclick="runAudit()">📊 Generar auditoría completa</button>
   </div>
 
   <!-- LOADING -->
   <div class="loading" id="loading">
-    <div class="loader"><div class="loader-ring"></div></div>
+    <div class="loader-ring"></div>
     <div class="loading-title">Analizando tu producto...</div>
-    <div class="loading-sub">GPT-4o está auditando cada aspecto.<br>Esto tarda entre 20 y 30 segundos.</div>
+    <div class="loading-sub">GPT-4o está auditando cada aspecto.<br>Esto tarda entre 20 y 35 segundos.</div>
     <div class="loading-steps">
-      <div class="loading-step active" id="step1"><div class="step-dot"></div>Leyendo el producto</div>
-      <div class="loading-step" id="step2"><div class="step-dot"></div>Calculando scores</div>
-      <div class="loading-step" id="step3"><div class="step-dot"></div>Detectando fortalezas y debilidades</div>
-      <div class="loading-step" id="step4"><div class="step-dot"></div>Generando copies y plan de acción</div>
+      <div class="loading-step" id="ls1"><div class="step-dot"></div>Leyendo el producto</div>
+      <div class="loading-step" id="ls2"><div class="step-dot"></div>Calculando scores</div>
+      <div class="loading-step" id="ls3"><div class="step-dot"></div>Analizando fortalezas y debilidades</div>
+      <div class="loading-step" id="ls4"><div class="step-dot"></div>Generando copies optimizados</div>
+      <div class="loading-step" id="ls5"><div class="step-dot"></div>Armando plan de acción</div>
     </div>
   </div>
 
   <!-- RESULTS -->
   <div class="results" id="results">
 
-    <!-- REPORT HEADER -->
-    <div class="report-header">
+    <div class="action-bar">
+      <div class="action-bar-left">
+        <button class="btn btn-ghost" onclick="exportPDF()">⬇ Exportar PDF</button>
+        <button class="btn btn-outline" onclick="shareReport()">🔗 Compartir informe</button>
+      </div>
+      <button class="btn btn-sm" onclick="resetApp()">← Nueva auditoría</button>
+    </div>
+
+    <div class="share-link" id="share-link">
+      <span style="color:var(--green);font-size:12px">✓ Link copiado:</span>
+      <span class="share-url" id="share-url"></span>
+    </div>
+
+    <!-- HEADER -->
+    <div class="report-header" id="report-header">
       <div class="report-meta">
-        <div class="report-title">📊 Informe de Auditoría</div>
+        <div class="report-title">📊 Informe de Auditoría Vendly</div>
         <div class="report-date" id="report-date"></div>
       </div>
-      <div class="report-product">Producto analizado: <strong id="report-product-name"></strong></div>
-      <div class="resumen-text" id="resumen-text"></div>
+      <div class="report-product">Producto: <strong id="rp-name"></strong></div>
+      <div class="resumen-text" id="r-resumen"></div>
     </div>
 
     <!-- SCORES -->
     <div class="scores-grid">
-      <div class="score-card conversion">
-        <div class="score-label">Score de Conversión</div>
-        <div class="score-circle score-conversion">
-          <svg class="score-svg" viewBox="0 0 72 72" width="72" height="72">
-            <circle class="score-bg" cx="36" cy="36" r="30"/>
-            <circle class="score-fill" id="score-conv-circle" cx="36" cy="36" r="30" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+      <div class="score-card sc-conv">
+        <div class="score-label">Conversión</div>
+        <div class="score-circle">
+          <svg class="score-svg" viewBox="0 0 68 68" width="68" height="68">
+            <circle class="score-bg-ring" cx="34" cy="34" r="28"/>
+            <circle class="score-fill-ring" id="sc1" cx="34" cy="34" r="28" stroke-dasharray="175.9" stroke-dashoffset="175.9"/>
           </svg>
-          <div class="score-number" id="score-conv-num">0</div>
+          <div class="score-num" id="sn1">0</div>
         </div>
-        <div class="score-explain" id="score-conv-exp"></div>
+        <div class="score-exp" id="se1"></div>
       </div>
-      <div class="score-card confianza">
-        <div class="score-label">Score de Confianza</div>
-        <div class="score-circle score-confianza">
-          <svg class="score-svg" viewBox="0 0 72 72" width="72" height="72">
-            <circle class="score-bg" cx="36" cy="36" r="30"/>
-            <circle class="score-fill" id="score-conf-circle" cx="36" cy="36" r="30" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+      <div class="score-card sc-conf">
+        <div class="score-label">Confianza</div>
+        <div class="score-circle">
+          <svg class="score-svg" viewBox="0 0 68 68" width="68" height="68">
+            <circle class="score-bg-ring" cx="34" cy="34" r="28"/>
+            <circle class="score-fill-ring" id="sc2" cx="34" cy="34" r="28" stroke-dasharray="175.9" stroke-dashoffset="175.9"/>
           </svg>
-          <div class="score-number" id="score-conf-num">0</div>
+          <div class="score-num" id="sn2">0</div>
         </div>
-        <div class="score-explain" id="score-conf-exp"></div>
+        <div class="score-exp" id="se2"></div>
       </div>
-      <div class="score-card seo">
-        <div class="score-label">Score SEO</div>
-        <div class="score-circle score-seo">
-          <svg class="score-svg" viewBox="0 0 72 72" width="72" height="72">
-            <circle class="score-bg" cx="36" cy="36" r="30"/>
-            <circle class="score-fill" id="score-seo-circle" cx="36" cy="36" r="30" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+      <div class="score-card sc-seo">
+        <div class="score-label">SEO</div>
+        <div class="score-circle">
+          <svg class="score-svg" viewBox="0 0 68 68" width="68" height="68">
+            <circle class="score-bg-ring" cx="34" cy="34" r="28"/>
+            <circle class="score-fill-ring" id="sc3" cx="34" cy="34" r="28" stroke-dasharray="175.9" stroke-dashoffset="175.9"/>
           </svg>
-          <div class="score-number" id="score-seo-num">0</div>
+          <div class="score-num" id="sn3">0</div>
         </div>
-        <div class="score-explain" id="score-seo-exp"></div>
+        <div class="score-exp" id="se3"></div>
       </div>
+    </div>
+
+    <!-- COMPETIDOR -->
+    <div class="rc" id="comp-card" style="display:none">
+      <div class="rc-head">
+        <div class="rc-ico ico-r">⚔</div>
+        <div class="rc-tit">Análisis vs competidor</div>
+      </div>
+      <div class="comp-compare">
+        <div class="comp-col">
+          <div class="comp-col-title cc-yours">✦ Tus ventajas</div>
+          <ul class="check-list" id="comp-ventajas"></ul>
+        </div>
+        <div class="comp-col">
+          <div class="comp-col-title cc-comp">⚠ Tus desventajas</div>
+          <ul class="check-list" id="comp-desventajas"></ul>
+        </div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div class="desc-sec-tit" style="margin-bottom:8px">Oportunidades de diferenciación</div>
+        <ul class="check-list" id="comp-opps"></ul>
+      </div>
+      <div class="precio-box" id="comp-conclusion"></div>
     </div>
 
     <!-- FORTALEZAS -->
-    <div class="report-card">
-      <div class="rc-header">
-        <div class="rc-icon rc-icon-green">✓</div>
-        <div class="rc-title">Fortalezas detectadas</div>
-        <div class="rc-count" id="fortalezas-count"></div>
-      </div>
-      <ul class="check-list" id="fortalezas-list"></ul>
+    <div class="rc">
+      <div class="rc-head"><div class="rc-ico ico-g">✓</div><div class="rc-tit">Fortalezas</div><div class="rc-ct" id="fort-ct"></div></div>
+      <ul class="check-list" id="r-fort"></ul>
     </div>
 
     <!-- DEBILIDADES -->
-    <div class="report-card">
-      <div class="rc-header">
-        <div class="rc-icon rc-icon-red">⚠</div>
-        <div class="rc-title">Debilidades detectadas</div>
-        <div class="rc-count" id="debilidades-count"></div>
-      </div>
-      <ul class="check-list" id="debilidades-list"></ul>
+    <div class="rc">
+      <div class="rc-head"><div class="rc-ico ico-r">⚠</div><div class="rc-tit">Debilidades</div><div class="rc-ct" id="deb-ct"></div></div>
+      <ul class="check-list" id="r-deb"></ul>
     </div>
 
     <!-- MEJORAS -->
-    <div class="report-card">
-      <div class="rc-header">
-        <div class="rc-icon rc-icon-blue">↑</div>
-        <div class="rc-title">Mejoras recomendadas</div>
-      </div>
-      <div class="mejora-list" id="mejoras-list"></div>
+    <div class="rc">
+      <div class="rc-head"><div class="rc-ico ico-b">↑</div><div class="rc-tit">Mejoras recomendadas</div></div>
+      <div class="mejoras" id="r-mej"></div>
     </div>
 
-    <!-- DESCRIPCION OPTIMIZADA -->
-    <div class="report-card">
-      <div class="rc-header">
-        <div class="rc-icon rc-icon-purple">✦</div>
-        <div class="rc-title">Descripción optimizada del producto</div>
-      </div>
-      <div class="desc-section">
-        <div class="desc-section-title">Título SEO</div>
-        <div class="desc-box">
-          <div class="desc-text" id="desc-titulo"></div>
-          <button class="copy-btn" onclick="copyEl(this,'desc-titulo')">Copiar</button>
-        </div>
-      </div>
-      <div class="desc-section">
-        <div class="desc-section-title">Descripción corta (para listado)</div>
-        <div class="desc-box">
-          <div class="desc-text" id="desc-corta"></div>
-          <button class="copy-btn" onclick="copyEl(this,'desc-corta')">Copiar</button>
-        </div>
-      </div>
-      <div class="desc-section">
-        <div class="desc-section-title">Descripción larga (para la página del producto)</div>
-        <div class="desc-box">
-          <div class="desc-text" id="desc-larga"></div>
-          <button class="copy-btn" onclick="copyEl(this,'desc-larga')">Copiar</button>
-        </div>
-      </div>
-      <div class="desc-section">
-        <div class="desc-section-title">Puntos destacados</div>
-        <div class="desc-box">
-          <ul class="bullet-list" id="desc-bullets"></ul>
-        </div>
-      </div>
+    <!-- DESCRIPCION -->
+    <div class="rc">
+      <div class="rc-head"><div class="rc-ico ico-p">✦</div><div class="rc-tit">Descripción optimizada</div></div>
+      <div class="desc-sec"><div class="desc-sec-tit">Título SEO</div><div class="desc-box"><div class="desc-txt" id="d-tit"></div><button class="copy-btn" onclick="copyEl(this,'d-tit')">Copiar</button></div></div>
+      <div class="desc-sec"><div class="desc-sec-tit">Descripción corta</div><div class="desc-box"><div class="desc-txt" id="d-cor"></div><button class="copy-btn" onclick="copyEl(this,'d-cor')">Copiar</button></div></div>
+      <div class="desc-sec"><div class="desc-sec-tit">Descripción larga</div><div class="desc-box"><div class="desc-txt" id="d-lar"></div><button class="copy-btn" onclick="copyEl(this,'d-lar')">Copiar</button></div></div>
+      <div class="desc-sec"><div class="desc-sec-tit">Bullet points</div><div class="desc-box"><ul class="bul-list" id="d-bul"></ul></div></div>
     </div>
 
     <!-- META ADS -->
-    <div class="report-card">
-      <div class="rc-header">
-        <div class="rc-icon rc-icon-purple">📢</div>
-        <div class="rc-title">5 anuncios para Meta Ads</div>
-      </div>
+    <div class="rc">
+      <div class="rc-head"><div class="rc-ico ico-p">📢</div><div class="rc-tit">5 anuncios para Meta Ads</div></div>
       <div class="ads-tabs" id="ads-tabs"></div>
       <div id="ads-panels"></div>
     </div>
 
     <!-- INSTAGRAM -->
-    <div class="report-card">
-      <div class="rc-header">
-        <div class="rc-icon rc-icon-gold">📱</div>
-        <div class="rc-title">3 posts para Instagram</div>
-      </div>
-      <div class="ig-grid" id="ig-grid"></div>
+    <div class="rc">
+      <div class="rc-head"><div class="rc-ico ico-o">📱</div><div class="rc-tit">3 posts para Instagram</div></div>
+      <div class="ig-grid" id="r-ig"></div>
     </div>
 
-    <!-- PLAN DE ACCION -->
-    <div class="report-card">
-      <div class="rc-header">
-        <div class="rc-icon rc-icon-green">🎯</div>
-        <div class="rc-title">Plan de acción priorizado</div>
-      </div>
-      <div class="plan-list" id="plan-list"></div>
+    <!-- FAQ -->
+    <div class="rc">
+      <div class="rc-head"><div class="rc-ico ico-b">❓</div><div class="rc-tit">Preguntas frecuentes optimizadas</div></div>
+      <div class="faq-list" id="r-faq"></div>
+    </div>
+
+    <!-- KEYWORDS -->
+    <div class="rc">
+      <div class="rc-head"><div class="rc-ico ico-g">🔍</div><div class="rc-tit">Keywords SEO</div></div>
+      <div class="kw-grid" id="r-kw"></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:10px">Hacé click en cada keyword para copiarla</div>
+    </div>
+
+    <!-- ESTRATEGIA PRECIO -->
+    <div class="rc">
+      <div class="rc-head"><div class="rc-ico ico-o">💰</div><div class="rc-tit">Estrategia de precio</div></div>
+      <div class="precio-box" id="r-precio"></div>
+    </div>
+
+    <!-- PLAN -->
+    <div class="rc">
+      <div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div></div>
+      <div class="plan-list" id="r-plan"></div>
     </div>
 
     <button class="reset-btn" onclick="resetApp()">← Analizar otro producto</button>
-
-  </div><!-- /results -->
+  </div>
 
 </div>
 
@@ -479,11 +564,16 @@ footer span{color:var(--accent2)}
 
 <script>
 let currentProduct = null;
-let activeInputTab = 'url';
-let loadingInterval = null;
+let currentCompetitor = null;
+let currentAudit = null;
+let activeTab = 'url';
+let compEnabled = false;
+let loadingTimer = null;
+let remainingAudits = 3;
 
+// ── TABS ──────────────────────────────────────────────────────
 function switchTab(tab, btn) {
-  activeInputTab = tab;
+  activeTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
@@ -492,61 +582,78 @@ function switchTab(tab, btn) {
   document.getElementById('url-result').classList.remove('show');
 }
 
-async function scrapeUrl() {
-  const url = document.getElementById('product-url').value.trim();
-  if (!url) return showError('scrape-error','Ingresá una URL válida');
-  hideError('scrape-error');
+function toggleComp() {
+  compEnabled = !compEnabled;
+  document.getElementById('comp-switch').classList.toggle('on', compEnabled);
+  document.getElementById('comp-section').classList.toggle('show', compEnabled);
+  if (!compEnabled) currentCompetitor = null;
+}
+
+// ── SCRAPER ───────────────────────────────────────────────────
+async function scrapeUrl(type, resultId, nameId, descId, errId) {
+  const urlId = type === 'product' ? 'product-url' : 'comp-url';
+  const url = document.getElementById(urlId).value.trim();
+  if (!url) return showErr(errId, 'Ingresá una URL válida');
+  hideErr(errId);
   const btn = event.target;
+  const orig = btn.textContent;
   btn.textContent = 'Leyendo...';
   btn.disabled = true;
   try {
-    const res = await fetch('/api/scrape',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+    const res = await fetch('/api/scrape', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url}) });
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
-    currentProduct = data.product;
-    document.getElementById('url-name').textContent = data.product.name || 'Producto sin nombre';
-    document.getElementById('url-desc').textContent = data.product.description ? data.product.description.slice(0,120)+'...' : 'Sin descripción disponible';
-    document.getElementById('url-result').classList.add('show');
+    if (type === 'product') currentProduct = data.product;
+    else currentCompetitor = data.product;
+    document.getElementById(nameId).textContent = data.product.name || 'Sin nombre';
+    document.getElementById(descId).textContent = data.product.description ? data.product.description.slice(0,120)+'...' : 'Sin descripción';
+    document.getElementById(resultId).classList.add('show');
   } catch(e) {
-    showError('scrape-error', e.message || 'Error al leer la URL');
+    showErr(errId, e.message || 'Error al leer la URL');
   } finally {
-    btn.textContent = 'Leer →';
+    btn.textContent = orig;
     btn.disabled = false;
   }
 }
 
-function startLoadingSteps() {
-  const steps = ['step1','step2','step3','step4'];
+// ── LOADING STEPS ─────────────────────────────────────────────
+function startLoading() {
+  const steps = ['ls1','ls2','ls3','ls4','ls5'];
   let i = 0;
-  document.querySelectorAll('.loading-step').forEach(s => s.classList.remove('active'));
+  steps.forEach(s => document.getElementById(s).className = 'loading-step');
   document.getElementById(steps[0]).classList.add('active');
-  loadingInterval = setInterval(() => {
-    i++;
-    if (i < steps.length) {
+  loadingTimer = setInterval(() => {
+    if (i < steps.length - 1) {
+      document.getElementById(steps[i]).className = 'loading-step done';
+      i++;
       document.getElementById(steps[i]).classList.add('active');
     }
   }, 6000);
 }
-
-function stopLoadingSteps() {
-  if (loadingInterval) clearInterval(loadingInterval);
+function stopLoading() {
+  if (loadingTimer) clearInterval(loadingTimer);
+  ['ls1','ls2','ls3','ls4','ls5'].forEach(s => {
+    document.getElementById(s).className = 'loading-step done';
+  });
 }
 
+// ── RUN AUDIT ─────────────────────────────────────────────────
 async function runAudit() {
-  hideError('audit-error');
-  let product;
+  hideErr('audit-error');
+  document.getElementById('upgrade-banner').classList.remove('show');
 
-  if (activeInputTab === 'url') {
+  let product;
+  if (activeTab === 'url') {
     if (!currentProduct) {
       const url = document.getElementById('product-url').value.trim();
-      if (!url) return showError('audit-error','Pegá una URL o leéla primero');
+      if (!url) return showErr('audit-error', 'Pegá una URL o leéla primero');
       product = { url, name: url, description:'', price:'' };
     } else {
       product = currentProduct;
     }
   } else {
     const name = document.getElementById('manual-name').value.trim();
-    if (!name) return showError('audit-error','El nombre del producto es obligatorio');
+    if (!name) return showErr('audit-error', 'El nombre del producto es obligatorio');
     product = {
       name,
       description: document.getElementById('manual-desc').value.trim(),
@@ -557,194 +664,416 @@ async function runAudit() {
 
   const country = document.getElementById('country').value;
   const tone = document.getElementById('tone').value;
+  const competitorProduct = compEnabled ? currentCompetitor : null;
 
   document.getElementById('audit-btn').disabled = true;
   document.getElementById('loading').classList.add('show');
   document.getElementById('results').classList.remove('show');
-  startLoadingSteps();
+  startLoading();
 
   try {
-    const res = await fetch('/api/audit',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({product, country, tone})
+    const res = await fetch('/api/audit', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ product, country, tone, competitorProduct })
     });
     const data = await res.json();
+
+    if (data.upgrade) {
+      document.getElementById('upgrade-banner').classList.add('show');
+      return;
+    }
     if (!data.success) throw new Error(data.error);
-    renderAudit(data.audit, product.name || product.url);
+
+    currentAudit = data.audit;
+    if (data.remaining !== undefined) {
+      remainingAudits = data.remaining;
+      document.getElementById('remaining-count').textContent = `Auditorías restantes: ${remainingAudits}`;
+    }
+    renderAudit(data.audit, product.name || product.url, !!competitorProduct);
   } catch(e) {
-    showError('audit-error', e.message || 'Error generando la auditoría. Intentá de nuevo.');
+    showErr('audit-error', e.message || 'Error generando la auditoría. Intentá de nuevo.');
   } finally {
+    stopLoading();
     document.getElementById('audit-btn').disabled = false;
     document.getElementById('loading').classList.remove('show');
-    stopLoadingSteps();
   }
 }
 
-function renderAudit(a, productName) {
+// ── RENDER ────────────────────────────────────────────────────
+function renderAudit(a, productName, hasCompetitor) {
   // Header
   const now = new Date();
-  document.getElementById('report-date').textContent = now.toLocaleDateString('es-AR', {day:'2-digit',month:'long',year:'numeric'});
-  document.getElementById('report-product-name').textContent = productName;
-  document.getElementById('resumen-text').textContent = a.resumen_ejecutivo;
+  document.getElementById('report-date').textContent = now.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('rp-name').textContent = productName;
+  document.getElementById('r-resumen').textContent = a.resumen_ejecutivo;
 
   // Scores
-  animateScore('score-conv-circle', 'score-conv-num', a.scores.conversion);
-  animateScore('score-conf-circle', 'score-conf-num', a.scores.confianza);
-  animateScore('score-seo-circle', 'score-seo-num', a.scores.seo);
-  document.getElementById('score-conv-exp').textContent = a.scores.conversion_explicacion;
-  document.getElementById('score-conf-exp').textContent = a.scores.confianza_explicacion;
-  document.getElementById('score-seo-exp').textContent = a.scores.seo_explicacion;
+  animateScore('sc1','sn1', a.scores.conversion);
+  animateScore('sc2','sn2', a.scores.confianza);
+  animateScore('sc3','sn3', a.scores.seo);
+  setText('se1', a.scores.conversion_explicacion);
+  setText('se2', a.scores.confianza_explicacion);
+  setText('se3', a.scores.seo_explicacion);
+
+  // Competitor
+  const compCard = document.getElementById('comp-card');
+  if (hasCompetitor && a.analisis_competidor) {
+    const ac = a.analisis_competidor;
+    compCard.style.display = 'block';
+    const cv = document.getElementById('comp-ventajas');
+    cv.innerHTML = '';
+    ac.ventajas_vs_competidor.forEach(v => cv.insertAdjacentHTML('beforeend',`<li><span class="ci ci-g">✓</span>${v}</li>`));
+    const cd = document.getElementById('comp-desventajas');
+    cd.innerHTML = '';
+    ac.desventajas_vs_competidor.forEach(d => cd.insertAdjacentHTML('beforeend',`<li><span class="ci ci-r">!</span>${d}</li>`));
+    const co = document.getElementById('comp-opps');
+    co.innerHTML = '';
+    ac.oportunidades.forEach(o => co.insertAdjacentHTML('beforeend',`<li><span class="ci ci-g">→</span>${o}</li>`));
+    setText('comp-conclusion', ac.conclusion);
+  } else {
+    compCard.style.display = 'none';
+  }
 
   // Fortalezas
-  const fl = document.getElementById('fortalezas-list');
+  const fl = document.getElementById('r-fort');
   fl.innerHTML = '';
-  a.fortalezas.forEach(f => {
-    fl.insertAdjacentHTML('beforeend',`<li><span class="check-icon check-green">✓</span>${f}</li>`);
-  });
-  document.getElementById('fortalezas-count').textContent = a.fortalezas.length;
+  a.fortalezas.forEach(f => fl.insertAdjacentHTML('beforeend',`<li><span class="ci ci-g">✓</span>${f}</li>`));
+  document.getElementById('fort-ct').textContent = a.fortalezas.length;
 
   // Debilidades
-  const dl = document.getElementById('debilidades-list');
+  const dl = document.getElementById('r-deb');
   dl.innerHTML = '';
-  a.debilidades.forEach(d => {
-    dl.insertAdjacentHTML('beforeend',`<li><span class="check-icon check-red">!</span>${d}</li>`);
-  });
-  document.getElementById('debilidades-count').textContent = a.debilidades.length;
+  a.debilidades.forEach(d => dl.insertAdjacentHTML('beforeend',`<li><span class="ci ci-r">!</span>${d}</li>`));
+  document.getElementById('deb-ct').textContent = a.debilidades.length;
 
   // Mejoras
-  const ml = document.getElementById('mejoras-list');
+  const ml = document.getElementById('r-mej');
   ml.innerHTML = '';
   a.mejoras_recomendadas.forEach(m => {
-    const cls = m.impacto === 'ALTO' ? 'impact-alto' : m.impacto === 'MEDIO' ? 'impact-medio' : 'impact-bajo';
-    ml.insertAdjacentHTML('beforeend',`
-      <div class="mejora-item">
-        <span class="mejora-impact ${cls}">${m.impacto}</span>
-        <div class="mejora-content">
-          <div class="mt">${m.titulo}</div>
-          <div class="md">${m.descripcion}</div>
-        </div>
-      </div>`);
+    const cls = m.impacto === 'ALTO' ? 'imp-a' : m.impacto === 'MEDIO' ? 'imp-m' : 'imp-b';
+    ml.insertAdjacentHTML('beforeend',`<div class="mej"><span class="mej-imp ${cls}">${m.impacto}</span><div><div class="mej-tit">${m.titulo}</div><div class="mej-desc">${m.descripcion}</div></div></div>`);
   });
 
-  // Descripción optimizada
-  const d = a.descripcion_optimizada;
-  document.getElementById('desc-titulo').textContent = d.titulo_seo;
-  document.getElementById('desc-corta').textContent = d.descripcion_corta;
-  document.getElementById('desc-larga').textContent = d.descripcion_larga;
-  const bl = document.getElementById('desc-bullets');
+  // Descripcion
+  setText('d-tit', a.descripcion_optimizada.titulo_seo);
+  setText('d-cor', a.descripcion_optimizada.descripcion_corta);
+  setText('d-lar', a.descripcion_optimizada.descripcion_larga);
+  const bl = document.getElementById('d-bul');
   bl.innerHTML = '';
-  d.bullet_points.forEach(b => {
+  a.descripcion_optimizada.bullet_points.forEach(b => {
     const li = document.createElement('li');
     li.textContent = b;
     bl.appendChild(li);
   });
 
   // Meta Ads
-  const adsTabs = document.getElementById('ads-tabs');
-  const adsPanels = document.getElementById('ads-panels');
-  adsTabs.innerHTML = '';
-  adsPanels.innerHTML = '';
+  const at = document.getElementById('ads-tabs');
+  const ap = document.getElementById('ads-panels');
+  at.innerHTML = ''; ap.innerHTML = '';
   a.meta_ads.forEach((ad, i) => {
-    const isActive = i === 0;
-    adsTabs.insertAdjacentHTML('beforeend',`<button class="ad-tab ${isActive?'active':''}" onclick="switchAdTab(${i},this)">Ad ${i+1}</button>`);
-    adsPanels.insertAdjacentHTML('beforeend',`
-      <div class="ad-panel ${isActive?'active':''}" id="ad-panel-${i}">
+    const act = i === 0;
+    at.insertAdjacentHTML('beforeend',`<button class="ad-tab ${act?'active':''}" onclick="switchAdTab(${i},this)">Ad ${i+1}</button>`);
+    ap.insertAdjacentHTML('beforeend',`
+      <div class="ad-panel ${act?'active':''}" id="adp-${i}">
         <div class="ad-card">
-          <div class="ad-card-header">
-            <span style="font-size:13px;font-weight:500">${ad.nombre}</span>
-            <span class="ad-objetivo">${ad.objetivo}</span>
-          </div>
-          <div class="ad-headline">${ad.headline}</div>
-          <div class="ad-field">
-            <div class="ad-field-label">Texto principal</div>
-            <div class="ad-field-text" id="ad-primary-${i}">${ad.texto_principal}</div>
-            <button class="copy-btn" style="position:static;margin-top:8px" onclick="copyText(this,\`${escapeJs(ad.texto_principal)}\`)">Copiar</button>
-          </div>
-          <div class="ad-field">
-            <div class="ad-field-label">Descripción</div>
-            <div class="ad-field-text">${ad.descripcion}</div>
-          </div>
+          <div class="ad-ch"><span style="font-size:13px;font-weight:500">${ad.nombre}</span><span class="ad-obj">${ad.objetivo}</span></div>
+          <div class="ad-hl">${ad.headline}</div>
+          <div class="ad-f"><div class="ad-fl">Texto principal</div><div class="ad-ft" id="adt-${i}">${ad.texto_principal}</div><button class="copy-btn" style="position:static;margin-top:8px" onclick="copyText(this,'${esc(ad.texto_principal)}')">Copiar</button></div>
+          <div class="ad-f"><div class="ad-fl">Descripción</div><div class="ad-ft">${ad.descripcion}</div></div>
         </div>
       </div>`);
   });
 
   // Instagram
-  const ig = document.getElementById('ig-grid');
+  const ig = document.getElementById('r-ig');
   ig.innerHTML = '';
-  a.instagram_posts.forEach((post, i) => {
+  a.instagram_posts.forEach((p, i) => {
     ig.insertAdjacentHTML('beforeend',`
       <div class="ig-post">
-        <div class="ig-post-header">
-          <span class="ig-tipo">${post.tipo}</span>
-        </div>
-        <div class="ig-hook">"${post.hook}"</div>
-        <div class="ig-caption" id="ig-cap-${i}">${post.caption}</div>
-        <div class="ig-expand" onclick="expandIg(${i},this)">Ver más ↓</div>
+        <div class="ig-ph"><span class="ig-tipo">${p.tipo}</span><button class="copy-btn" style="position:static" onclick="copyText(this,'${esc(p.caption)}')">Copiar</button></div>
+        <div class="ig-hook">"${p.hook}"</div>
+        <div class="ig-cap" id="igc-${i}">${p.caption.replace(/\n/g,'<br>')}</div>
+        <div class="ig-exp" onclick="toggleIg(${i},this)">Ver más ↓</div>
       </div>`);
   });
 
-  // Plan de acción
-  const pl = document.getElementById('plan-list');
+  // FAQ
+  const fq = document.getElementById('r-faq');
+  fq.innerHTML = '';
+  (a.preguntas_frecuentes || []).forEach(f => {
+    fq.insertAdjacentHTML('beforeend',`<div class="faq-item"><div class="faq-q">${f.pregunta}</div><div class="faq-a">${f.respuesta}</div></div>`);
+  });
+
+  // Keywords
+  const kw = document.getElementById('r-kw');
+  kw.innerHTML = '';
+  (a.keywords_seo || []).forEach(k => {
+    kw.insertAdjacentHTML('beforeend',`<span class="kw" onclick="copyKw(this,'${k}')">${k}</span>`);
+  });
+
+  // Precio
+  setText('r-precio', a.estrategia_precio);
+
+  // Plan
+  const pl = document.getElementById('r-plan');
   pl.innerHTML = '';
   a.plan_accion.forEach(p => {
     pl.insertAdjacentHTML('beforeend',`
       <div class="plan-item">
-        <div class="plan-num">${p.prioridad}</div>
-        <div class="plan-content">
-          <div class="pt">${p.accion}</div>
-          <div class="pd">${p.impacto_esperado}</div>
-          <span class="plan-plazo">${p.plazo}</span>
+        <div class="plan-n">${p.prioridad}</div>
+        <div>
+          <div class="plan-t">${p.accion}</div>
+          <div class="plan-d">${p.impacto_esperado}</div>
+          <span class="plan-pl">${p.plazo}</span>
         </div>
       </div>`);
   });
 
   document.getElementById('results').classList.add('show');
-  setTimeout(() => {
-    document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
-  }, 100);
+  setTimeout(() => document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}), 100);
 }
 
-function animateScore(circleId, numId, value) {
-  const circle = document.getElementById(circleId);
-  const num = document.getElementById(numId);
-  const circumference = 188.5;
-  const offset = circumference - (value / 100) * circumference;
-  setTimeout(() => {
-    circle.style.strokeDashoffset = offset;
-    let current = 0;
-    const step = value / 40;
-    const interval = setInterval(() => {
-      current = Math.min(current + step, value);
-      num.textContent = Math.round(current);
-      if (current >= value) clearInterval(interval);
-    }, 25);
-  }, 300);
-}
-
-function switchAdTab(idx, btn) {
+// ── ACTIONS ───────────────────────────────────────────────────
+function switchAdTab(i, btn) {
   document.querySelectorAll('.ad-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.ad-panel').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('ad-panel-' + idx).classList.add('active');
+  document.getElementById('adp-' + i).classList.add('active');
 }
 
-function expandIg(idx, btn) {
-  const cap = document.getElementById('ig-cap-' + idx);
+function toggleIg(i, btn) {
+  const cap = document.getElementById('igc-' + i);
   cap.classList.toggle('expanded');
   btn.textContent = cap.classList.contains('expanded') ? 'Ver menos ↑' : 'Ver más ↓';
 }
 
+async function shareReport() {
+  if (!currentAudit) return;
+  try {
+    const res = await fetch('/api/share', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ audit: currentAudit, product: { name: document.getElementById('rp-name').textContent } })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const fullUrl = window.location.origin + data.url;
+      navigator.clipboard.writeText(fullUrl);
+      document.getElementById('share-url').textContent = fullUrl;
+      document.getElementById('share-link').classList.add('show');
+      showToast('✓ Link copiado al portapapeles');
+    }
+  } catch(e) {
+    showToast('Error al generar el link. Intentá de nuevo.');
+  }
+}
+
+function exportPDF() {
+  if (!currentAudit) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const a = currentAudit;
+  const productName = document.getElementById('rp-name').textContent;
+  const date = document.getElementById('report-date').textContent;
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 20;
+  const contentW = pageW - margin * 2;
+  let y = 20;
+
+  const addPage = () => { doc.addPage(); y = 20; };
+  const checkY = (needed = 20) => { if (y + needed > 270) addPage(); };
+  const addText = (text, x, fontSize, color, maxW) => {
+    doc.setFontSize(fontSize);
+    doc.setTextColor(...color);
+    const lines = doc.splitTextToSize(String(text || ''), maxW || contentW);
+    checkY(lines.length * (fontSize * 0.45) + 4);
+    doc.text(lines, x, y);
+    y += lines.length * (fontSize * 0.45) + 3;
+  };
+
+  // Cover
+  doc.setFillColor(7, 7, 14);
+  doc.rect(0, 0, pageW, 297, 'F');
+  doc.setFillColor(124, 92, 252);
+  doc.rect(margin, 30, 6, 40, 'F');
+  doc.setFontSize(32);
+  doc.setTextColor(240, 238, 248);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Informe de', margin + 12, 50);
+  doc.text('Auditoría Vendly', margin + 12, 62);
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(139, 137, 160);
+  doc.text(productName, margin + 12, 78);
+  doc.text(date, margin + 12, 86);
+  doc.setFontSize(10);
+  doc.text('Generado por Vendly — vendly-production-e0f2.up.railway.app', margin, 280);
+
+  // Score badges on cover
+  const scores = [
+    { label: 'Conversión', val: a.scores.conversion, x: margin },
+    { label: 'Confianza', val: a.scores.confianza, x: margin + 55 },
+    { label: 'SEO', val: a.scores.seo, x: margin + 110 }
+  ];
+  scores.forEach(s => {
+    doc.setFillColor(22, 22, 31);
+    doc.roundedRect(s.x, 100, 48, 30, 3, 3, 'F');
+    doc.setFontSize(20);
+    doc.setTextColor(166, 136, 250);
+    doc.setFont('helvetica', 'bold');
+    doc.text(String(s.val), s.x + 24, 118, { align: 'center' });
+    doc.setFontSize(9);
+    doc.setTextColor(139, 137, 160);
+    doc.setFont('helvetica', 'normal');
+    doc.text(s.label, s.x + 24, 125, { align: 'center' });
+  });
+
+  addPage();
+  doc.setFillColor(22, 22, 31);
+  doc.rect(0, 0, pageW, 297, 'F');
+
+  const section = (title, icon) => {
+    checkY(14);
+    doc.setFillColor(124, 92, 252, 0.1);
+    doc.setDrawColor(124, 92, 252);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(196, 181, 253);
+    doc.text(`${icon}  ${title}`, margin, y);
+    y += 2;
+    doc.setDrawColor(124, 92, 252);
+    doc.setLineWidth(0.3);
+    doc.line(margin, y, pageW - margin, y);
+    y += 7;
+  };
+
+  // Resumen
+  section('Resumen ejecutivo', '📊');
+  addText(a.resumen_ejecutivo, margin, 10, [200, 198, 220]);
+  y += 6;
+
+  // Fortalezas
+  section('Fortalezas detectadas', '✓');
+  a.fortalezas.forEach(f => {
+    checkY(8);
+    doc.setFontSize(10);
+    doc.setTextColor(52, 211, 153);
+    doc.text('✓', margin, y);
+    doc.setTextColor(200, 198, 220);
+    const lines = doc.splitTextToSize(f, contentW - 8);
+    doc.text(lines, margin + 6, y);
+    y += lines.length * 5 + 3;
+  });
+  y += 4;
+
+  // Debilidades
+  section('Debilidades detectadas', '⚠');
+  a.debilidades.forEach(d => {
+    checkY(8);
+    doc.setFontSize(10);
+    doc.setTextColor(248, 113, 113);
+    doc.text('!', margin, y);
+    doc.setTextColor(200, 198, 220);
+    const lines = doc.splitTextToSize(d, contentW - 8);
+    doc.text(lines, margin + 6, y);
+    y += lines.length * 5 + 3;
+  });
+  y += 4;
+
+  // Mejoras
+  section('Mejoras recomendadas', '↑');
+  a.mejoras_recomendadas.forEach(m => {
+    checkY(12);
+    const impColor = m.impacto === 'ALTO' ? [248,113,113] : m.impacto === 'MEDIO' ? [245,200,66] : [96,165,250];
+    doc.setFontSize(9);
+    doc.setTextColor(...impColor);
+    doc.text(`[${m.impacto}]`, margin, y);
+    doc.setFontSize(10);
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(240,238,248);
+    doc.text(m.titulo, margin + 20, y);
+    doc.setFont('helvetica','normal');
+    y += 5;
+    addText(m.descripcion, margin + 4, 9, [139,137,160]);
+    y += 2;
+  });
+  y += 4;
+
+  // Descripcion
+  section('Descripción optimizada', '✦');
+  addText('Título SEO:', margin, 9, [196,181,253]);
+  addText(a.descripcion_optimizada.titulo_seo, margin + 4, 10, [240,238,248]);
+  y += 2;
+  addText('Descripción corta:', margin, 9, [196,181,253]);
+  addText(a.descripcion_optimizada.descripcion_corta, margin + 4, 10, [240,238,248]);
+  y += 2;
+  addText('Descripción larga:', margin, 9, [196,181,253]);
+  addText(a.descripcion_optimizada.descripcion_larga, margin + 4, 10, [200,198,220]);
+  y += 4;
+
+  // Plan
+  section('Plan de acción priorizado', '🎯');
+  a.plan_accion.forEach(p => {
+    checkY(12);
+    doc.setFillColor(124, 92, 252);
+    doc.circle(margin + 3, y - 1, 3, 'F');
+    doc.setFontSize(10);
+    doc.setTextColor(255,255,255);
+    doc.text(String(p.prioridad), margin + 3, y, { align: 'center' });
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(240,238,248);
+    const tlines = doc.splitTextToSize(p.accion, contentW - 12);
+    doc.text(tlines, margin + 10, y);
+    y += tlines.length * 5 + 1;
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.setTextColor(139,137,160);
+    const dlines = doc.splitTextToSize(p.impacto_esperado, contentW - 12);
+    doc.text(dlines, margin + 10, y);
+    y += dlines.length * 4.5 + 1;
+    doc.setTextColor(196,181,253);
+    doc.text(p.plazo, margin + 10, y);
+    y += 7;
+  });
+
+  doc.save(`vendly-auditoria-${productName.slice(0,30).replace(/\s+/g,'-').toLowerCase()}.pdf`);
+  showToast('✓ PDF descargado exitosamente');
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function animateScore(circleId, numId, value) {
+  const circle = document.getElementById(circleId);
+  const num = document.getElementById(numId);
+  const circ = 175.9;
+  const offset = circ - (value / 100) * circ;
+  setTimeout(() => {
+    circle.style.strokeDashoffset = offset;
+    let cur = 0;
+    const step = value / 50;
+    const iv = setInterval(() => {
+      cur = Math.min(cur + step, value);
+      num.textContent = Math.round(cur);
+      if (cur >= value) clearInterval(iv);
+    }, 20);
+  }, 400);
+}
+
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text || '';
+}
+
 function copyEl(btn, id) {
   const text = document.getElementById(id).textContent;
-  copyToClip(btn, text);
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 2000);
+  });
 }
 
 function copyText(btn, text) {
-  copyToClip(btn, text);
-}
-
-function copyToClip(btn, text) {
   navigator.clipboard.writeText(text).then(() => {
     const orig = btn.textContent;
     btn.textContent = '✓ Copiado';
@@ -753,11 +1082,40 @@ function copyToClip(btn, text) {
   });
 }
 
-function escapeJs(str) {
-  return str.replace(/`/g,'\\`').replace(/\$/g,'\\$');
+function copyKw(el, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    el.classList.add('copied');
+    setTimeout(() => el.classList.remove('copied'), 1500);
+  });
+}
+
+function esc(str) {
+  return (str || '').replace(/'/g,"\\'").replace(/\n/g,' ').slice(0,200);
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.classList.add('show'); }
+}
+
+function hideErr(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('show');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
 function resetApp() {
+  currentProduct = null;
+  currentCompetitor = null;
+  currentAudit = null;
   document.getElementById('results').classList.remove('show');
   document.getElementById('product-url').value = '';
   document.getElementById('url-result').classList.remove('show');
@@ -765,19 +1123,29 @@ function resetApp() {
   document.getElementById('manual-desc').value = '';
   document.getElementById('manual-price').value = '';
   document.getElementById('manual-url').value = '';
-  currentProduct = null;
-  window.scrollTo({top:0,behavior:'smooth'});
+  document.getElementById('comp-url').value = '';
+  document.getElementById('comp-result').classList.remove('show');
+  document.getElementById('share-link').classList.remove('show');
+  document.getElementById('upgrade-banner').classList.remove('show');
+  hideErr('audit-error');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function showError(id, msg) {
-  const el = document.getElementById(id);
-  el.textContent = msg;
-  el.classList.add('show');
-}
-
-function hideError(id) {
-  document.getElementById(id).classList.remove('show');
-}
+// Load shared report if URL matches /informe/:token
+window.addEventListener('DOMContentLoaded', async () => {
+  const match = window.location.pathname.match(/^\/informe\/([a-f0-9]+)$/);
+  if (match) {
+    try {
+      const res = await fetch('/api/report/' + match[1]);
+      const data = await res.json();
+      if (data.success) {
+        currentAudit = data.audit;
+        renderAudit(data.audit, data.product?.name || 'Producto compartido', !!data.audit.analisis_competidor);
+        document.getElementById('input-section') && document.getElementById('input-section').classList.add('hidden');
+      }
+    } catch(e) {}
+  }
+});
 </script>
 </body>
 </html>
