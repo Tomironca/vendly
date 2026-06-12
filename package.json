@@ -1,14 +1,13 @@
 {
   "name": "vendly",
-  "version": "1.0.0",
-  "description": "Generador de copies para e-commerce con IA",
+  "version": "5.0.0",
+  "description": "Auditoría de e-commerce con IA",
   "main": "server.js",
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -16,6 +15,9 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "axios": "^1.6.0",
-    "cheerio": "^1.0.0-rc.12"
+    "cheerio": "^1.0.0-rc.12",
+    "better-sqlite3": "^9.4.3",
+    "resend": "^3.2.0",
+    "jsonwebtoken": "^9.0.2"
   }
 }
