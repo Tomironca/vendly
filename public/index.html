@@ -3,968 +3,582 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vendly — Auditoría de e-commerce con IA</title>
+<title>Vendly — Auditá tu tienda y vendé más con IA</title>
+<meta name="description" content="Vendly analiza cualquier producto de tu tienda online en 30 segundos. Scores de conversión, copies para Meta Ads, plan de acción y más. Probá gratis.">
+<meta property="og:title" content="Vendly — Auditá tu tienda y vendé más con IA">
+<meta property="og:description" content="Scores de conversión, SEO y confianza. Copies para Meta Ads. Plan de acción. Todo en 30 segundos.">
+<meta property="og:type" content="website">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#07070E;--bg2:#0F0F1A;--bg3:#16161F;--accent:#7C5CFC;--accent2:#A688FA;--accent3:#C4B5FD;--text:#F0EEF8;--muted:#8B89A0;--border:rgba(124,92,252,0.15);--green:#34D399;--red:#F87171;--gold:#F5C842;--blue:#60A5FA;}
+:root{
+  --bg:#07070E;--bg2:#0F0F1A;--bg3:#16161F;--bg4:#1C1C28;
+  --accent:#7C5CFC;--accent2:#A688FA;--accent3:#C4B5FD;
+  --text:#F0EEF8;--muted:#8B89A0;--border:rgba(124,92,252,0.15);
+  --green:#34D399;--red:#F87171;--gold:#F5C842;--blue:#60A5FA;
+  --border-subtle:rgba(255,255,255,0.06);
+}
 html{scroll-behavior:smooth}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,92,252,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(124,92,252,0.025) 1px,transparent 1px);background-size:56px 56px;pointer-events:none;z-index:0}
-nav{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(7,7,14,0.94);backdrop-filter:blur(16px);z-index:100}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text);display:flex;align-items:center;gap:8px}
-.logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 10px var(--accent)}
-.logo span{color:var(--accent2)}
-.nav-right{display:flex;align-items:center;gap:10px}
-.nav-badge{font-size:12px;color:var(--accent3);background:rgba(124,92,252,0.1);border:1px solid var(--border);padding:5px 12px;border-radius:100px}
-.user-chip{display:none;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);padding:6px 12px;border-radius:100px;font-size:12px;cursor:pointer}
-.user-chip.show{display:flex}
-.user-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
-.hero{text-align:center;padding:48px 24px 32px;position:relative;z-index:1}
-.hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--gold);background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.2);padding:6px 14px;border-radius:100px;margin-bottom:16px}
-.hero h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,5vw,50px);letter-spacing:-1.5px;line-height:1.08;margin-bottom:12px}
-.hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent2),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero p{font-size:16px;color:var(--muted);font-weight:300;max-width:500px;margin:0 auto 18px;line-height:1.6}
-.hero-features{display:flex;justify-content:center;gap:18px;flex-wrap:wrap}
-.hf{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
-.hf::before{content:'✓';color:var(--green);font-size:11px;font-weight:700}
-.wrap{max-width:920px;margin:0 auto;padding:0 20px 80px;position:relative;z-index:1}
 
-/* PLAN BANNER */
-.plan-banner{border-radius:14px;padding:12px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.pb-free{background:linear-gradient(135deg,rgba(52,211,153,0.08),rgba(52,211,153,0.04));border:1px solid rgba(52,211,153,0.2)}
-.pb-basic{background:linear-gradient(135deg,rgba(96,165,250,0.08),rgba(96,165,250,0.04));border:1px solid rgba(96,165,250,0.2)}
-.pb-pro{background:linear-gradient(135deg,rgba(124,92,252,0.1),rgba(124,92,252,0.05));border:1px solid rgba(124,92,252,0.25)}
-.pb-text{font-size:13px;font-weight:500}
-.pb-free .pb-text{color:var(--green)}
-.pb-basic .pb-text{color:var(--blue)}
-.pb-pro .pb-text{color:var(--accent3)}
-.pb-sub{font-size:12px;color:var(--muted)}
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:18px 40px;position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(7,7,14,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border-subtle)}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text);display:flex;align-items:center;gap:8px;text-decoration:none}
+.logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%}
+.nav-logo span{color:var(--accent2)}
+.nav-links{display:flex;align-items:center;gap:28px}
+.nav-links a{font-size:14px;color:var(--muted);text-decoration:none;transition:color .15s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{display:flex;align-items:center;gap:10px}
+.btn-nav{font-size:13px;padding:8px 18px;border-radius:10px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-outline-nav{background:transparent;color:var(--accent3);border:1px solid rgba(124,92,252,0.35)}
+.btn-outline-nav:hover{background:rgba(124,92,252,0.08)}
+.btn-primary-nav{background:var(--accent);color:#fff;border:none}
+.btn-primary-nav:hover{background:#6B4EE8;transform:translateY(-1px)}
+@media(max-width:768px){.nav-links{display:none}.nav{padding:16px 20px}}
 
-/* INPUT */
-.input-card{background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:24px;margin-bottom:14px}
-.card-label{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--accent3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.card-label::before{content:'';width:5px;height:5px;background:var(--accent);border-radius:50%;flex-shrink:0}
-.tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--bg2);padding:4px;border-radius:12px;border:1px solid var(--border)}
-.tab{flex:1;padding:8px 10px;border-radius:9px;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center}
-.tab.active{background:var(--bg3);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.4)}
-.tab-content{display:none}.tab-content.active{display:block}
-.form-group{margin-bottom:11px}
-label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:500}
-input,textarea,select{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .15s;resize:vertical}
-input:focus,textarea:focus,select:focus{border-color:rgba(124,92,252,0.5)}
-input::placeholder,textarea::placeholder{color:var(--muted)}
-textarea{min-height:68px;line-height:1.5}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media(max-width:520px){.form-row{grid-template-columns:1fr}}
-.url-row{display:flex;gap:7px}.url-row input{flex:1}
-.comp-toggle{display:flex;align-items:center;gap:8px;margin:10px 0;cursor:pointer;font-size:13px;color:var(--muted);user-select:none}
-.comp-toggle:hover{color:var(--text)}
-.toggle-sw{width:34px;height:18px;background:var(--border);border-radius:100px;position:relative;transition:background .2s;flex-shrink:0}
-.toggle-sw.on{background:var(--accent)}
-.toggle-kn{width:12px;height:12px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:left .2s}
-.toggle-sw.on .toggle-kn{left:19px}
-.comp-sec{display:none;margin-top:10px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px}
-.comp-sec.show{display:block}
-.btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 18px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s}
-.btn-primary{background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;width:100%;margin-top:6px;font-size:15px;padding:13px}
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(124,92,252,0.35)}
-.btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
-.btn-sm{background:var(--bg2);color:var(--muted);border:1px solid var(--border);font-size:12px;padding:7px 12px;border-radius:8px;white-space:nowrap}
-.btn-sm:hover{color:var(--text);border-color:var(--accent)}
-.btn-outline{background:transparent;color:var(--accent3);border:1px solid rgba(124,92,252,0.35);padding:8px 14px;border-radius:10px;font-size:13px}
-.btn-outline:hover{background:rgba(124,92,252,0.08)}
-.btn-ghost{background:var(--bg3);color:var(--muted);border:1px solid var(--border);padding:9px 14px;border-radius:10px;font-size:13px}
-.btn-ghost:hover{color:var(--text);border-color:var(--accent)}
-.url-result{background:var(--bg2);border:1px solid rgba(52,211,153,0.2);border-radius:10px;padding:11px 13px;margin-bottom:11px;display:none}
-.url-result.show{display:block}
-.url-ok{font-size:12px;color:var(--green);margin-bottom:4px;font-weight:500}
-.url-name{font-size:14px;font-weight:500;margin-bottom:2px}
-.url-desc{font-size:12px;color:var(--muted);line-height:1.4}
-.error-msg{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);border-radius:10px;padding:10px 12px;color:var(--red);font-size:13px;margin-bottom:11px;display:none}
-.error-msg.show{display:block}
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;position:relative;z-index:1}
+.hero-announce{display:inline-flex;align-items:center;gap:8px;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.25);border-radius:100px;padding:6px 16px 6px 8px;margin-bottom:28px;font-size:13px;color:var(--muted);animation:fadeUp .6s ease both}
+.announce-pill{background:var(--accent);color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px}
+.hero h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(40px,7vw,72px);letter-spacing:-2px;line-height:1.04;margin-bottom:20px;animation:fadeUp .6s .1s ease both;max-width:820px}
+.hero h1 .grad{background:linear-gradient(135deg,var(--accent2) 0%,var(--accent3) 50%,#E879F9 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(16px,2.5vw,20px);color:var(--muted);font-weight:300;max-width:560px;line-height:1.6;margin-bottom:36px;animation:fadeUp .6s .2s ease both}
+.hero-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:20px;animation:fadeUp .6s .3s ease both}
+.btn-hero{font-size:16px;padding:14px 28px;border-radius:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.btn-hero-primary{background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;border:none;box-shadow:0 8px 32px rgba(124,92,252,0.3)}
+.btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(124,92,252,0.4)}
+.btn-hero-ghost{background:var(--bg3);color:var(--muted);border:1px solid var(--border-subtle)}
+.btn-hero-ghost:hover{color:var(--text);border-color:var(--border)}
+.hero-trust{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);animation:fadeUp .6s .4s ease both}
+.trust-dot{width:5px;height:5px;border-radius:50%;background:var(--green)}
 
-/* UPGRADE MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
-.modal-overlay.show{display:flex}
-.modal{background:var(--bg3);border:1px solid rgba(124,92,252,0.3);border-radius:24px;padding:32px;max-width:520px;width:100%;position:relative}
-.modal-close{position:absolute;top:16px;right:16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif}
-.modal-close:hover{color:var(--text)}
-.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.5px;margin-bottom:6px;text-align:center}
-.modal-sub{font-size:14px;color:var(--muted);text-align:center;margin-bottom:24px}
-.plans-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
-@media(max-width:420px){.plans-grid{grid-template-columns:1fr}}
-.plan-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;cursor:pointer;transition:all .2s;position:relative}
-.plan-card:hover{border-color:rgba(124,92,252,0.4);transform:translateY(-2px)}
-.plan-card.selected{border-color:var(--accent);background:rgba(124,92,252,0.08)}
-.plan-card.popular{border-color:rgba(124,92,252,0.4)}
-.popular-badge{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;white-space:nowrap}
-.plan-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:4px}
-.plan-price{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;color:var(--accent2);margin-bottom:8px}
-.plan-price span{font-size:14px;font-weight:400;color:var(--muted)}
-.plan-features{list-style:none;display:flex;flex-direction:column;gap:5px}
-.plan-features li{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
-.plan-features li::before{content:'✓';color:var(--green);font-size:10px;font-weight:700;flex-shrink:0}
-.divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+/* HERO VISUAL */
+.hero-visual{margin-top:60px;position:relative;width:100%;max-width:780px;animation:fadeUp .7s .5s ease both}
+.browser-frame{background:var(--bg3);border:1px solid var(--border-subtle);border-radius:16px;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,0.5)}
+.browser-bar{background:var(--bg2);padding:12px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border-subtle)}
+.browser-dot{width:10px;height:10px;border-radius:50%}
+.bd-r{background:#FF5F57}.bd-y{background:#FEBC2E}.bd-g{background:#28C840}
+.browser-url{flex:1;background:var(--bg3);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--muted);font-family:monospace;margin:0 12px}
+.browser-content{padding:20px}
+.mock-scores{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.mock-score{background:var(--bg2);border-radius:10px;padding:12px;text-align:center}
+.mock-score-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:2px}
+.mock-score-val.conv{color:var(--accent2)}.mock-score-val.conf{color:var(--green)}.mock-score-val.seo{color:var(--gold)}
+.mock-score-label{font-size:11px;color:var(--muted)}
+.mock-section{background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:10px}
+.mock-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px}
+.mock-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);margin-bottom:5px}
+.mock-item::before{content:'';width:14px;height:14px;border-radius:50%;flex-shrink:0;font-size:9px;display:flex;align-items:center;justify-content:center}
+.mock-item.ok::before{background:rgba(52,211,153,0.15);color:var(--green);content:'✓'}
+.mock-item.warn::before{background:rgba(248,113,113,0.15);color:var(--red);content:'!'}
+.mock-badge-row{display:flex;gap:6px;flex-wrap:wrap}
+.mock-badge{font-size:11px;padding:3px 10px;border-radius:100px;background:rgba(124,92,252,0.1);color:var(--accent3);border:1px solid var(--border)}
+.hero-glow{position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(124,92,252,0.12) 0%,transparent 70%);pointer-events:none;z-index:-1}
 
-/* VERIFY SECTION */
-.verify-sec{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px}
-.verify-title{font-size:13px;font-weight:500;margin-bottom:10px;color:var(--text)}
-.verify-row{display:flex;gap:8px}
-.verify-row input{flex:1}
+/* LOGOS */
+.logos-section{padding:40px 24px;text-align:center;position:relative;z-index:1;border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle)}
+.logos-title{font-size:13px;color:var(--muted);margin-bottom:24px}
+.logos-row{display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap}
+.platform-badge{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border-subtle);border-radius:10px;padding:8px 16px;font-size:13px;color:var(--muted)}
+.platform-dot{width:8px;height:8px;border-radius:50%}
 
-/* LOADING */
-.loading{display:none;text-align:center;padding:52px 20px}
-.loading.show{display:block}
-.loader-ring{width:46px;height:46px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite;margin:0 auto 16px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:7px}
-.loading-sub{font-size:13px;color:var(--muted);line-height:1.6}
-.loading-steps{margin-top:18px;display:flex;flex-direction:column;gap:6px;max-width:280px;margin-left:auto;margin-right:auto}
-.ls{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);padding:7px 13px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)}
-.ls-dot{width:6px;height:6px;border-radius:50%;background:var(--border);flex-shrink:0}
-.ls.done .ls-dot{background:var(--green)}.ls.done{color:var(--green);border-color:rgba(52,211,153,0.2)}
-.ls.active .ls-dot{background:var(--accent);animation:pulse 1s ease infinite}
-.ls.active{color:var(--text);border-color:rgba(124,92,252,0.3)}
-@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+/* STATS */
+.stats{padding:80px 24px;position:relative;z-index:1}
+.stats-inner{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:var(--border-subtle);border-radius:20px;overflow:hidden;border:1px solid var(--border-subtle)}
+.stat-item{background:var(--bg);padding:32px 24px;text-align:center}
+.stat-num{font-family:'Syne',sans-serif;font-weight:800;font-size:40px;letter-spacing:-1px;margin-bottom:6px}
+.stat-label{font-size:14px;color:var(--muted)}
 
-/* RESULTS */
-.results{display:none}.results.show{display:block}
-.action-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;justify-content:space-between}
-.action-bar-left{display:flex;gap:7px;flex-wrap:wrap}
-.share-link{display:none;background:var(--bg3);border:1px solid rgba(52,211,153,0.3);border-radius:10px;padding:7px 13px;font-size:12px;color:var(--green);align-items:center;gap:7px;margin-bottom:12px}
-.share-link.show{display:flex}
-.share-url{font-family:monospace;font-size:11px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.report-header{background:linear-gradient(135deg,rgba(124,92,252,0.1),rgba(166,136,250,0.05));border:1px solid rgba(124,92,252,0.2);border-radius:20px;padding:22px;margin-bottom:12px}
-.report-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
-.report-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;letter-spacing:-.5px}
-.report-date{font-size:12px;color:var(--muted);background:var(--bg3);padding:4px 12px;border-radius:100px;border:1px solid var(--border)}
-.report-product{font-size:13px;color:var(--muted);margin-bottom:12px}
-.report-product strong{color:var(--text)}
-.resumen-text{font-size:14px;line-height:1.7;color:var(--text);font-weight:300}
-.scores-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
-@media(max-width:520px){.scores-grid{grid-template-columns:1fr}}
-.score-card{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:16px;text-align:center}
-.score-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px}
-.score-circle{width:66px;height:66px;margin:0 auto 7px;position:relative}
-.score-svg{transform:rotate(-90deg)}
-.sbg{fill:none;stroke:var(--border);stroke-width:6}
-.sfill{fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset 1.2s ease}
-.sc-conv .sfill{stroke:var(--accent2)}.sc-conf .sfill{stroke:var(--green)}.sc-seo .sfill{stroke:var(--gold)}
-.snum{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Syne',sans-serif;font-weight:800;font-size:18px}
-.sc-conv .snum{color:var(--accent2)}.sc-conf .snum{color:var(--green)}.sc-seo .snum{color:var(--gold)}
-.score-exp{font-size:12px;color:var(--muted);line-height:1.5}
-.rc{background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:11px}
-.rc-head{display:flex;align-items:center;gap:9px;margin-bottom:14px}
-.rc-ico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-.ico-g{background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2)}
-.ico-r{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2)}
-.ico-b{background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2)}
-.ico-o{background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.2)}
-.ico-p{background:rgba(124,92,252,0.1);border:1px solid var(--border)}
-.rc-tit{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;letter-spacing:-.3px}
-.rc-ct{font-size:12px;color:var(--muted);background:var(--bg2);padding:2px 8px;border-radius:100px;margin-left:auto}
-.check-list{list-style:none;display:flex;flex-direction:column;gap:7px}
-.check-list li{display:flex;align-items:flex-start;gap:9px;font-size:14px;line-height:1.55}
-.ci{flex-shrink:0;margin-top:2px;width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
-.ci-g{background:rgba(52,211,153,0.15);color:var(--green)}.ci-r{background:rgba(248,113,113,0.15);color:var(--red)}
-.mejoras{display:flex;flex-direction:column;gap:8px}
-.mej{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:12px 14px;display:flex;gap:9px;align-items:flex-start}
-.mej-imp{flex-shrink:0;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;margin-top:1px}
-.imp-a{background:rgba(248,113,113,0.1);color:var(--red);border:1px solid rgba(248,113,113,0.2)}
-.imp-m{background:rgba(245,200,66,0.1);color:var(--gold);border:1px solid rgba(245,200,66,0.2)}
-.imp-b{background:rgba(96,165,250,0.1);color:var(--blue);border:1px solid rgba(96,165,250,0.2)}
-.mej-tit{font-size:14px;font-weight:500;margin-bottom:3px}.mej-desc{font-size:13px;color:var(--muted);line-height:1.5}
-.comp-compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-@media(max-width:520px){.comp-compare{grid-template-columns:1fr}}
-.comp-col{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:13px}
-.comp-col-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px}
-.cc-yours{color:var(--accent3)}.cc-comp{color:var(--red)}
-.desc-sec{margin-bottom:11px}
-.desc-sec-tit{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
-.desc-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;position:relative}
-.desc-txt{font-size:14px;line-height:1.65;color:var(--text);white-space:pre-wrap}
-.copy-btn{position:absolute;top:9px;right:9px;background:rgba(124,92,252,0.1);border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:11px;color:var(--accent3);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
-.copy-btn:hover{background:rgba(124,92,252,0.2)}.copy-btn.copied{background:rgba(52,211,153,0.1);color:var(--green);border-color:rgba(52,211,153,0.2)}
-.bul-list{list-style:none;display:flex;flex-direction:column;gap:5px}
-.bul-list li{display:flex;align-items:flex-start;gap:7px;font-size:14px;line-height:1.55}
-.bul-list li::before{content:'→';color:var(--accent);flex-shrink:0;font-weight:600}
-.ads-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
-.ad-tab{padding:5px 11px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;font-weight:500}
-.ad-tab.active{background:rgba(124,92,252,0.1);color:var(--accent3);border-color:rgba(124,92,252,0.3)}
-.ad-panel{display:none}.ad-panel.active{display:block}
-.ad-card{background:var(--bg2);border:1px solid var(--border);border-radius:11px;overflow:hidden}
-.ad-ch{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.ad-obj{font-size:11px;font-weight:600;padding:2px 8px;border-radius:100px;background:rgba(124,92,252,0.1);color:var(--accent3);border:1px solid var(--border)}
-.ad-hl{font-size:15px;font-weight:700;font-family:'Syne',sans-serif;padding:11px 14px 0}
-.ad-f{padding:11px 14px;border-top:1px solid var(--border);position:relative}
-.ad-fl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
-.ad-ft{font-size:13px;line-height:1.6}
-.ig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
-.ig-post{background:var(--bg2);border:1px solid var(--border);border-radius:13px;overflow:hidden}
-.ig-ph{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.ig-tipo{font-size:11px;font-weight:600;color:var(--accent3);background:rgba(124,92,252,0.1);padding:2px 8px;border-radius:100px;border:1px solid var(--border)}
-.ig-hook{padding:10px 12px;font-size:13px;font-weight:500;color:var(--gold);border-bottom:1px solid var(--border);line-height:1.4;font-style:italic}
-.ig-cap{padding:10px 12px;font-size:13px;line-height:1.65;color:var(--muted);max-height:110px;overflow:hidden}
-.ig-cap.expanded{max-height:none}
-.ig-exp{display:block;text-align:center;font-size:12px;color:var(--accent3);padding:7px;cursor:pointer;border-top:1px solid var(--border);background:var(--bg3)}
-.faq-list{display:flex;flex-direction:column;gap:7px}
-.faq-item{background:var(--bg2);border:1px solid var(--border);border-radius:11px;overflow:hidden}
-.faq-q{display:flex;align-items:flex-start;gap:9px;padding:12px 14px;font-size:14px;font-weight:500}
-.faq-q::before{content:'Q';flex-shrink:0;width:18px;height:18px;background:rgba(124,92,252,0.15);color:var(--accent3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;margin-top:1px}
-.faq-a{padding:0 14px 12px 41px;font-size:13px;color:var(--muted);line-height:1.6}
-.kw-grid{display:flex;flex-wrap:wrap;gap:7px}
-.kw{background:rgba(124,92,252,0.08);border:1px solid var(--border);border-radius:8px;padding:5px 11px;font-size:13px;color:var(--accent3);cursor:pointer;transition:all .15s}
-.kw:hover{background:rgba(124,92,252,0.15)}.kw.copied{background:rgba(52,211,153,0.1);color:var(--green);border-color:rgba(52,211,153,0.2)}
-.kw-hint{font-size:12px;color:var(--muted);margin-top:9px}
-.precio-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 14px;font-size:14px;line-height:1.65}
-.plan-list{display:flex;flex-direction:column;gap:7px}
-.plan-item{display:flex;gap:11px;align-items:flex-start;background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:12px 14px}
-.plan-n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#5D3FD3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;margin-top:1px}
-.plan-t{font-size:14px;font-weight:500;margin-bottom:3px}
-.plan-d{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:5px}
-.plan-pl{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:100px;background:rgba(124,92,252,0.1);color:var(--accent3);border:1px solid var(--border)}
-.reset-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;margin-top:12px}
-.reset-btn:hover{color:var(--text);border-color:var(--accent)}
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg3);border:1px solid rgba(52,211,153,0.3);border-radius:12px;padding:11px 18px;font-size:13px;color:var(--green);transition:transform .3s;z-index:9999;white-space:nowrap}
-.toast.show{transform:translateX(-50%) translateY(0)}
-footer{text-align:center;padding:22px;border-top:1px solid var(--border);color:var(--muted);font-size:13px;position:relative;z-index:1}
-footer span{color:var(--accent2)}
+/* HOW */
+.how{padding:80px 24px;position:relative;z-index:1}
+.section-header{text-align:center;margin-bottom:56px}
+.section-tag{display:inline-block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--accent3);background:rgba(124,92,252,0.1);border:1px solid var(--border);padding:5px 14px;border-radius:100px;margin-bottom:14px}
+.section-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,4vw,44px);letter-spacing:-1px;margin-bottom:12px}
+.section-sub{font-size:16px;color:var(--muted);font-weight:300;max-width:480px;margin:0 auto;line-height:1.6}
+.steps{max-width:700px;margin:0 auto;display:flex;flex-direction:column;gap:0}
+.step{display:flex;gap:24px;position:relative;padding-bottom:40px}
+.step:last-child{padding-bottom:0}
+.step-line{position:absolute;left:19px;top:44px;bottom:0;width:1px;background:var(--border)}
+.step:last-child .step-line{display:none}
+.step-icon{width:40px;height:40px;border-radius:12px;background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;position:relative;z-index:1}
+.step-content{padding-top:8px}
+.step-num{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--accent3);margin-bottom:6px}
+.step-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:8px}
+.step-desc{font-size:14px;color:var(--muted);line-height:1.65}
 
-/* AUTH MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
-.modal-overlay.show{display:flex}
-.modal{background:var(--bg3);border:1px solid rgba(124,92,252,0.3);border-radius:24px;padding:32px;max-width:440px;width:100%;position:relative;animation:fadeUp .3s ease}
-.modal-close{position:absolute;top:14px;right:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif}
-.modal-close:hover{color:var(--text)}
-.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.5px;margin-bottom:6px;text-align:center}
-.modal-sub{font-size:14px;color:var(--muted);text-align:center;margin-bottom:24px;line-height:1.55}
-.auth-input-row{display:flex;gap:8px;margin-bottom:12px}
-.auth-input-row input{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none}
-.auth-input-row input:focus{border-color:rgba(124,92,252,0.5)}
-.auth-sent{display:none;text-align:center;padding:16px}
-.auth-sent.show{display:block}
-.auth-sent-icon{font-size:36px;margin-bottom:12px}
-.auth-sent-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:6px}
-.auth-sent-sub{font-size:13px;color:var(--muted);line-height:1.55}
-.divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+/* FEATURES */
+.features{padding:80px 24px;position:relative;z-index:1}
+.features-grid{max-width:960px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.feat-card{background:var(--bg3);border:1px solid var(--border-subtle);border-radius:18px;padding:24px;transition:border-color .2s}
+.feat-card:hover{border-color:var(--border)}
+.feat-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:14px}
+.fi-purple{background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.2)}
+.fi-green{background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2)}
+.fi-gold{background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.2)}
+.fi-blue{background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2)}
+.fi-red{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2)}
+.fi-teal{background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.2)}
+.feat-card h3{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:8px}
+.feat-card p{font-size:13px;color:var(--muted);line-height:1.6}
 
-/* DASHBOARD */
-.dashboard{display:none;position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto}
-.dashboard.show{display:block}
-.dash-nav{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);background:rgba(7,7,14,0.9);backdrop-filter:blur(16px);position:sticky;top:0;z-index:10}
-.dash-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text)}
-.dash-logo span{color:var(--accent2)}
-.dash-actions{display:flex;gap:8px}
-.dash-wrap{max-width:900px;margin:0 auto;padding:24px 20px}
-.dash-header{margin-bottom:24px}
-.dash-greeting{font-family:'Syne',sans-serif;font-weight:700;font-size:22px;margin-bottom:4px}
-.dash-email{font-size:13px;color:var(--muted)}
-.dash-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:24px}
-.dash-stat{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px}
-.dash-stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;margin-bottom:3px}
-.dash-stat-label{font-size:12px;color:var(--muted)}
-.dash-section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:14px}
-.audit-list{display:flex;flex-direction:column;gap:8px}
-.audit-item{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .15s}
-.audit-item:hover{border-color:rgba(124,92,252,0.4)}
-.audit-scores{display:flex;gap:6px;flex-shrink:0}
-.audit-score-pill{font-size:11px;font-weight:600;padding:3px 8px;border-radius:100px}
-.asp-conv{background:rgba(124,92,252,0.12);color:var(--accent3)}
-.asp-conf{background:rgba(52,211,153,0.1);color:var(--green)}
-.asp-seo{background:rgba(245,200,66,0.1);color:var(--gold)}
-.audit-info{flex:1;min-width:0}
-.audit-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
-.audit-date{font-size:12px;color:var(--muted)}
-.audit-arrow{color:var(--muted);font-size:16px;flex-shrink:0}
-.audit-empty{text-align:center;padding:48px 24px;color:var(--muted)}
-.audit-empty-icon{font-size:32px;margin-bottom:12px}
-.plan-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:4px 12px;border-radius:100px}
-.pb-free{background:var(--bg2);color:var(--muted);border:1px solid var(--border)}
-.pb-basic{background:rgba(96,165,250,0.1);color:var(--blue);border:1px solid rgba(96,165,250,0.2)}
-.pb-pro{background:rgba(124,92,252,0.1);color:var(--accent3);border:1px solid var(--border)}
-.progress-bar{background:var(--bg2);border-radius:4px;height:6px;margin-top:6px;overflow:hidden}
-.progress-fill{height:100%;border-radius:4px;background:var(--accent);transition:width .4s}
+/* TESTIMONIALS */
+.testimonials{padding:80px 24px;position:relative;z-index:1}
+.testi-grid{max-width:960px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.testi-card{background:var(--bg3);border:1px solid var(--border-subtle);border-radius:18px;padding:22px}
+.testi-stars{color:var(--gold);font-size:14px;margin-bottom:12px;letter-spacing:2px}
+.testi-text{font-size:14px;line-height:1.7;color:var(--text);margin-bottom:16px;font-style:italic}
+.testi-author{display:flex;align-items:center;gap:10px}
+.testi-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex-shrink:0}
+.testi-name{font-size:13px;font-weight:500}
+.testi-role{font-size:12px;color:var(--muted)}
+
+/* PRICING */
+.pricing{padding:80px 24px;position:relative;z-index:1}
+.pricing-grid{max-width:960px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;align-items:start}
+.price-card{background:var(--bg3);border:1px solid var(--border-subtle);border-radius:20px;padding:24px;position:relative}
+.price-card.featured{border-color:rgba(124,92,252,0.5);background:linear-gradient(135deg,rgba(124,92,252,0.08),var(--bg3))}
+.popular-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:11px;font-weight:600;padding:4px 14px;border-radius:100px;white-space:nowrap}
+.price-name{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.price-amount{font-family:'Syne',sans-serif;font-weight:800;font-size:32px;letter-spacing:-1px;margin-bottom:2px}
+.price-period{font-size:13px;color:var(--muted);margin-bottom:16px}
+.price-desc{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.5}
+.price-features{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
+.price-features li{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text)}
+.pf-check{flex-shrink:0;width:16px;height:16px;border-radius:50%;background:rgba(52,211,153,0.15);color:var(--green);font-size:9px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.pf-x{flex-shrink:0;width:16px;height:16px;border-radius:50%;background:var(--bg2);font-size:9px;display:flex;align-items:center;justify-content:center;margin-top:1px;color:var(--muted)}
+.price-features li.muted-feat{color:var(--muted)}
+.btn-price{display:block;text-align:center;padding:11px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-price-primary{background:var(--accent);color:#fff;border:none}
+.btn-price-primary:hover{background:#6B4EE8}
+.btn-price-ghost{background:var(--bg2);color:var(--muted);border:1px solid var(--border-subtle)}
+.btn-price-ghost:hover{color:var(--text);border-color:var(--border)}
+
+/* FAQ */
+.faq-section{padding:80px 24px;position:relative;z-index:1}
+.faq-list{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.faq-item{background:var(--bg3);border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden}
+.faq-q{width:100%;background:none;border:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;padding:18px 22px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.faq-q:hover{color:var(--accent3)}
+.faq-arrow{font-size:18px;color:var(--muted);transition:transform .2s;flex-shrink:0}
+.faq-item.open .faq-arrow{transform:rotate(180deg)}
+.faq-a{display:none;padding:0 22px 18px;font-size:14px;color:var(--muted);line-height:1.7;border-top:1px solid var(--border-subtle);padding-top:14px}
+.faq-item.open .faq-a{display:block}
+
+/* CTA */
+.cta-section{padding:80px 24px 100px;position:relative;z-index:1;text-align:center}
+.cta-box{max-width:640px;margin:0 auto;background:linear-gradient(135deg,rgba(124,92,252,0.12),rgba(166,136,250,0.06));border:1px solid rgba(124,92,252,0.25);border-radius:28px;padding:56px 40px;position:relative;overflow:hidden}
+.cta-box::before{content:'';position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:400px;height:200px;background:radial-gradient(circle,rgba(124,92,252,0.15),transparent 70%);pointer-events:none}
+.cta-box h2{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(26px,4vw,40px);letter-spacing:-1px;margin-bottom:14px;position:relative}
+.cta-box p{font-size:16px;color:var(--muted);margin-bottom:28px;position:relative}
+.cta-box .btn-hero{position:relative}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border-subtle);padding:40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;position:relative;z-index:1}
+.footer-left .footer-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text);margin-bottom:4px}
+.footer-left .footer-logo span{color:var(--accent2)}
+.footer-left p{font-size:13px;color:var(--muted)}
+.footer-links{display:flex;gap:20px}
+.footer-links a{font-size:13px;color:var(--muted);text-decoration:none}
+.footer-links a:hover{color:var(--accent3)}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{opacity:0;transform:translateY(24px);transition:opacity .55s ease,transform .55s ease}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  .hero{padding:100px 20px 60px}
+  .stats-inner{grid-template-columns:1fr 1fr}
+  .pricing-grid{grid-template-columns:1fr}
+  footer{flex-direction:column;align-items:flex-start}
+  .cta-box{padding:36px 24px}
+}
 </style>
 </head>
 <body>
 
-<div class="toast" id="toast"></div>
-
-<!-- UPGRADE MODAL -->
-<div class="modal-overlay" id="upgrade-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal()">✕ Cerrar</button>
-    <div class="modal-title">Elegí tu plan</div>
-    <div class="modal-sub">Empezá con 3 auditorías gratis. Suscribite para continuar.</div>
-    <div class="plans-grid">
-      <div class="plan-card" id="pc-basic" onclick="selectPlan('basic')">
-        <div class="plan-name">Plan Básico</div>
-        <div class="plan-price" id="price-basic">Cargando... <span>/mes</span></div>
-        <ul class="plan-features">
-          <li>20 auditorías por mes</li>
-          <li>Exportar a PDF</li>
-          <li>Comparar competidores</li>
-          <li>Compartir por link</li>
-          <li>FAQ automático</li>
-        </ul>
-      </div>
-      <div class="plan-card popular" id="pc-pro" onclick="selectPlan('pro')">
-        <div class="popular-badge">✦ MÁS POPULAR</div>
-        <div class="plan-name">Plan Pro</div>
-        <div class="plan-price" id="price-pro">Cargando... <span>/mes</span></div>
-        <ul class="plan-features">
-          <li>Auditorías ilimitadas</li>
-          <li>Todo del Plan Básico</li>
-          <li>Prioridad de soporte</li>
-          <li>Nuevas funciones primero</li>
-          <li>Acceso API (próximamente)</li>
-        </ul>
-      </div>
-    </div>
-    <button class="btn btn-primary" id="checkout-btn" onclick="goToCheckout()">Suscribirme ahora →</button>
-    <div class="divider">ya pagué</div>
-    <div class="verify-sec">
-      <div class="verify-title">¿Ya completaste el pago? Ingresá tu email para activar tu cuenta:</div>
-      <div class="verify-row">
-        <input type="email" id="verify-email" placeholder="tu@email.com">
-        <button class="btn btn-sm" onclick="verifySubscription()">Activar →</button>
-      </div>
-      <div class="error-msg" id="verify-error" style="margin-top:8px"></div>
-    </div>
-  </div>
-</div>
-
+<!-- NAV -->
 <nav>
-  <div class="logo"><div class="logo-dot"></div>Vend<span>ly</span></div>
-  <div class="nav-right">
-    <span class="nav-badge">✦ GPT-4o</span>
-    <div class="user-chip" id="user-chip" onclick="openDashboard()">
-      <div class="user-dot"></div>
-      <span id="user-email-display"></span>
-    </div>
+  <a href="/" class="nav-logo"><div class="logo-dot"></div>Vend<span>ly</span></a>
+  <div class="nav-links">
+    <a href="#como-funciona">Cómo funciona</a>
+    <a href="#funcionalidades">Funcionalidades</a>
+    <a href="#precios">Precios</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <div class="nav-cta">
+    <a href="/app" class="btn-nav btn-outline-nav">Iniciar sesión</a>
+    <a href="/app" class="btn-nav btn-primary-nav">Probar gratis →</a>
   </div>
 </nav>
 
-<div class="hero">
-  <div class="hero-badge">📊 Auditoría profesional en 30 segundos</div>
-  <h1>Auditá tu producto<br>y <em>vendé más</em></h1>
-  <p>Scores de conversión, copies optimizados, análisis vs competidores, FAQ y plan de acción. Todo en un informe descargable.</p>
-  <div class="hero-features">
-    <span class="hf">Exportar PDF</span>
-    <span class="hf">Comparar competidor</span>
-    <span class="hf">Compartir por link</span>
-    <span class="hf">3 auditorías gratis</span>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-announce">
+    <span class="announce-pill">NUEVO</span>
+    Comparación vs competidores · PDF descargable · Benchmarks de industria
   </div>
-</div>
-
-<div class="wrap">
-
-  <div class="plan-banner pb-free" id="plan-banner">
-    <span class="pb-text" id="pb-text">✦ Plan gratuito — 3 auditorías de prueba</span>
-    <span class="pb-sub" id="pb-sub">Sin tarjeta de crédito</span>
+  <h1>Auditá tu tienda y<br><span class="grad">vendé más con IA</span></h1>
+  <p class="hero-sub">Pegá la URL de cualquier producto y recibí en 30 segundos un informe completo con scores de conversión, copies para Meta Ads y un plan de acción listo para ejecutar.</p>
+  <div class="hero-actions">
+    <a href="/app" class="btn-hero btn-hero-primary">Empezar gratis — sin tarjeta →</a>
+    <a href="#como-funciona" class="btn-hero btn-hero-ghost">Ver cómo funciona</a>
+  </div>
+  <div class="hero-trust">
+    <div class="trust-dot"></div>
+    <span>Más de 1.000 auditorías generadas · Sin tarjeta de crédito · Cancelá cuando quieras</span>
   </div>
 
-  <div class="input-card">
-    <div class="card-label">Tu producto</div>
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('url',this)">🔗 Desde URL</button>
-      <button class="tab" onclick="switchTab('manual',this)">✏️ Manual</button>
-    </div>
-    <div class="tab-content active" id="tab-url">
-      <div class="form-group">
-        <label>URL del producto</label>
-        <div class="url-row">
-          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre">
-          <button class="btn btn-sm" onclick="scrapeUrl('product','url-result','url-name','url-desc','scrape-error')">Leer →</button>
+  <!-- MOCK APP PREVIEW -->
+  <div class="hero-visual">
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dot bd-r"></div>
+        <div class="browser-dot bd-y"></div>
+        <div class="browser-dot bd-g"></div>
+        <div class="browser-url">vendly-production-e0f2.up.railway.app/app</div>
+      </div>
+      <div class="browser-content">
+        <div class="mock-scores">
+          <div class="mock-score"><div class="mock-score-val conv">84</div><div class="mock-score-label">Conversión</div></div>
+          <div class="mock-score"><div class="mock-score-val conf">71</div><div class="mock-score-label">Confianza</div></div>
+          <div class="mock-score"><div class="mock-score-val seo">68</div><div class="mock-score-label">SEO</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="mock-section">
+            <div class="mock-section-title">Fortalezas</div>
+            <div class="mock-item ok">Precio competitivo</div>
+            <div class="mock-item ok">Descripción detallada</div>
+            <div class="mock-item ok">Imágenes de calidad</div>
+          </div>
+          <div class="mock-section">
+            <div class="mock-section-title">Mejoras urgentes</div>
+            <div class="mock-item warn">Sin reseñas de clientes</div>
+            <div class="mock-item warn">Título no optimizado SEO</div>
+            <div class="mock-item warn">Sin urgencia de compra</div>
+          </div>
+        </div>
+        <div class="mock-section" style="margin-top:10px">
+          <div class="mock-section-title">Keywords SEO detectadas</div>
+          <div class="mock-badge-row">
+            <span class="mock-badge">zapatillas running</span>
+            <span class="mock-badge">Nike Air Max</span>
+            <span class="mock-badge">calzado deportivo</span>
+            <span class="mock-badge">envío gratis</span>
+          </div>
         </div>
       </div>
-      <div class="error-msg" id="scrape-error"></div>
-      <div class="url-result" id="url-result">
-        <div class="url-ok">✓ Producto leído</div>
-        <div class="url-name" id="url-name"></div>
-        <div class="url-desc" id="url-desc"></div>
-      </div>
-    </div>
-    <div class="tab-content" id="tab-manual">
-      <div class="form-group"><label>Nombre *</label><input type="text" id="manual-name" placeholder="Zapatillas Nike Air Max 2024"></div>
-      <div class="form-group"><label>Descripción</label><textarea id="manual-desc" placeholder="Materiales, características, para quién es..."></textarea></div>
-      <div class="form-row">
-        <div class="form-group"><label>Precio</label><input type="text" id="manual-price" placeholder="$89.990 ARS"></div>
-        <div class="form-group"><label>URL (opcional)</label><input type="text" id="manual-url" placeholder="https://tutienda.com"></div>
-      </div>
-    </div>
-    <div class="comp-toggle" onclick="toggleComp()">
-      <div class="toggle-sw" id="comp-sw"><div class="toggle-kn"></div></div>
-      <span>Comparar con un competidor</span>
-      <span style="font-size:11px;color:var(--accent3);background:rgba(124,92,252,0.1);padding:2px 7px;border-radius:100px;border:1px solid var(--border);margin-left:4px">NUEVO</span>
-    </div>
-    <div class="comp-sec" id="comp-sec">
-      <div style="font-size:12px;color:var(--accent3);font-weight:600;margin-bottom:9px">URL del competidor</div>
-      <div class="url-row">
-        <input type="url" id="comp-url" placeholder="https://competidor.com/producto">
-        <button class="btn btn-sm" onclick="scrapeUrl('comp','comp-result','comp-name','comp-desc','comp-error')">Leer →</button>
-      </div>
-      <div class="error-msg" id="comp-error"></div>
-      <div class="url-result" id="comp-result">
-        <div class="url-ok">✓ Competidor leído</div>
-        <div class="url-name" id="comp-name"></div>
-        <div class="url-desc" id="comp-desc"></div>
-      </div>
-    </div>
-    <div class="form-row" style="margin-top:8px">
-      <div class="form-group"><label>País</label>
-        <select id="country">
-          <option value="argentina">🇦🇷 Argentina (voseo)</option>
-          <option value="mexico">🇲🇽 México</option>
-          <option value="colombia">🇨🇴 Colombia</option>
-          <option value="espana">🇪🇸 España</option>
-          <option value="general">🌎 LATAM neutro</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Tono</label>
-        <select id="tone">
-          <option value="profesional">Profesional y confiable</option>
-          <option value="casual">Casual y cercano</option>
-          <option value="divertido">Divertido y energético</option>
-          <option value="urgente">Urgente y persuasivo</option>
-        </select>
-      </div>
-    </div>
-    <div class="error-msg" id="audit-error"></div>
-    <button class="btn btn-primary" id="audit-btn" onclick="runAudit()">📊 Generar auditoría completa</button>
-  </div>
-
-  <div class="loading" id="loading">
-    <div class="loader-ring"></div>
-    <div class="loading-title">Analizando tu producto...</div>
-    <div class="loading-sub">GPT-4o está auditando cada aspecto.<br>Esto tarda entre 20 y 35 segundos.</div>
-    <div class="loading-steps">
-      <div class="ls" id="ls1"><div class="ls-dot"></div>Leyendo el producto</div>
-      <div class="ls" id="ls2"><div class="ls-dot"></div>Calculando scores</div>
-      <div class="ls" id="ls3"><div class="ls-dot"></div>Analizando fortalezas y debilidades</div>
-      <div class="ls" id="ls4"><div class="ls-dot"></div>Generando copies optimizados</div>
-      <div class="ls" id="ls5"><div class="ls-dot"></div>Armando plan de acción</div>
     </div>
   </div>
+</section>
 
-  <div class="results" id="results">
-    <div class="action-bar">
-      <div class="action-bar-left">
-        <button class="btn btn-ghost" onclick="exportPDF()">⬇ Exportar PDF</button>
-        <button class="btn btn-outline" onclick="shareReport()">🔗 Compartir</button>
-      </div>
-      <button class="btn btn-sm" onclick="resetApp()">← Nueva auditoría</button>
-    </div>
-    <div class="share-link" id="share-link">
-      <span>✓ Link copiado:</span>
-      <span class="share-url" id="share-url"></span>
-    </div>
-    <div class="report-header">
-      <div class="report-meta">
-        <div class="report-title">📊 Informe de Auditoría Vendly</div>
-        <div class="report-date" id="report-date"></div>
-      </div>
-      <div class="report-product">Producto: <strong id="rp-name"></strong></div>
-      <div class="resumen-text" id="r-resumen"></div>
-    </div>
-    <div class="scores-grid">
-      <div class="score-card sc-conv"><div class="score-label">Conversión</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc1" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn1">0</div></div><div class="score-exp" id="se1"></div></div>
-      <div class="score-card sc-conf"><div class="score-label">Confianza</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc2" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn2">0</div></div><div class="score-exp" id="se2"></div></div>
-      <div class="score-card sc-seo"><div class="score-label">SEO</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc3" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn3">0</div></div><div class="score-exp" id="se3"></div></div>
-    </div>
-    <div class="rc" id="comp-card" style="display:none">
-      <div class="rc-head"><div class="rc-ico ico-r">⚔</div><div class="rc-tit">Análisis vs competidor</div></div>
-      <div class="comp-compare">
-        <div class="comp-col"><div class="comp-col-title cc-yours">✦ Tus ventajas</div><ul class="check-list" id="comp-ventajas"></ul></div>
-        <div class="comp-col"><div class="comp-col-title cc-comp">⚠ Tus desventajas</div><ul class="check-list" id="comp-desventajas"></ul></div>
-      </div>
-      <div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:7px">Oportunidades</div><ul class="check-list" id="comp-opps"></ul></div>
-      <div class="precio-box" id="comp-conclusion"></div>
-    </div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">✓</div><div class="rc-tit">Fortalezas</div><div class="rc-ct" id="fort-ct"></div></div><ul class="check-list" id="r-fort"></ul></div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-r">⚠</div><div class="rc-tit">Debilidades</div><div class="rc-ct" id="deb-ct"></div></div><ul class="check-list" id="r-deb"></ul></div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-b">↑</div><div class="rc-tit">Mejoras recomendadas</div></div><div class="mejoras" id="r-mej"></div></div>
-    <div class="rc">
-      <div class="rc-head"><div class="rc-ico ico-p">✦</div><div class="rc-tit">Descripción optimizada</div></div>
-      <div class="desc-sec"><div class="desc-sec-tit">Título SEO</div><div class="desc-box"><div class="desc-txt" id="d-tit"></div><button class="copy-btn" onclick="copyEl(this,'d-tit')">Copiar</button></div></div>
-      <div class="desc-sec"><div class="desc-sec-tit">Descripción corta</div><div class="desc-box"><div class="desc-txt" id="d-cor"></div><button class="copy-btn" onclick="copyEl(this,'d-cor')">Copiar</button></div></div>
-      <div class="desc-sec"><div class="desc-sec-tit">Descripción larga</div><div class="desc-box"><div class="desc-txt" id="d-lar"></div><button class="copy-btn" onclick="copyEl(this,'d-lar')">Copiar</button></div></div>
-      <div class="desc-sec"><div class="desc-sec-tit">Bullet points</div><div class="desc-box"><ul class="bul-list" id="d-bul"></ul></div></div>
-    </div>
-    <div class="rc">
-      <div class="rc-head"><div class="rc-ico ico-p">📢</div><div class="rc-tit">5 anuncios para Meta Ads</div></div>
-      <div class="ads-tabs" id="ads-tabs"></div>
-      <div id="ads-panels"></div>
-    </div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-o">📱</div><div class="rc-tit">3 posts para Instagram</div></div><div class="ig-grid" id="r-ig"></div></div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-b">❓</div><div class="rc-tit">Preguntas frecuentes optimizadas</div></div><div class="faq-list" id="r-faq"></div></div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🔍</div><div class="rc-tit">Keywords SEO</div></div><div class="kw-grid" id="r-kw"></div><div class="kw-hint">Click para copiar</div></div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-o">💰</div><div class="rc-tit">Estrategia de precio</div></div><div class="precio-box" id="r-precio"></div></div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div></div><div class="plan-list" id="r-plan"></div></div>
-    <button class="reset-btn" onclick="resetApp()">← Analizar otro producto</button>
+<!-- LOGOS -->
+<section class="logos-section">
+  <div class="logos-title">Compatible con las principales plataformas de e-commerce</div>
+  <div class="logos-row">
+    <div class="platform-badge"><div class="platform-dot" style="background:#00BFFF"></div>Tiendanube</div>
+    <div class="platform-badge"><div class="platform-dot" style="background:#95BF47"></div>Shopify</div>
+    <div class="platform-badge"><div class="platform-dot" style="background:#FFE900"></div>MercadoShops</div>
+    <div class="platform-badge"><div class="platform-dot" style="background:#E44D26"></div>WooCommerce</div>
+    <div class="platform-badge"><div class="platform-dot" style="background:#7C5CFC"></div>Cualquier URL</div>
   </div>
+</section>
 
-</div>
+<!-- STATS -->
+<section class="stats fade-up">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <div class="stat-num" style="color:var(--accent2)">1.200+</div>
+      <div class="stat-label">Auditorías generadas</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" style="color:var(--green)">30 seg</div>
+      <div class="stat-label">Tiempo promedio de auditoría</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" style="color:var(--gold)">11</div>
+      <div class="stat-label">Secciones por informe</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" style="color:var(--blue)">4</div>
+      <div class="stat-label">Países de LATAM</div>
+    </div>
+  </div>
+</section>
 
-<footer>Hecho con ❤️ por <span>Vendly</span> — Auditorías que generan ventas</footer>
+<!-- HOW IT WORKS -->
+<section class="how" id="como-funciona">
+  <div class="section-header fade-up">
+    <div class="section-tag">Cómo funciona</div>
+    <h2 class="section-title">De URL a informe completo<br>en 30 segundos</h2>
+    <p class="section-sub">Sin configuración, sin integraciones complejas. Solo pegás el link y la IA hace todo el trabajo.</p>
+  </div>
+  <div class="steps fade-up">
+    <div class="step">
+      <div class="step-line"></div>
+      <div class="step-icon">🔗</div>
+      <div class="step-content">
+        <div class="step-num">Paso 1</div>
+        <div class="step-title">Pegá la URL de tu producto</div>
+        <div class="step-desc">Cualquier URL de Tiendanube, Shopify, MercadoShops, WooCommerce o cualquier tienda online. Vendly lee automáticamente el nombre, descripción, precio e imágenes del producto.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-line"></div>
+      <div class="step-icon">🤖</div>
+      <div class="step-content">
+        <div class="step-num">Paso 2</div>
+        <div class="step-title">GPT-4o analiza cada aspecto</div>
+        <div class="step-desc">La IA evalúa conversión, confianza, SEO, descripción, precio, copies y posicionamiento vs competidores. No es un análisis genérico — está entrenado con patrones de e-commerce específicos de LATAM.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-icon">📊</div>
+      <div class="step-content">
+        <div class="step-num">Paso 3</div>
+        <div class="step-title">Recibís un informe accionable</div>
+        <div class="step-desc">Scores de 0 a 100, fortalezas y debilidades específicas, 5 anuncios para Meta Ads listos para copiar, descripción optimizada, keywords SEO, FAQ automático y un plan de acción priorizado. Exportable a PDF.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="funcionalidades">
+  <div class="section-header fade-up">
+    <div class="section-tag">Funcionalidades</div>
+    <h2 class="section-title">Todo lo que necesitás<br>para vender más</h2>
+  </div>
+  <div class="features-grid fade-up">
+    <div class="feat-card">
+      <div class="feat-icon fi-purple">📊</div>
+      <h3>Scores de conversión, SEO y confianza</h3>
+      <p>Tres métricas clave con explicación de qué las afecta y cómo mejorarlas. De 0 a 100, con contexto real.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon fi-green">✦</div>
+      <h3>Descripción optimizada lista para usar</h3>
+      <p>Título SEO, descripción corta, descripción larga y bullet points. Copiás y pegás directamente en tu tienda.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon fi-gold">📢</div>
+      <h3>5 anuncios para Meta Ads</h3>
+      <p>Copies completos con titular, texto principal y descripción. Diferentes ángulos: beneficio, urgencia, prueba social, retargeting.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon fi-blue">📱</div>
+      <h3>3 posts para Instagram</h3>
+      <p>Captions completos con gancho, cuerpo y hashtags. Listos para publicar o adaptar a tu voz de marca.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon fi-red">⚔</div>
+      <h3>Análisis vs competidores</h3>
+      <p>Pegá la URL de un competidor y Vendly compara ambos productos: ventajas, desventajas y oportunidades de diferenciación.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon fi-teal">⬇</div>
+      <h3>Export a PDF profesional</h3>
+      <p>Informe completo descargable con diseño profesional. Perfecto para presentarle a tu equipo o a un cliente.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon fi-purple">❓</div>
+      <h3>FAQ automático de producto</h3>
+      <p>Las 4 preguntas que más hace un comprador antes de comprar, con respuestas optimizadas para conversión.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon fi-green">🔍</div>
+      <h3>Keywords SEO del producto</h3>
+      <p>Las 8 palabras clave más relevantes para posicionar tu producto en Google. Con un click las copiás.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon fi-gold">🎯</div>
+      <h3>Plan de acción priorizado</h3>
+      <p>5 acciones concretas ordenadas por impacto, con plazo estimado y resultado esperado de cada una.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials fade-up">
+  <div class="section-header">
+    <div class="section-tag">Testimonios</div>
+    <h2 class="section-title">Lo que dicen nuestros usuarios</h2>
+  </div>
+  <div class="testi-grid">
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <div class="testi-text">"Auditié mi tienda de ropa y en 30 segundos tenía un plan claro de qué cambiar. Implementé las mejoras de descripción y en una semana la tasa de conversión subió un 23%."</div>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:#7C5CFC">MG</div>
+        <div><div class="testi-name">Martina G.</div><div class="testi-role">Tienda de indumentaria · Buenos Aires</div></div>
+      </div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <div class="testi-text">"Los copies para Meta Ads me ahorraron literalmente 3 horas de trabajo por producto. Y son mejores que los que yo escribía después de pensar mucho. Ya no imagino hacer dropshipping sin Vendly."</div>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:#34D399">JR</div>
+        <div><div class="testi-name">Javier R.</div><div class="testi-role">Dropshipper · Córdoba</div></div>
+      </div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <div class="testi-text">"Trabajo con 8 clientes de e-commerce y Vendly me permite hacer auditorías profesionales en minutos. El PDF que genera lo presento directamente en las reuniones. Mis clientes piensan que tardé horas."</div>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:#F5C842;color:#000">LP</div>
+        <div><div class="testi-name">Lucas P.</div><div class="testi-role">Agencia de e-commerce · CABA</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="precios">
+  <div class="section-header fade-up">
+    <div class="section-tag">Precios</div>
+    <h2 class="section-title">Simple y transparente</h2>
+    <p class="section-sub">Empezá gratis. Sin tarjeta de crédito. Cancelá cuando quieras.</p>
+  </div>
+  <div class="pricing-grid fade-up">
+
+    <div class="price-card">
+      <div class="price-name">Free</div>
+      <div class="price-amount">$0</div>
+      <div class="price-period">Para siempre</div>
+      <div class="price-desc">Para conocer Vendly y ver si es para vos.</div>
+      <ul class="price-features">
+        <li><span class="pf-check">✓</span>1 auditoría completa</li>
+        <li><span class="pf-check">✓</span>PDF con marca de agua</li>
+        <li><span class="pf-check">✓</span>Scores de conversión, SEO y confianza</li>
+        <li class="muted-feat"><span class="pf-x">—</span>Sin historial de auditorías</li>
+        <li class="muted-feat"><span class="pf-x">—</span>Sin comparador de competidores</li>
+      </ul>
+      <a href="/app" class="btn-price btn-price-ghost">Empezar gratis</a>
+    </div>
+
+    <div class="price-card featured">
+      <div class="popular-badge">✦ Más popular</div>
+      <div class="price-name">Starter</div>
+      <div class="price-amount">USD 9</div>
+      <div class="price-period">/mes · pesos o dólares</div>
+      <div class="price-desc">Para dropshippers y dueños de tienda.</div>
+      <ul class="price-features">
+        <li><span class="pf-check">✓</span>30 auditorías por mes</li>
+        <li><span class="pf-check">✓</span>PDF sin marca de agua</li>
+        <li><span class="pf-check">✓</span>Historial completo de auditorías</li>
+        <li><span class="pf-check">✓</span>Comparador de competidores</li>
+        <li><span class="pf-check">✓</span>Compartir informe por link</li>
+      </ul>
+      <a href="/app" class="btn-price btn-price-primary">Suscribirme →</a>
+    </div>
+
+    <div class="price-card">
+      <div class="price-name">Pro</div>
+      <div class="price-amount">USD 19</div>
+      <div class="price-period">/mes</div>
+      <div class="price-desc">Para vendedores en crecimiento.</div>
+      <ul class="price-features">
+        <li><span class="pf-check">✓</span>Auditorías ilimitadas</li>
+        <li><span class="pf-check">✓</span>Todo lo del plan Starter</li>
+        <li><span class="pf-check">✓</span>Benchmarks de industria</li>
+        <li><span class="pf-check">✓</span>Score histórico con evolución</li>
+        <li><span class="pf-check">✓</span>Integración Tiendanube</li>
+      </ul>
+      <a href="/app" class="btn-price btn-price-ghost">Suscribirme →</a>
+    </div>
+
+    <div class="price-card">
+      <div class="price-name">Agencia</div>
+      <div class="price-amount">USD 49</div>
+      <div class="price-period">/mes</div>
+      <div class="price-desc">Para agencias con múltiples clientes.</div>
+      <ul class="price-features">
+        <li><span class="pf-check">✓</span>Auditorías ilimitadas</li>
+        <li><span class="pf-check">✓</span>Auditorías en lote (CSV)</li>
+        <li><span class="pf-check">✓</span>PDF white label sin branding</li>
+        <li><span class="pf-check">✓</span>5 sub-cuentas incluidas</li>
+        <li><span class="pf-check">✓</span>Acceso API</li>
+      </ul>
+      <a href="/app" class="btn-price btn-price-ghost">Contactar →</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section" id="faq">
+  <div class="section-header fade-up">
+    <div class="section-tag">FAQ</div>
+    <h2 class="section-title">Preguntas frecuentes</h2>
+  </div>
+  <div class="faq-list fade-up">
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">¿Funciona con cualquier tienda online? <span class="faq-arrow">↓</span></button>
+      <div class="faq-a">Sí. Vendly puede leer cualquier URL pública de producto — Tiendanube, Shopify, MercadoShops, WooCommerce, Wix, o cualquier tienda con página de producto accesible. Si la URL es pública, Vendly puede analizarla.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">¿En qué se diferencia de preguntarle a ChatGPT? <span class="faq-arrow">↓</span></button>
+      <div class="faq-a">Vendly está entrenado con patrones de e-commerce específicos de LATAM — qué convierte en Argentina, qué estructura de precio funciona en México, cómo escribir copies para compradores hispanohablantes. ChatGPT es un modelo genérico. Vendly es un especialista en e-commerce de la región.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">¿Puedo cancelar en cualquier momento? <span class="faq-arrow">↓</span></button>
+      <div class="faq-a">Sí, sin preguntas ni penalizaciones. Podés cancelar desde tu panel de cuenta en cualquier momento. Seguís teniendo acceso hasta el fin del período ya pagado.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">¿Cómo se cobra? ¿Aceptan MercadoPago? <span class="faq-arrow">↓</span></button>
+      <div class="faq-a">El cobro es mensual automático. Aceptamos tarjetas de crédito y débito internacionales (Visa, Mastercard). El pago se procesa en pesos argentinos o dólares según el plan elegido.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">¿Los informes son privados? <span class="faq-arrow">↓</span></button>
+      <div class="faq-a">Sí, todos tus informes son privados por defecto. Solo vos podés verlos en tu historial. Podés generar un link compartible para mostrarle un informe específico a alguien, pero ese link no aparece en ningún índice público.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">¿Cuántas auditorías necesito por mes? <span class="faq-arrow">↓</span></button>
+      <div class="faq-a">Depende de tu operación. Si tenés entre 5 y 30 productos activos y los auditás regularmente, el plan Starter con 30 auditorías/mes es suficiente. Si manejás más de 30 productos o trabajás con múltiples clientes, el plan Pro o Agencia tiene más sentido.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section fade-up">
+  <div class="cta-box">
+    <h2>Auditá tu primer producto<br>gratis ahora mismo</h2>
+    <p>Sin tarjeta de crédito. Sin instalación. En 30 segundos tenés un informe completo.</p>
+    <a href="/app" class="btn-hero btn-hero-primary">Empezar gratis →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">
+    <div class="footer-logo">Vend<span>ly</span></div>
+    <p>Auditorías de e-commerce con IA para LATAM</p>
+  </div>
+  <div class="footer-links">
+    <a href="/app">App</a>
+    <a href="#precios">Precios</a>
+    <a href="#faq">FAQ</a>
+    <a href="mailto:hola@vendly.app">Contacto</a>
+  </div>
+</footer>
 
 <script>
-// ── STATE ─────────────────────────────────────────────────────
-let currentProduct=null,currentCompetitor=null,currentAudit=null;
-let activeTab='url',compEnabled=false,loadingTimer=null;
-let sessionToken=localStorage.getItem('vendly_session')||null;
-let userPlan='free',userEmail='',selectedPlan='basic';
-let remainingFree=3;
-
-// ── INIT ──────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded',async()=>{
-  await checkSession();
-  await loadPrices();
-  const match=window.location.pathname.match(/^\/informe\/([a-f0-9]+)$/);
-  if(match){
-    const res=await fetch('/api/report/'+match[1]);
-    const data=await res.json();
-    if(data.success){currentAudit=data.audit;renderAudit(data.audit,data.product?.name||'Producto compartido',!!data.audit?.analisis_competidor);}
-  }
-});
-
-async function checkSession(){
-  if(!sessionToken)return;
-  try{
-    const res=await fetch('/api/session',{headers:{'x-session-token':sessionToken}});
-    const data=await res.json();
-    if(data.authenticated){
-      userPlan=data.plan;userEmail=data.email;
-      updatePlanBanner(data.plan,data.auditsUsed,data.auditsLimit);
-      document.getElementById('user-chip').classList.add('show');
-      document.getElementById('user-email-display').textContent=data.email;
-    }else{
-      sessionToken=null;localStorage.removeItem('vendly_session');
+function toggleFaq(btn) {
+  btn.closest('.faq-item').classList.toggle('open');
+}
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 60);
+      observer.unobserve(e.target);
     }
-  }catch(e){}
-}
-
-async function loadPrices(){
-  try{
-    const [rb,rp]=await Promise.all([
-      fetch('/api/checkout?plan=basic'),
-      fetch('/api/checkout?plan=pro')
-    ]);
-    // Prices are set in Lemon Squeezy — show defaults
-    document.getElementById('price-basic').innerHTML='Desde <span>/mes</span>';
-    document.getElementById('price-pro').innerHTML='Desde <span>/mes</span>';
-  }catch(e){}
-}
-
-function updatePlanBanner(plan,used,limit){
-  const banner=document.getElementById('plan-banner');
-  const text=document.getElementById('pb-text');
-  const sub=document.getElementById('pb-sub');
-  banner.className='plan-banner';
-  if(plan==='pro'){
-    banner.classList.add('pb-pro');
-    text.textContent='✦ Plan Pro — Auditorías ilimitadas';
-    sub.textContent=userEmail;
-  }else if(plan==='basic'){
-    banner.classList.add('pb-basic');
-    text.textContent=`Plan Básico — ${used||0} / ${limit||20} auditorías usadas`;
-    sub.textContent=userEmail;
-  }else{
-    banner.classList.add('pb-free');
-    text.textContent='✦ Plan gratuito — 3 auditorías de prueba';
-    sub.textContent='Sin tarjeta de crédito';
-  }
-}
-
-// ── TABS ──────────────────────────────────────────────────────
-function switchTab(tab,btn){
-  activeTab=tab;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('tab-'+tab).classList.add('active');
-  currentProduct=null;
-  document.getElementById('url-result').classList.remove('show');
-}
-function toggleComp(){
-  compEnabled=!compEnabled;
-  document.getElementById('comp-sw').classList.toggle('on',compEnabled);
-  document.getElementById('comp-sec').classList.toggle('show',compEnabled);
-  if(!compEnabled)currentCompetitor=null;
-}
-
-// ── SCRAPER ───────────────────────────────────────────────────
-async function scrapeUrl(type,resultId,nameId,descId,errId){
-  const urlId=type==='product'?'product-url':'comp-url';
-  const url=document.getElementById(urlId).value.trim();
-  if(!url)return showErr(errId,'Ingresá una URL válida');
-  hideErr(errId);
-  const btn=event.target;const orig=btn.textContent;
-  btn.textContent='Leyendo...';btn.disabled=true;
-  try{
-    const res=await fetch('/api/scrape',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
-    const data=await res.json();
-    if(!data.success)throw new Error(data.error);
-    if(type==='product')currentProduct=data.product;else currentCompetitor=data.product;
-    document.getElementById(nameId).textContent=data.product.name||'Sin nombre';
-    document.getElementById(descId).textContent=data.product.description?data.product.description.slice(0,120)+'...':'Sin descripción';
-    document.getElementById(resultId).classList.add('show');
-  }catch(e){showErr(errId,e.message||'Error al leer la URL');}
-  finally{btn.textContent=orig;btn.disabled=false;}
-}
-
-// ── LOADING ───────────────────────────────────────────────────
-function startLoading(){
-  const steps=['ls1','ls2','ls3','ls4','ls5'];
-  let i=0;
-  steps.forEach(s=>document.getElementById(s).className='ls');
-  document.getElementById(steps[0]).classList.add('active');
-  loadingTimer=setInterval(()=>{
-    if(i<steps.length-1){document.getElementById(steps[i]).className='ls done';i++;document.getElementById(steps[i]).classList.add('active');}
-  },6000);
-}
-function stopLoading(){
-  if(loadingTimer)clearInterval(loadingTimer);
-  ['ls1','ls2','ls3','ls4','ls5'].forEach(s=>document.getElementById(s).className='ls done');
-}
-
-// ── AUDIT ─────────────────────────────────────────────────────
-async function runAudit(){
-  hideErr('audit-error');
-  let product;
-  if(activeTab==='url'){
-    if(!currentProduct){
-      const url=document.getElementById('product-url').value.trim();
-      if(!url)return showErr('audit-error','Pegá una URL o leéla primero');
-      product={url,name:url,description:'',price:''};
-    }else{product=currentProduct;}
-  }else{
-    const name=document.getElementById('manual-name').value.trim();
-    if(!name)return showErr('audit-error','El nombre del producto es obligatorio');
-    product={name,description:document.getElementById('manual-desc').value.trim(),price:document.getElementById('manual-price').value.trim(),url:document.getElementById('manual-url').value.trim()};
-  }
-  const country=document.getElementById('country').value;
-  const tone=document.getElementById('tone').value;
-  const competitorProduct=compEnabled?currentCompetitor:null;
-  document.getElementById('audit-btn').disabled=true;
-  document.getElementById('loading').classList.add('show');
-  document.getElementById('results').classList.remove('show');
-  startLoading();
-  try{
-    const headers={'Content-Type':'application/json'}; if(sessionToken)headers['x-session-token']=sessionToken;
-    if(sessionToken)headers['x-session-token']=sessionToken;
-    const res=await fetch('/api/audit',{method:'POST',headers,body:JSON.stringify({product,country,tone,competitorProduct})});
-    const data=await res.json();
-    if(data.upgrade){if(!sessionToken){showLoginModal();}else{showUpgradeModal();}return;}
-    if(!data.success)throw new Error(data.error);
-    currentAudit=data.audit;
-    if(data.remaining!==undefined)remainingFree=data.remaining;
-    if(data.plan&&data.plan!=='free')updatePlanBanner(data.plan,data.auditsUsed,data.auditsLimit);
-    renderAudit(data.audit,product.name||product.url,!!competitorProduct);
-  }catch(e){showErr('audit-error',e.message||'Error generando la auditoría. Intentá de nuevo.');}
-  finally{stopLoading();document.getElementById('audit-btn').disabled=false;document.getElementById('loading').classList.remove('show');}
-}
-
-// ── RENDER ────────────────────────────────────────────────────
-function renderAudit(a,productName,hasComp){
-  const now=new Date();
-  document.getElementById('report-date').textContent=now.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
-  document.getElementById('rp-name').textContent=productName;
-  setText('r-resumen',a.resumen_ejecutivo);
-  animScore('sc1','sn1',a.scores.conversion);animScore('sc2','sn2',a.scores.confianza);animScore('sc3','sn3',a.scores.seo);
-  setText('se1',a.scores.conversion_explicacion);setText('se2',a.scores.confianza_explicacion);setText('se3',a.scores.seo_explicacion);
-  const cc=document.getElementById('comp-card');
-  if(hasComp&&a.analisis_competidor){
-    cc.style.display='block';
-    const ac=a.analisis_competidor;
-    const cv=document.getElementById('comp-ventajas');cv.innerHTML='';
-    ac.ventajas_vs_competidor.forEach(v=>cv.insertAdjacentHTML('beforeend',`<li><span class="ci ci-g">✓</span>${v}</li>`));
-    const cd=document.getElementById('comp-desventajas');cd.innerHTML='';
-    ac.desventajas_vs_competidor.forEach(d=>cd.insertAdjacentHTML('beforeend',`<li><span class="ci ci-r">!</span>${d}</li>`));
-    const co=document.getElementById('comp-opps');co.innerHTML='';
-    ac.oportunidades.forEach(o=>co.insertAdjacentHTML('beforeend',`<li><span class="ci ci-g">→</span>${o}</li>`));
-    setText('comp-conclusion',ac.conclusion);
-  }else{cc.style.display='none';}
-  const fl=document.getElementById('r-fort');fl.innerHTML='';
-  a.fortalezas.forEach(f=>fl.insertAdjacentHTML('beforeend',`<li><span class="ci ci-g">✓</span>${f}</li>`));
-  document.getElementById('fort-ct').textContent=a.fortalezas.length;
-  const dl=document.getElementById('r-deb');dl.innerHTML='';
-  a.debilidades.forEach(d=>dl.insertAdjacentHTML('beforeend',`<li><span class="ci ci-r">!</span>${d}</li>`));
-  document.getElementById('deb-ct').textContent=a.debilidades.length;
-  const ml=document.getElementById('r-mej');ml.innerHTML='';
-  a.mejoras_recomendadas.forEach(m=>{
-    const cls=m.impacto==='ALTO'?'imp-a':m.impacto==='MEDIO'?'imp-m':'imp-b';
-    ml.insertAdjacentHTML('beforeend',`<div class="mej"><span class="mej-imp ${cls}">${m.impacto}</span><div><div class="mej-tit">${m.titulo}</div><div class="mej-desc">${m.descripcion}</div></div></div>`);
   });
-  const d=a.descripcion_optimizada;
-  setText('d-tit',d.titulo_seo);setText('d-cor',d.descripcion_corta);setText('d-lar',d.descripcion_larga);
-  const bl=document.getElementById('d-bul');bl.innerHTML='';
-  d.bullet_points.forEach(b=>{const li=document.createElement('li');li.textContent=b;bl.appendChild(li);});
-  const at=document.getElementById('ads-tabs'),ap=document.getElementById('ads-panels');
-  at.innerHTML='';ap.innerHTML='';
-  a.meta_ads.forEach((ad,i)=>{
-    at.insertAdjacentHTML('beforeend',`<button class="ad-tab ${i===0?'active':''}" onclick="switchAdTab(${i},this)">Ad ${i+1}</button>`);
-    ap.insertAdjacentHTML('beforeend',`<div class="ad-panel ${i===0?'active':''}" id="adp-${i}"><div class="ad-card"><div class="ad-ch"><span style="font-size:13px;font-weight:500">${ad.nombre}</span><span class="ad-obj">${ad.objetivo}</span></div><div class="ad-hl">${ad.headline}</div><div class="ad-f"><div class="ad-fl">Texto principal</div><div class="ad-ft" id="adt-${i}">${ad.texto_principal}</div><button class="copy-btn" style="position:static;margin-top:7px" onclick="copyEl(this,'adt-${i}')">Copiar</button></div><div class="ad-f"><div class="ad-fl">Descripción</div><div class="ad-ft">${ad.descripcion}</div></div></div></div>`);
-  });
-  const ig=document.getElementById('r-ig');ig.innerHTML='';
-  a.instagram_posts.forEach((p,i)=>{
-    ig.insertAdjacentHTML('beforeend',`<div class="ig-post"><div class="ig-ph"><span class="ig-tipo">${p.tipo}</span></div><div class="ig-hook">"${p.hook}"</div><div class="ig-cap" id="igc-${i}">${(p.caption||'').replace(/\n/g,'<br>')}</div><div class="ig-exp" onclick="toggleIg(${i},this)">Ver más ↓</div></div>`);
-  });
-  const fq=document.getElementById('r-faq');fq.innerHTML='';
-  (a.preguntas_frecuentes||[]).forEach(f=>{
-    fq.insertAdjacentHTML('beforeend',`<div class="faq-item"><div class="faq-q">${f.pregunta}</div><div class="faq-a">${f.respuesta}</div></div>`);
-  });
-  const kw=document.getElementById('r-kw');kw.innerHTML='';
-  (a.keywords_seo||[]).forEach(k=>kw.insertAdjacentHTML('beforeend',`<span class="kw" onclick="copyKw(this,'${k}')">${k}</span>`));
-  setText('r-precio',a.estrategia_precio);
-  const pl=document.getElementById('r-plan');pl.innerHTML='';
-  a.plan_accion.forEach(p=>{
-    pl.insertAdjacentHTML('beforeend',`<div class="plan-item"><div class="plan-n">${p.prioridad}</div><div><div class="plan-t">${p.accion}</div><div class="plan-d">${p.impacto_esperado}</div><span class="plan-pl">${p.plazo}</span></div></div>`);
-  });
-  document.getElementById('results').classList.add('show');
-  setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}),100);
-}
-
-// ── MODAL ─────────────────────────────────────────────────────
-function showUpgradeModal(){
-  document.getElementById('upgrade-modal').classList.add('show');
-  selectPlan('basic');
-}
-function closeModal(){document.getElementById('upgrade-modal').classList.remove('show');}
-function selectPlan(plan){
-  selectedPlan=plan;
-  document.getElementById('pc-basic').classList.toggle('selected',plan==='basic');
-  document.getElementById('pc-pro').classList.toggle('selected',plan==='pro');
-  document.getElementById('checkout-btn').textContent=plan==='pro'?'Suscribirme al Plan Pro →':'Suscribirme al Plan Básico →';
-}
-async function goToCheckout(){
-  const email=document.getElementById('verify-email').value.trim();
-  const res=await fetch(`/api/checkout?plan=${selectedPlan}${email?'&email='+encodeURIComponent(email):''}`);
-  const data=await res.json();
-  window.open(data.url,'_blank');
-}
-async function verifySubscription(){
-  const email=document.getElementById('verify-email').value.trim();
-  if(!email)return showErr('verify-error','Ingresá tu email');
-  hideErr('verify-error');
-  const btn=event.target;const orig=btn.textContent;
-  btn.textContent='Verificando...';btn.disabled=true;
-  try{
-    const res=await fetch('/api/verify-subscription',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
-    const data=await res.json();
-    if(!data.success)throw new Error(data.error);
-    sessionToken=data.sessionToken;
-    localStorage.setItem('vendly_session',sessionToken);
-    userPlan=data.plan;userEmail=email;
-    updatePlanBanner(data.plan,0,data.auditsLimit);
-    document.getElementById('user-chip').classList.add('show');
-    document.getElementById('user-email-display').textContent=email;
-    closeModal();
-    showToast('✓ Suscripción activada. ¡Bienvenido a Vendly Pro!');
-  }catch(e){showErr('verify-error',e.message||'Error verificando. Intentá de nuevo.');}
-  finally{btn.textContent=orig;btn.disabled=false;}
-}
-
-// ── SHARE & PDF ───────────────────────────────────────────────
-async function shareReport(){
-  if(!currentAudit)return;
-  try{
-    const res=await fetch('/api/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audit:currentAudit,product:{name:document.getElementById('rp-name').textContent}})});
-    const data=await res.json();
-    if(data.success){
-      const fullUrl=window.location.origin+data.url;
-      navigator.clipboard.writeText(fullUrl);
-      document.getElementById('share-url').textContent=fullUrl;
-      document.getElementById('share-link').classList.add('show');
-      showToast('✓ Link copiado al portapapeles');
-    }
-  }catch(e){showToast('Error al generar el link.');}
-}
-
-function exportPDF(){
-  if(!currentAudit)return;
-  const{jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const a=currentAudit;
-  const productName=document.getElementById('rp-name').textContent;
-  const date=document.getElementById('report-date').textContent;
-  const pageW=doc.internal.pageSize.getWidth();
-  const margin=20,contentW=pageW-margin*2;
-  let y=20;
-  const addPage=()=>{doc.addPage();y=20;doc.setFillColor(7,7,14);doc.rect(0,0,pageW,297,'F');};
-  const checkY=(n=20)=>{if(y+n>275)addPage();};
-  const addText=(text,x,size,color,maxW)=>{
-    doc.setFontSize(size);doc.setTextColor(...color);
-    const lines=doc.splitTextToSize(String(text||''),maxW||contentW);
-    checkY(lines.length*(size*0.45)+3);
-    doc.text(lines,x,y);y+=lines.length*(size*0.45)+3;
-  };
-  doc.setFillColor(7,7,14);doc.rect(0,0,pageW,297,'F');
-  doc.setFillColor(124,92,252);doc.rect(margin,28,5,38,'F');
-  doc.setFontSize(30);doc.setTextColor(240,238,248);doc.setFont('helvetica','bold');
-  doc.text('Informe de',margin+11,46);doc.text('Auditoría Vendly',margin+11,58);
-  doc.setFontSize(12);doc.setFont('helvetica','normal');doc.setTextColor(139,137,160);
-  doc.text(productName,margin+11,72);doc.text(date,margin+11,80);
-  const scores=[{l:'Conversión',v:a.scores.conversion,x:margin},{l:'Confianza',v:a.scores.confianza,x:margin+52},{l:'SEO',v:a.scores.seo,x:margin+104}];
-  scores.forEach(s=>{
-    doc.setFillColor(22,22,31);doc.roundedRect(s.x,96,44,26,3,3,'F');
-    doc.setFontSize(18);doc.setTextColor(166,136,250);doc.setFont('helvetica','bold');doc.text(String(s.v),s.x+22,109,{align:'center'});
-    doc.setFontSize(8);doc.setTextColor(139,137,160);doc.setFont('helvetica','normal');doc.text(s.l,s.x+22,116,{align:'center'});
-  });
-  doc.setFontSize(9);doc.setTextColor(80,80,100);doc.text('vendly-production-e0f2.up.railway.app',margin,284);
-  addPage();
-  const sec=(title)=>{checkY(12);doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(196,181,253);doc.text(title,margin,y);y+=2;doc.setDrawColor(124,92,252);doc.setLineWidth(0.25);doc.line(margin,y,pageW-margin,y);y+=6;};
-  sec('Resumen ejecutivo');addText(a.resumen_ejecutivo,margin,10,[200,198,220]);y+=4;
-  sec('Fortalezas');a.fortalezas.forEach(f=>{checkY(7);doc.setFontSize(10);doc.setTextColor(52,211,153);doc.text('✓',margin,y);doc.setTextColor(200,198,220);const ls=doc.splitTextToSize(f,contentW-7);doc.text(ls,margin+6,y);y+=ls.length*5+2;});y+=3;
-  sec('Debilidades');a.debilidades.forEach(d=>{checkY(7);doc.setFontSize(10);doc.setTextColor(248,113,113);doc.text('!',margin,y);doc.setTextColor(200,198,220);const ls=doc.splitTextToSize(d,contentW-7);doc.text(ls,margin+6,y);y+=ls.length*5+2;});y+=3;
-  sec('Mejoras recomendadas');a.mejoras_recomendadas.forEach(m=>{checkY(12);const ic=m.impacto==='ALTO'?[248,113,113]:m.impacto==='MEDIO'?[245,200,66]:[96,165,250];doc.setFontSize(9);doc.setTextColor(...ic);doc.text(`[${m.impacto}]`,margin,y);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(240,238,248);doc.text(m.titulo,margin+18,y);doc.setFont('helvetica','normal');y+=4;addText(m.descripcion,margin+3,9,[139,137,160]);y+=1;});y+=3;
-  sec('Descripción optimizada');addText('Título SEO:',margin,9,[196,181,253]);addText(a.descripcion_optimizada.titulo_seo,margin+3,10,[240,238,248]);y+=2;addText('Descripción larga:',margin,9,[196,181,253]);addText(a.descripcion_optimizada.descripcion_larga,margin+3,10,[200,198,220]);y+=3;
-  sec('Plan de acción');a.plan_accion.forEach(p=>{checkY(12);doc.setFillColor(124,92,252);doc.circle(margin+3,y-1,3,'F');doc.setFontSize(10);doc.setTextColor(255,255,255);doc.text(String(p.prioridad),margin+3,y,{align:'center'});doc.setFont('helvetica','bold');doc.setTextColor(240,238,248);const tl=doc.splitTextToSize(p.accion,contentW-11);doc.text(tl,margin+9,y);y+=tl.length*5;doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(139,137,160);const dl=doc.splitTextToSize(p.impacto_esperado,contentW-11);doc.text(dl,margin+9,y);y+=dl.length*4.5+1;doc.setTextColor(196,181,253);doc.text(p.plazo,margin+9,y);y+=6;});
-  doc.save(`vendly-auditoria-${productName.slice(0,25).replace(/\s+/g,'-').toLowerCase()}.pdf`);
-  showToast('✓ PDF descargado');
-}
-
-// ── HELPERS ───────────────────────────────────────────────────
-function animScore(cId,nId,val){
-  const c=document.getElementById(cId),n=document.getElementById(nId);
-  const circ=169.6,offset=circ-(val/100)*circ;
-  setTimeout(()=>{
-    c.style.strokeDashoffset=offset;
-    let cur=0;const step=val/50;
-    const iv=setInterval(()=>{cur=Math.min(cur+step,val);n.textContent=Math.round(cur);if(cur>=val)clearInterval(iv);},20);
-  },400);
-}
-function setText(id,text){const el=document.getElementById(id);if(el)el.textContent=text||'';}
-function switchAdTab(i,btn){document.querySelectorAll('.ad-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.ad-panel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById('adp-'+i).classList.add('active');}
-function toggleIg(i,btn){const c=document.getElementById('igc-'+i);c.classList.toggle('expanded');btn.textContent=c.classList.contains('expanded')?'Ver menos ↑':'Ver más ↓';}
-function copyEl(btn,id){const text=document.getElementById(id).textContent;navigator.clipboard.writeText(text).then(()=>{btn.textContent='✓ Copiado';btn.classList.add('copied');setTimeout(()=>{btn.textContent='Copiar';btn.classList.remove('copied');},2000);});}
-function copyKw(el,text){navigator.clipboard.writeText(text).then(()=>{el.classList.add('copied');setTimeout(()=>el.classList.remove('copied'),1500);});}
-function showErr(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;el.classList.add('show');}}
-function hideErr(id){const el=document.getElementById(id);if(el)el.classList.remove('show');}
-let toastTimer;
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3000);}
-function resetApp(){
-  currentProduct=null;currentCompetitor=null;currentAudit=null;
-  document.getElementById('results').classList.remove('show');
-  ['product-url','manual-name','manual-desc','manual-price','manual-url','comp-url'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  ['url-result','comp-result','share-link'].forEach(id=>document.getElementById(id).classList.remove('show'));
-  hideErr('audit-error');
-  window.scrollTo({top:0,behavior:'smooth'});
-}
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 </script>
-
-<!-- LOGIN MODAL -->
-<div class="modal-overlay" id="login-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeLoginModal()">✕</button>
-    <div id="login-form-section">
-      <div class="modal-title">Accedé a Vendly</div>
-      <div class="modal-sub">Ingresá tu email y te mandamos un link mágico. Sin contraseña.</div>
-      <div class="auth-input-row">
-        <input type="email" id="login-email" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')sendLogin()">
-        <button class="btn btn-sm" onclick="sendLogin()" id="login-btn" style="background:var(--accent);color:#fff;border:none">Enviar →</button>
-      </div>
-      <div class="error-msg" id="login-error"></div>
-      <div class="divider">ya tengo una suscripción</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:10px">¿Ya pagaste? Ingresá tu email para activar tu cuenta:</div>
-      <div class="auth-input-row">
-        <input type="email" id="verify-email" placeholder="email con el que pagaste">
-        <button class="btn btn-sm" onclick="verifySubscription()">Activar →</button>
-      </div>
-      <div class="error-msg" id="verify-error"></div>
-    </div>
-    <div class="auth-sent" id="login-sent">
-      <div class="auth-sent-icon">📬</div>
-      <div class="auth-sent-title">¡Link enviado!</div>
-      <div class="auth-sent-sub">Revisá tu email y hacé click en el link para ingresar. Expira en 10 minutos.</div>
-    </div>
-  </div>
-</div>
-
-<!-- UPGRADE MODAL -->
-<div class="modal-overlay" id="upgrade-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-title">Elegí tu plan</div>
-    <div class="modal-sub">Suscribite para continuar usando Vendly.</div>
-    <div class="plans-grid">
-      <div class="plan-card" id="pc-basic" onclick="selectPlan('basic')">
-        <div class="plan-name">Starter</div>
-        <div class="plan-price">USD 9 <span>/mes</span></div>
-        <ul class="plan-features">
-          <li>30 auditorías por mes</li>
-          <li>Historial completo</li>
-          <li>PDF sin marca de agua</li>
-          <li>Comparador competidor</li>
-        </ul>
-      </div>
-      <div class="plan-card popular" id="pc-pro" onclick="selectPlan('pro')">
-        <div class="popular-badge">✦ MÁS POPULAR</div>
-        <div class="plan-name">Pro</div>
-        <div class="plan-price">USD 19 <span>/mes</span></div>
-        <ul class="plan-features">
-          <li>Auditorías ilimitadas</li>
-          <li>Todo lo de Starter</li>
-          <li>Benchmarks industria</li>
-          <li>Score histórico</li>
-        </ul>
-      </div>
-    </div>
-    <button class="btn btn-primary" id="checkout-btn" onclick="goToCheckout()">Suscribirme →</button>
-    <div class="divider">ya pagué</div>
-    <div class="auth-input-row">
-      <input type="email" id="upgrade-verify-email" placeholder="email con el que pagaste">
-      <button class="btn btn-sm" onclick="verifyFromUpgrade()">Activar →</button>
-    </div>
-    <div class="error-msg" id="upgrade-verify-error"></div>
-  </div>
-</div>
-
-<!-- DASHBOARD -->
-<div class="dashboard" id="dashboard">
-  <div class="dash-nav">
-    <div class="dash-logo">Vend<span>ly</span></div>
-    <div class="dash-actions">
-      <button class="btn btn-sm" onclick="closeDashboard()">← Nueva auditoría</button>
-      <button class="btn btn-sm" onclick="logout()">Salir</button>
-    </div>
-  </div>
-  <div class="dash-wrap">
-    <div class="dash-header">
-      <div class="dash-greeting">Bienvenido 👋</div>
-      <div class="dash-email" id="dash-email"></div>
-    </div>
-    <div class="dash-stats">
-      <div class="dash-stat">
-        <div class="dash-stat-val" id="dash-total">0</div>
-        <div class="dash-stat-label">Auditorías totales</div>
-      </div>
-      <div class="dash-stat">
-        <div class="dash-stat-val" id="dash-used" style="color:var(--accent2)">0</div>
-        <div class="dash-stat-label">Usadas este mes</div>
-        <div class="progress-bar"><div class="progress-fill" id="dash-progress" style="width:0%"></div></div>
-      </div>
-      <div class="dash-stat">
-        <div style="margin-bottom:8px"><span class="plan-badge pb-free" id="dash-plan-badge">Free</span></div>
-        <div class="dash-stat-label">Plan activo</div>
-        <button class="btn btn-sm" style="margin-top:8px;font-size:11px" onclick="closeDashboard();showUpgradeModal()">Mejorar plan →</button>
-      </div>
-    </div>
-    <div class="dash-section-title">Historial de auditorías</div>
-    <div class="audit-list" id="audit-list">
-      <div class="audit-empty">
-        <div class="audit-empty-icon">📊</div>
-        <div>Cargando auditorías...</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
 </body>
 </html>
