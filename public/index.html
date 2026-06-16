@@ -9,6 +9,7 @@
 <meta property="og:description" content="Scores de conversión, SEO y confianza. Copies para Meta Ads. Plan de acción. Todo en 30 segundos.">
 <meta property="og:type" content="website">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -19,12 +20,16 @@
   --border-subtle:rgba(255,255,255,0.06);
 }
 html{scroll-behavior:smooth}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;min-height:100vh}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,92,252,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(124,92,252,0.025) 1px,transparent 1px);background-size:56px 56px;pointer-events:none;z-index:0}
+
+/* CONTROL DE VISTAS ACCESIBLES DESDE JS */
+.view-section { display: none; }
+.view-section.active-view { display: block; }
 
 /* NAV */
 nav{display:flex;align-items:center;justify-content:space-between;padding:18px 40px;position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(7,7,14,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border-subtle)}
-.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text);display:flex;align-items:center;gap:8px;text-decoration:none}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text);display:flex;align-items:center;gap:8px;text-decoration:none;cursor:pointer}
 .logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%}
 .nav-logo span{color:var(--accent2)}
 .nav-links{display:flex;align-items:center;gap:28px}
@@ -38,7 +43,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:18px 4
 .btn-primary-nav:hover{background:#6B4EE8;transform:translateY(-1px)}
 @media(max-width:768px){.nav-links{display:none}.nav{padding:16px 20px}}
 
-/* HERO */
+/* HERO LANDING */
 .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;position:relative;z-index:1}
 .hero-announce{display:inline-flex;align-items:center;gap:8px;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.25);border-radius:100px;padding:6px 16px 6px 8px;margin-bottom:28px;font-size:13px;color:var(--muted);animation:fadeUp .6s ease both}
 .announce-pill{background:var(--accent);color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px}
@@ -82,503 +87,296 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:18px 4
 .logos-title{font-size:13px;color:var(--muted);margin-bottom:24px}
 .logos-row{display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap}
 .platform-badge{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border-subtle);border-radius:10px;padding:8px 16px;font-size:13px;color:var(--muted)}
-.platform-dot{width:8px;height:8px;border-radius:50%}
 
-/* STATS */
-.stats{padding:80px 24px;position:relative;z-index:1}
-.stats-inner{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:var(--border-subtle);border-radius:20px;overflow:hidden;border:1px solid var(--border-subtle)}
-.stat-item{background:var(--bg);padding:32px 24px;text-align:center}
-.stat-num{font-family:'Syne',sans-serif;font-weight:800;font-size:40px;letter-spacing:-1px;margin-bottom:6px}
-.stat-label{font-size:14px;color:var(--muted)}
+/* ESTILOS DE LA APP (DASHBOARD / AUDITORÍA) */
+.app-nav{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(7,7,14,0.94);backdrop-filter:blur(16px);z-index:100}
+.app-hero{text-align:center;padding:120px 24px 32px;position:relative;z-index:1}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--gold);background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.2);padding:6px 14px;border-radius:100px;margin-bottom:16px}
+.app-hero h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,5vw,50px);letter-spacing:-1.5px;line-height:1.08;margin-bottom:12px}
+.app-hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent2),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.app-hero p{font-size:16px;color:var(--muted);font-weight:300;max-width:500px;margin:0 auto 18px;line-height:1.6}
+.hero-features{display:flex;justify-content:center;gap:18px;flex-wrap:wrap}
+.hf{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+.hf::before{content:'✓';color:var(--green);font-size:11px;font-weight:700}
+.wrap{max-width:920px;margin:0 auto;padding:0 20px 80px;position:relative;z-index:1}
 
-/* HOW */
-.how{padding:80px 24px;position:relative;z-index:1}
-.section-header{text-align:center;margin-bottom:56px}
-.section-tag{display:inline-block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--accent3);background:rgba(124,92,252,0.1);border:1px solid var(--border);padding:5px 14px;border-radius:100px;margin-bottom:14px}
-.section-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,4vw,44px);letter-spacing:-1px;margin-bottom:12px}
-.section-sub{font-size:16px;color:var(--muted);font-weight:300;max-width:480px;margin:0 auto;line-height:1.6}
-.steps{max-width:700px;margin:0 auto;display:flex;flex-direction:column;gap:0}
-.step{display:flex;gap:24px;position:relative;padding-bottom:40px}
-.step:last-child{padding-bottom:0}
-.step-line{position:absolute;left:19px;top:44px;bottom:0;width:1px;background:var(--border)}
-.step:last-child .step-line{display:none}
-.step-icon{width:40px;height:40px;border-radius:12px;background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;position:relative;z-index:1}
-.step-content{padding-top:8px}
-.step-num{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--accent3);margin-bottom:6px}
-.step-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:8px}
-.step-desc{font-size:14px;color:var(--muted);line-height:1.65}
+/* INPUT CARD */
+.input-card{background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:24px;margin-bottom:14px;margin-top:20px}
+.card-label{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--accent3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-label::before{content:'';width:5px;height:5px;background:var(--accent);border-radius:50%;flex-shrink:0}
+.form-group{margin-bottom:11px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:500}
+input,textarea,select{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .15s;resize:vertical}
+input:focus,textarea:focus,select:focus{border-color:rgba(124,92,252,0.5)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.form-row{grid-template-columns:1fr}}
 
-/* FEATURES */
-.features{padding:80px 24px;position:relative;z-index:1}
-.features-grid{max-width:960px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
-.feat-card{background:var(--bg3);border:1px solid var(--border-subtle);border-radius:18px;padding:24px;transition:border-color .2s}
-.feat-card:hover{border-color:var(--border)}
-.feat-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:14px}
-.fi-purple{background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.2)}
-.fi-green{background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2)}
-.fi-gold{background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.2)}
-.fi-blue{background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2)}
-.fi-red{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2)}
-.fi-teal{background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.2)}
-.feat-card h3{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:8px}
-.feat-card p{font-size:13px;color:var(--muted);line-height:1.6}
+/* BOTONES */
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 18px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;width:100%;margin-top:6px;font-size:15px;padding:13px}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(124,92,252,0.35)}
+.btn-sm{background:var(--bg2);color:var(--muted);border:1px solid var(--border);font-size:12px;padding:7px 12px;border-radius:8px;white-space:nowrap;cursor:pointer}
+.btn-sm:hover{color:var(--text);border-color:var(--accent)}
 
-/* TESTIMONIALS */
-.testimonials{padding:80px 24px;position:relative;z-index:1}
-.testi-grid{max-width:960px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
-.testi-card{background:var(--bg3);border:1px solid var(--border-subtle);border-radius:18px;padding:22px}
-.testi-stars{color:var(--gold);font-size:14px;margin-bottom:12px;letter-spacing:2px}
-.testi-text{font-size:14px;line-height:1.7;color:var(--text);margin-bottom:16px;font-style:italic}
-.testi-author{display:flex;align-items:center;gap:10px}
-.testi-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex-shrink:0}
-.testi-name{font-size:13px;font-weight:500}
-.testi-role{font-size:12px;color:var(--muted)}
+/* PLANES Y FOOTER */
+.pb-free{background:linear-gradient(135deg,rgba(52,211,153,0.08),rgba(52,211,153,0.04));border:1px solid rgba(52,211,153,0.2);border-radius:14px;padding:12px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;color:var(--green);font-size:13px}
+.pb-sub{font-size:12px;color:var(--muted)}
 
-/* PRICING */
-.pricing{padding:80px 24px;position:relative;z-index:1}
-.pricing-grid{max-width:960px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;align-items:start}
-.price-card{background:var(--bg3);border:1px solid var(--border-subtle);border-radius:20px;padding:24px;position:relative}
-.price-card.featured{border-color:rgba(124,92,252,0.5);background:linear-gradient(135deg,rgba(124,92,252,0.08),var(--bg3))}
-.popular-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:11px;font-weight:600;padding:4px 14px;border-radius:100px;white-space:nowrap}
-.price-name{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
-.price-amount{font-family:'Syne',sans-serif;font-weight:800;font-size:32px;letter-spacing:-1px;margin-bottom:2px}
-.price-period{font-size:13px;color:var(--muted);margin-bottom:16px}
-.price-desc{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.5}
-.price-features{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
-.price-features li{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text)}
-.pf-check{flex-shrink:0;width:16px;height:16px;border-radius:50%;background:rgba(52,211,153,0.15);color:var(--green);font-size:9px;display:flex;align-items:center;justify-content:center;margin-top:1px}
-.pf-x{flex-shrink:0;width:16px;height:16px;border-radius:50%;background:var(--bg2);font-size:9px;display:flex;align-items:center;justify-content:center;margin-top:1px;color:var(--muted)}
-.price-features li.muted-feat{color:var(--muted)}
-.btn-price{display:block;text-align:center;padding:11px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;text-decoration:none}
-.btn-price-primary{background:var(--accent);color:#fff;border:none}
-.btn-price-primary:hover{background:#6B4EE8}
-.btn-price-ghost{background:var(--bg2);color:var(--muted);border:1px solid var(--border-subtle)}
-.btn-price-ghost:hover{color:var(--text);border-color:var(--border)}
-
-/* FAQ */
-.faq-section{padding:80px 24px;position:relative;z-index:1}
-.faq-list{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
-.faq-item{background:var(--bg3);border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden}
-.faq-q{width:100%;background:none;border:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;padding:18px 22px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px}
-.faq-q:hover{color:var(--accent3)}
-.faq-arrow{font-size:18px;color:var(--muted);transition:transform .2s;flex-shrink:0}
-.faq-item.open .faq-arrow{transform:rotate(180deg)}
-.faq-a{display:none;padding:0 22px 18px;font-size:14px;color:var(--muted);line-height:1.7;border-top:1px solid var(--border-subtle);padding-top:14px}
+/* SECCIÓN PRECIOS & FAQ EN LANDING */
+.pricing-section{padding:80px 24px;text-align:center}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;max-width:900px;margin:40px auto 0}
+.price-card{background:var(--bg2);border:1px solid var(--border-subtle);border-radius:20px;padding:32px 24px;text-align:left;position:relative}
+.price-card.popular{border-color:var(--accent)}
+.faq-section{padding:80px 24px;max-width:760px;margin:0 auto}
+.faq-grid{margin-top:32px;display:flex;flex-direction:column;gap:12px}
+.faq-item{background:var(--bg2);border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden}
+.faq-q{width:100%;padding:18px 22px;background:transparent;border:none;color:var(--text);font-family:'Syne',sans-serif;font-weight:600;font-size:15px;text-align:left;display:flex;justify-content:between;cursor:pointer}
+.faq-a{padding:0 22px 18px;color:var(--muted);font-size:14px;line-height:1.6;display:none}
 .faq-item.open .faq-a{display:block}
 
-/* CTA */
-.cta-section{padding:80px 24px 100px;position:relative;z-index:1;text-align:center}
-.cta-box{max-width:640px;margin:0 auto;background:linear-gradient(135deg,rgba(124,92,252,0.12),rgba(166,136,250,0.06));border:1px solid rgba(124,92,252,0.25);border-radius:28px;padding:56px 40px;position:relative;overflow:hidden}
-.cta-box::before{content:'';position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:400px;height:200px;background:radial-gradient(circle,rgba(124,92,252,0.15),transparent 70%);pointer-events:none}
-.cta-box h2{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(26px,4vw,40px);letter-spacing:-1px;margin-bottom:14px;position:relative}
-.cta-box p{font-size:16px;color:var(--muted);margin-bottom:28px;position:relative}
-.cta-box .btn-hero{position:relative}
+footer{padding:40px;border-top:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
+.footer-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px}
+.footer-logo span{color:var(--accent2)}
+.footer-links a{color:var(--muted);text-decoration:none;margin-left:20px;font-size:14px}
+.footer-links a:hover{color:var(--text)}
 
-/* FOOTER */
-footer{border-top:1px solid var(--border-subtle);padding:40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;position:relative;z-index:1}
-.footer-left .footer-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text);margin-bottom:4px}
-.footer-left .footer-logo span{color:var(--accent2)}
-.footer-left p{font-size:13px;color:var(--muted)}
-.footer-links{display:flex;gap:20px}
-.footer-links a{font-size:13px;color:var(--muted);text-decoration:none}
-.footer-links a:hover{color:var(--accent3)}
-
-/* ANIMATIONS */
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.fade-up{opacity:0;transform:translateY(24px);transition:opacity .55s ease,transform .55s ease}
-.fade-up.visible{opacity:1;transform:translateY(0)}
-
-/* RESPONSIVE */
-@media(max-width:640px){
-  .hero{padding:100px 20px 60px}
-  .stats-inner{grid-template-columns:1fr 1fr}
-  .pricing-grid{grid-template-columns:1fr}
-  footer{flex-direction:column;align-items:flex-start}
-  .cta-box{padding:36px 24px}
-}
 </style>
 </head>
 <body>
 
-<!-- NAV -->
-<nav>
-  <a href="/" class="nav-logo"><div class="logo-dot"></div>Vend<span>ly</span></a>
-  <div class="nav-links">
-    <a href="#como-funciona">Cómo funciona</a>
-    <a href="#funcionalidades">Funcionalidades</a>
-    <a href="#precios">Precios</a>
-    <a href="#faq">FAQ</a>
-  </div>
-  <div class="nav-cta">
-    <a href="/app" class="btn-nav btn-outline-nav">Iniciar sesión</a>
-    <a href="/app" class="btn-nav btn-primary-nav">Probar gratis →</a>
-  </div>
-</nav>
+  <nav>
+    <div class="nav-logo" onclick="showView('landing')">
+      <div class="logo-dot"></div>Vend<span>ly</span>
+    </div>
+    <div class="nav-links" id="landing-nav-links">
+      <a href="#como">Cómo funciona</a>
+      <a href="#precios">Precios</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div class="nav-cta">
+      <button class="btn-nav btn-outline-nav" onclick="showView('app')">App</button>
+      <button class="btn-nav btn-primary-nav" onclick="showView('app')">Empezar gratis</button>
+    </div>
+  </nav>
 
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-glow"></div>
-  <div class="hero-announce">
-    <span class="announce-pill">NUEVO</span>
-    Comparación vs competidores · PDF descargable · Benchmarks de industria
-  </div>
-  <h1>Auditá tu tienda y<br><span class="grad">vendé más con IA</span></h1>
-  <p class="hero-sub">Pegá la URL de cualquier producto y recibí en 30 segundos un informe completo con scores de conversión, copies para Meta Ads y un plan de acción listo para ejecutar.</p>
-  <div class="hero-actions">
-    <a href="/app" class="btn-hero btn-hero-primary">Empezar gratis — sin tarjeta →</a>
-    <a href="#como-funciona" class="btn-hero btn-hero-ghost">Ver cómo funciona</a>
-  </div>
-  <div class="hero-trust">
-    <div class="trust-dot"></div>
-    <span>Más de 1.000 auditorías generadas · Sin tarjeta de crédito · Cancelá cuando quieras</span>
-  </div>
-
-  <!-- MOCK APP PREVIEW -->
-  <div class="hero-visual">
-    <div class="browser-frame">
-      <div class="browser-bar">
-        <div class="browser-dot bd-r"></div>
-        <div class="browser-dot bd-y"></div>
-        <div class="browser-dot bd-g"></div>
-        <div class="browser-url">vendly-production-e0f2.up.railway.app/app</div>
+  <div id="view-landing" class="view-section active-view">
+    <section class="hero">
+      <div class="hero-announce">
+        <span class="announce-pill">Nuevo</span> Inteligencia Artificial integrada v1.0
       </div>
-      <div class="browser-content">
-        <div class="mock-scores">
-          <div class="mock-score"><div class="mock-score-val conv">84</div><div class="mock-score-label">Conversión</div></div>
-          <div class="mock-score"><div class="mock-score-val conf">71</div><div class="mock-score-label">Confianza</div></div>
-          <div class="mock-score"><div class="mock-score-val seo">68</div><div class="mock-score-label">SEO</div></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div class="mock-section">
-            <div class="mock-section-title">Fortalezas</div>
-            <div class="mock-item ok">Precio competitivo</div>
-            <div class="mock-item ok">Descripción detallada</div>
-            <div class="mock-item ok">Imágenes de calidad</div>
+      <h1>Auditá tu tienda online y <span class="grad">vendé más</span> con IA</h1>
+      <p class="hero-sub">Vendly analiza cualquier producto en 30 segundos. Obtené scores de conversión, copies ganadores para tus Ads y un plan de acción.</p>
+      <div class="hero-actions">
+        <button class="btn-hero btn-hero-primary" onclick="showView('app')">Empezar gratis →</button>
+        <a href="#como" class="btn-hero btn-hero-ghost">Ver cómo funciona</a>
+      </div>
+      <div class="hero-trust">
+        <div class="trust-dot"></div> Más de 1,200 auditorías realizadas hoy
+      </div>
+
+      <div class="hero-visual">
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot bd-r"></div>
+            <div class="browser-dot bd-y"></div>
+            <div class="browser-dot bd-g"></div>
+            <div class="browser-url">vendly.app/report/ejemplo-tienda</div>
           </div>
-          <div class="mock-section">
-            <div class="mock-section-title">Mejoras urgentes</div>
-            <div class="mock-item warn">Sin reseñas de clientes</div>
-            <div class="mock-item warn">Título no optimizado SEO</div>
-            <div class="mock-item warn">Sin urgencia de compra</div>
+          <div class="browser-content">
+            <div class="mock-scores">
+              <div class="mock-score"><div class="mock-score-val conv">84%</div><div class="mock-score-label">Conversión</div></div>
+              <div class="mock-score"><div class="mock-score-val conf">91%</div><div class="mock-score-label">Confianza</div></div>
+              <div class="mock-score"><div class="mock-score-val seo">76%</div><div class="mock-score-label">SEO</div></div>
+            </div>
+            <div class="mock-section">
+              <div class="mock-section-title">Copias Recomendados para Meta Ads</div>
+              <div class="mock-badge-row">
+                <span class="mock-badge">Enfoque Dolor</span>
+                <span class="mock-badge">Enfoque Beneficio</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="mock-section" style="margin-top:10px">
-          <div class="mock-section-title">Keywords SEO detectadas</div>
-          <div class="mock-badge-row">
-            <span class="mock-badge">zapatillas running</span>
-            <span class="mock-badge">Nike Air Max</span>
-            <span class="mock-badge">calzado deportivo</span>
-            <span class="mock-badge">envío gratis</span>
-          </div>
+        <div class="hero-glow"></div>
+      </div>
+    </section>
+
+    <section class="logos-section" id="como">
+      <div class="logos-title">Compatible con cualquier plataforma de e-commerce</div>
+      <div class="logos-row">
+        <div class="platform-badge"><div class="platform-dot" style="background:#96BF48"></div> Shopify</div>
+        <div class="platform-badge"><div class="platform-dot" style="background:#5971C0"></div> Vtex</div>
+        <div class="platform-badge"><div class="platform-dot" style="background:#00a6ff"></div> Tiendanube</div>
+        <div class="platform-badge"><div class="platform-dot" style="background:#9b5c8f"></div> WooCommerce</div>
+      </div>
+    </section>
+
+    <section class="pricing-section" id="precios">
+      <h2>Precios simples, sin sorpresas</h2>
+      <p style="color:var(--muted); margin-top:8px;">Comenzá gratis y escala a medida que tu negocio crezca.</p>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <h3>Starter</h3>
+          <div style="font-size:32px; font-weight:800; margin:16px 0; font-family:'Syne'">$0 <span style="font-size:14px; color:var(--muted)">/ gratis</span></div>
+          <p style="color:var(--muted); font-size:14px; margin-bottom:20px">Perfecto para probar la potencia de la IA.</p>
+          <button class="btn btn-primary" style="font-size:13px; padding:10px" onclick="showView('app')">Obtener plan free</button>
+        </div>
+        <div class="price-card popular">
+          <h3 style="color:var(--accent2)">Pro</h3>
+          <div style="font-size:32px; font-weight:800; margin:16px 0; font-family:'Syne'">$29 <span style="font-size:14px; color:var(--muted)">/ mes</span></div>
+          <p style="color:var(--muted); font-size:14px; margin-bottom:20px">Para tiendas activas que optimizan semanalmente.</p>
+          <button class="btn btn-primary" style="font-size:13px; padding:10px" onclick="showView('app')">Empezar Pro ahora</button>
         </div>
       </div>
-    </div>
-  </div>
-</section>
+    </section>
 
-<!-- LOGOS -->
-<section class="logos-section">
-  <div class="logos-title">Compatible con las principales plataformas de e-commerce</div>
-  <div class="logos-row">
-    <div class="platform-badge"><div class="platform-dot" style="background:#00BFFF"></div>Tiendanube</div>
-    <div class="platform-badge"><div class="platform-dot" style="background:#95BF47"></div>Shopify</div>
-    <div class="platform-badge"><div class="platform-dot" style="background:#FFE900"></div>MercadoShops</div>
-    <div class="platform-badge"><div class="platform-dot" style="background:#E44D26"></div>WooCommerce</div>
-    <div class="platform-badge"><div class="platform-dot" style="background:#7C5CFC"></div>Cualquier URL</div>
-  </div>
-</section>
-
-<!-- STATS -->
-<section class="stats fade-up">
-  <div class="stats-inner">
-    <div class="stat-item">
-      <div class="stat-num" style="color:var(--accent2)">1.200+</div>
-      <div class="stat-label">Auditorías generadas</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num" style="color:var(--green)">30 seg</div>
-      <div class="stat-label">Tiempo promedio de auditoría</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num" style="color:var(--gold)">11</div>
-      <div class="stat-label">Secciones por informe</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num" style="color:var(--blue)">4</div>
-      <div class="stat-label">Países de LATAM</div>
-    </div>
-  </div>
-</section>
-
-<!-- HOW IT WORKS -->
-<section class="how" id="como-funciona">
-  <div class="section-header fade-up">
-    <div class="section-tag">Cómo funciona</div>
-    <h2 class="section-title">De URL a informe completo<br>en 30 segundos</h2>
-    <p class="section-sub">Sin configuración, sin integraciones complejas. Solo pegás el link y la IA hace todo el trabajo.</p>
-  </div>
-  <div class="steps fade-up">
-    <div class="step">
-      <div class="step-line"></div>
-      <div class="step-icon">🔗</div>
-      <div class="step-content">
-        <div class="step-num">Paso 1</div>
-        <div class="step-title">Pegá la URL de tu producto</div>
-        <div class="step-desc">Cualquier URL de Tiendanube, Shopify, MercadoShops, WooCommerce o cualquier tienda online. Vendly lee automáticamente el nombre, descripción, precio e imágenes del producto.</div>
+    <section class="faq-section" id="faq">
+      <h2 style="text-align:center">Preguntas Frecuentes</h2>
+      <div class="faq-grid">
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">¿Cómo funciona la auditoría? <span style="margin-left:auto">↓</span></button>
+          <div class="faq-a">Nuestra inteligencia artificial analiza la URL de tu producto extrayendo el contenido de conversión, imágenes, SEO estructurado y copies para darte un reporte inmediato.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">¿Necesito instalar algún pixel? <span style="margin-left:auto">↓</span></button>
+          <div class="faq-a">No. Funciona de manera 100% externa. Solo pegás el enlace o el texto y la IA hace el trabajo sin tocar el código de tu tienda.</div>
+        </div>
       </div>
-    </div>
-    <div class="step">
-      <div class="step-line"></div>
-      <div class="step-icon">🤖</div>
-      <div class="step-content">
-        <div class="step-num">Paso 2</div>
-        <div class="step-title">GPT-4o analiza cada aspecto</div>
-        <div class="step-desc">La IA evalúa conversión, confianza, SEO, descripción, precio, copies y posicionamiento vs competidores. No es un análisis genérico — está entrenado con patrones de e-commerce específicos de LATAM.</div>
+    </section>
+
+    <footer>
+      <div class="footer-left">
+        <div class="footer-logo">Vend<span>ly</span></div>
+        <p style="font-size:13px; color:var(--muted)">Auditorías de e-commerce con IA para LATAM</p>
       </div>
-    </div>
-    <div class="step">
-      <div class="step-icon">📊</div>
-      <div class="step-content">
-        <div class="step-num">Paso 3</div>
-        <div class="step-title">Recibís un informe accionable</div>
-        <div class="step-desc">Scores de 0 a 100, fortalezas y debilidades específicas, 5 anuncios para Meta Ads listos para copiar, descripción optimizada, keywords SEO, FAQ automático y un plan de acción priorizado. Exportable a PDF.</div>
+      <div class="footer-links">
+        <a href="#" onclick="showView('app'); return false;">App</a>
+        <a href="#precios">Precios</a>
+        <a href="#faq">FAQ</a>
       </div>
-    </div>
+    </footer>
   </div>
-</section>
 
-<!-- FEATURES -->
-<section class="features" id="funcionalidades">
-  <div class="section-header fade-up">
-    <div class="section-tag">Funcionalidades</div>
-    <h2 class="section-title">Todo lo que necesitás<br>para vender más</h2>
-  </div>
-  <div class="features-grid fade-up">
-    <div class="feat-card">
-      <div class="feat-icon fi-purple">📊</div>
-      <h3>Scores de conversión, SEO y confianza</h3>
-      <p>Tres métricas clave con explicación de qué las afecta y cómo mejorarlas. De 0 a 100, con contexto real.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon fi-green">✦</div>
-      <h3>Descripción optimizada lista para usar</h3>
-      <p>Título SEO, descripción corta, descripción larga y bullet points. Copiás y pegás directamente en tu tienda.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon fi-gold">📢</div>
-      <h3>5 anuncios para Meta Ads</h3>
-      <p>Copies completos con titular, texto principal y descripción. Diferentes ángulos: beneficio, urgencia, prueba social, retargeting.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon fi-blue">📱</div>
-      <h3>3 posts para Instagram</h3>
-      <p>Captions completos con gancho, cuerpo y hashtags. Listos para publicar o adaptar a tu voz de marca.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon fi-red">⚔</div>
-      <h3>Análisis vs competidores</h3>
-      <p>Pegá la URL de un competidor y Vendly compara ambos productos: ventajas, desventajas y oportunidades de diferenciación.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon fi-teal">⬇</div>
-      <h3>Export a PDF profesional</h3>
-      <p>Informe completo descargable con diseño profesional. Perfecto para presentarle a tu equipo o a un cliente.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon fi-purple">❓</div>
-      <h3>FAQ automático de producto</h3>
-      <p>Las 4 preguntas que más hace un comprador antes de comprar, con respuestas optimizadas para conversión.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon fi-green">🔍</div>
-      <h3>Keywords SEO del producto</h3>
-      <p>Las 8 palabras clave más relevantes para posicionar tu producto en Google. Con un click las copiás.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon fi-gold">🎯</div>
-      <h3>Plan de acción priorizado</h3>
-      <p>5 acciones concretas ordenadas por impacto, con plazo estimado y resultado esperado de cada una.</p>
-    </div>
-  </div>
-</section>
 
-<!-- TESTIMONIALS -->
-<section class="testimonials fade-up">
-  <div class="section-header">
-    <div class="section-tag">Testimonios</div>
-    <h2 class="section-title">Lo que dicen nuestros usuarios</h2>
-  </div>
-  <div class="testi-grid">
-    <div class="testi-card">
-      <div class="testi-stars">★★★★★</div>
-      <div class="testi-text">"Auditié mi tienda de ropa y en 30 segundos tenía un plan claro de qué cambiar. Implementé las mejoras de descripción y en una semana la tasa de conversión subió un 23%."</div>
-      <div class="testi-author">
-        <div class="testi-avatar" style="background:#7C5CFC">MG</div>
-        <div><div class="testi-name">Martina G.</div><div class="testi-role">Tienda de indumentaria · Buenos Aires</div></div>
+  <div id="view-app" class="view-section">
+    <div class="app-nav">
+      <button class="btn btn-sm" onclick="showView('landing')">← Volver al inicio</button>
+      <span class="nav-badge">Consola de Control IA</span>
+    </div>
+
+    <div class="app-hero">
+      <div class="hero-badge">⚡ Panel Autónomo Inteligente</div>
+      <h1>Nueva <em>Auditoría</em></h1>
+      <p>Pegá la información técnica o descripción de tu producto para iniciar el análisis estratégico.</p>
+    </div>
+
+    <div class="wrap">
+      <div class="plan-banner pb-free">
+        <div class="pb-text">Plan Free Activo — 3 auditorías restantes este mes</div>
+        <div class="pb-sub">Obtené reportes ilimitados con el plan Pro</div>
       </div>
-    </div>
-    <div class="testi-card">
-      <div class="testi-stars">★★★★★</div>
-      <div class="testi-text">"Los copies para Meta Ads me ahorraron literalmente 3 horas de trabajo por producto. Y son mejores que los que yo escribía después de pensar mucho. Ya no imagino hacer dropshipping sin Vendly."</div>
-      <div class="testi-author">
-        <div class="testi-avatar" style="background:#34D399">JR</div>
-        <div><div class="testi-name">Javier R.</div><div class="testi-role">Dropshipper · Córdoba</div></div>
+
+      <div class="input-card">
+        <div class="card-label">Parámetros del Análisis</div>
+        
+        <div class="form-group">
+          <label>Nombre del Producto / Tienda</label>
+          <input type="text" id="prod-name" placeholder="Ej. Campera Impermeable Alpinist — Tienda Alpha">
+        </div>
+
+        <div class="form-group">
+          <label>Descripción completa o características del Producto</label>
+          <textarea id="prod-desc" placeholder="Pegá todo el texto del producto, características, precio, beneficios o dolores del cliente aquí..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Público Objetivo Predefinido</label>
+            <select id="prod-audience">
+              <option value="general">Público General / Masivo</option>
+              <option value="jovenes">Jóvenes y Estudiantes (18-25)</option>
+              <option value="profesionales">Profesionales / Ejecutivos (26-45)</option>
+              <option value="padres">Madres y Padres de Familia</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tono de la IA para los Anuncios</label>
+            <select id="prod-tone">
+              <option value="persuasivo">Persuasivo y Directo</option>
+              <option value="emocional">Emocional e Inspirador</option>
+              <option value="urgencia">Urgencia y Escasez</option>
+              <option value="tecnico">Técnico e Informativo</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="ejecutarSimulacionAuditoria()">Generar Auditoría Estratégica con IA ✨</button>
       </div>
-    </div>
-    <div class="testi-card">
-      <div class="testi-stars">★★★★★</div>
-      <div class="testi-text">"Trabajo con 8 clientes de e-commerce y Vendly me permite hacer auditorías profesionales en minutos. El PDF que genera lo presento directamente en las reuniones. Mis clientes piensan que tardé horas."</div>
-      <div class="testi-author">
-        <div class="testi-avatar" style="background:#F5C842;color:#000">LP</div>
-        <div><div class="testi-name">Lucas P.</div><div class="testi-role">Agencia de e-commerce · CABA</div></div>
+
+      <div id="resultado-auditoria" style="display:none; margin-top:30px; background:var(--bg2); padding:24px; border-radius:18px; border:1px solid var(--border)">
+        <h2 style="font-family:'Syne'; margin-bottom:12px; color:var(--accent2)">Reporte Generado Exitosamente</h2>
+        <p style="font-size:14px; margin-bottom:20px; color:var(--muted)">La IA procesó el texto introducido y analizó las variables críticas de conversión.</p>
+        
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:20px">
+          <div style="background:var(--bg3); padding:14px; border-radius:10px; text-align:center"><div style="font-size:24px; font-weight:800; color:var(--green)">92%</div><div style="font-size:12px; color:var(--muted)">Conversión</div></div>
+          <div style="background:var(--bg3); padding:14px; border-radius:10px; text-align:center"><div style="font-size:24px; font-weight:800; color:var(--accent3)">88%</div><div style="font-size:12px; color:var(--muted)">Estructura Copy</div></div>
+          <div style="background:var(--bg3); padding:14px; border-radius:10px; text-align:center"><div style="font-size:24px; font-weight:800; color:var(--gold)">85%</div><div style="font-size:12px; color:var(--muted)">SEO Score</div></div>
+        </div>
+
+        <div style="background:var(--bg3); padding:16px; border-radius:10px; margin-bottom:14px">
+          <h4 style="color:var(--text); margin-bottom:6px">Anuncio Ganador Sugerido (Meta Ads):</h4>
+          <p id="copy-generado" style="font-size:13px; color:var(--muted); font-style:italic; line-height:1.5"></p>
+        </div>
+        <button class="btn btn-sm" onclick="alert('Descargando PDF simulado...')">Descargar Reporte Completo (PDF)</button>
       </div>
+
     </div>
   </div>
-</section>
 
-<!-- PRICING -->
-<section class="pricing" id="precios">
-  <div class="section-header fade-up">
-    <div class="section-tag">Precios</div>
-    <h2 class="section-title">Simple y transparente</h2>
-    <p class="section-sub">Empezá gratis. Sin tarjeta de crédito. Cancelá cuando quieras.</p>
-  </div>
-  <div class="pricing-grid fade-up">
-
-    <div class="price-card">
-      <div class="price-name">Free</div>
-      <div class="price-amount">$0</div>
-      <div class="price-period">Para siempre</div>
-      <div class="price-desc">Para conocer Vendly y ver si es para vos.</div>
-      <ul class="price-features">
-        <li><span class="pf-check">✓</span>1 auditoría completa</li>
-        <li><span class="pf-check">✓</span>PDF con marca de agua</li>
-        <li><span class="pf-check">✓</span>Scores de conversión, SEO y confianza</li>
-        <li class="muted-feat"><span class="pf-x">—</span>Sin historial de auditorías</li>
-        <li class="muted-feat"><span class="pf-x">—</span>Sin comparador de competidores</li>
-      </ul>
-      <a href="/app" class="btn-price btn-price-ghost">Empezar gratis</a>
-    </div>
-
-    <div class="price-card featured">
-      <div class="popular-badge">✦ Más popular</div>
-      <div class="price-name">Starter</div>
-      <div class="price-amount">USD 9</div>
-      <div class="price-period">/mes · pesos o dólares</div>
-      <div class="price-desc">Para dropshippers y dueños de tienda.</div>
-      <ul class="price-features">
-        <li><span class="pf-check">✓</span>30 auditorías por mes</li>
-        <li><span class="pf-check">✓</span>PDF sin marca de agua</li>
-        <li><span class="pf-check">✓</span>Historial completo de auditorías</li>
-        <li><span class="pf-check">✓</span>Comparador de competidores</li>
-        <li><span class="pf-check">✓</span>Compartir informe por link</li>
-      </ul>
-      <a href="/app" class="btn-price btn-price-primary">Suscribirme →</a>
-    </div>
-
-    <div class="price-card">
-      <div class="price-name">Pro</div>
-      <div class="price-amount">USD 19</div>
-      <div class="price-period">/mes</div>
-      <div class="price-desc">Para vendedores en crecimiento.</div>
-      <ul class="price-features">
-        <li><span class="pf-check">✓</span>Auditorías ilimitadas</li>
-        <li><span class="pf-check">✓</span>Todo lo del plan Starter</li>
-        <li><span class="pf-check">✓</span>Benchmarks de industria</li>
-        <li><span class="pf-check">✓</span>Score histórico con evolución</li>
-        <li><span class="pf-check">✓</span>Integración Tiendanube</li>
-      </ul>
-      <a href="/app" class="btn-price btn-price-ghost">Suscribirme →</a>
-    </div>
-
-    <div class="price-card">
-      <div class="price-name">Agencia</div>
-      <div class="price-amount">USD 49</div>
-      <div class="price-period">/mes</div>
-      <div class="price-desc">Para agencias con múltiples clientes.</div>
-      <ul class="price-features">
-        <li><span class="pf-check">✓</span>Auditorías ilimitadas</li>
-        <li><span class="pf-check">✓</span>Auditorías en lote (CSV)</li>
-        <li><span class="pf-check">✓</span>PDF white label sin branding</li>
-        <li><span class="pf-check">✓</span>5 sub-cuentas incluidas</li>
-        <li><span class="pf-check">✓</span>Acceso API</li>
-      </ul>
-      <a href="/app" class="btn-price btn-price-ghost">Contactar →</a>
-    </div>
-
-  </div>
-</section>
-
-<!-- FAQ -->
-<section class="faq-section" id="faq">
-  <div class="section-header fade-up">
-    <div class="section-tag">FAQ</div>
-    <h2 class="section-title">Preguntas frecuentes</h2>
-  </div>
-  <div class="faq-list fade-up">
-    <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">¿Funciona con cualquier tienda online? <span class="faq-arrow">↓</span></button>
-      <div class="faq-a">Sí. Vendly puede leer cualquier URL pública de producto — Tiendanube, Shopify, MercadoShops, WooCommerce, Wix, o cualquier tienda con página de producto accesible. Si la URL es pública, Vendly puede analizarla.</div>
-    </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">¿En qué se diferencia de preguntarle a ChatGPT? <span class="faq-arrow">↓</span></button>
-      <div class="faq-a">Vendly está entrenado con patrones de e-commerce específicos de LATAM — qué convierte en Argentina, qué estructura de precio funciona en México, cómo escribir copies para compradores hispanohablantes. ChatGPT es un modelo genérico. Vendly es un especialista en e-commerce de la región.</div>
-    </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">¿Puedo cancelar en cualquier momento? <span class="faq-arrow">↓</span></button>
-      <div class="faq-a">Sí, sin preguntas ni penalizaciones. Podés cancelar desde tu panel de cuenta en cualquier momento. Seguís teniendo acceso hasta el fin del período ya pagado.</div>
-    </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">¿Cómo se cobra? ¿Aceptan MercadoPago? <span class="faq-arrow">↓</span></button>
-      <div class="faq-a">El cobro es mensual automático. Aceptamos tarjetas de crédito y débito internacionales (Visa, Mastercard). El pago se procesa en pesos argentinos o dólares según el plan elegido.</div>
-    </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">¿Los informes son privados? <span class="faq-arrow">↓</span></button>
-      <div class="faq-a">Sí, todos tus informes son privados por defecto. Solo vos podés verlos en tu historial. Podés generar un link compartible para mostrarle un informe específico a alguien, pero ese link no aparece en ningún índice público.</div>
-    </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">¿Cuántas auditorías necesito por mes? <span class="faq-arrow">↓</span></button>
-      <div class="faq-a">Depende de tu operación. Si tenés entre 5 y 30 productos activos y los auditás regularmente, el plan Starter con 30 auditorías/mes es suficiente. Si manejás más de 30 productos o trabajás con múltiples clientes, el plan Pro o Agencia tiene más sentido.</div>
-    </div>
-  </div>
-</section>
-
-<!-- CTA -->
-<section class="cta-section fade-up">
-  <div class="cta-box">
-    <h2>Auditá tu primer producto<br>gratis ahora mismo</h2>
-    <p>Sin tarjeta de crédito. Sin instalación. En 30 segundos tenés un informe completo.</p>
-    <a href="/app" class="btn-hero btn-hero-primary">Empezar gratis →</a>
-  </div>
-</section>
-
-<!-- FOOTER -->
-<footer>
-  <div class="footer-left">
-    <div class="footer-logo">Vend<span>ly</span></div>
-    <p>Auditorías de e-commerce con IA para LATAM</p>
-  </div>
-  <div class="footer-links">
-    <a href="/app">App</a>
-    <a href="#precios">Precios</a>
-    <a href="#faq">FAQ</a>
-    <a href="mailto:hola@vendly.app">Contacto</a>
-  </div>
-</footer>
-
-<script>
-function toggleFaq(btn) {
-  btn.closest('.faq-item').classList.toggle('open');
-}
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((e, i) => {
-    if (e.isIntersecting) {
-      setTimeout(() => e.target.classList.add('visible'), i * 60);
-      observer.unobserve(e.target);
+  <script>
+    // Sistema SPA para cambiar vistas sin recargar la página
+    function showView(viewName) {
+      document.querySelectorAll('.view-section').forEach(view => {
+        view.classList.remove('active-view');
+      });
+      
+      const targetView = document.getElementById('view-' + viewName);
+      if(targetView) {
+        targetView.classList.add('active-view');
+        window.scrollTo(0, 0);
+      }
+      
+      // Control de visibilidad de enlaces en el NAV superior
+      const navLinks = document.getElementById('landing-nav-links');
+      if (viewName === 'app') {
+        navLinks.style.display = 'none';
+      } else {
+        navLinks.style.display = 'flex';
+      }
     }
-  });
-}, { threshold: 0.08 });
-document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
-</script>
+
+    // Acordeón FAQ
+    function toggleFaq(btn) {
+      btn.closest('.faq-item').classList.toggle('open');
+    }
+
+    // Simulación de auditoría para interactividad de la App
+    function ejecutarSimulacionAuditoria() {
+      const nombre = document.getElementById('prod-name').value || "Producto general";
+      if(!document.getElementById('prod-desc').value) {
+         alert("Por favor introduce una descripción para auditar.");
+         return;
+      }
+      
+      const box = document.getElementById('resultado-auditoria');
+      const copyParaAnuncio = document.getElementById('copy-generado');
+      
+      copyParaAnuncio.innerText = `¿Cansado de buscar el mejor rendimiento para ${nombre}? Descubrí el verdadero estándar de calidad diseñado especialmente para vos. Envío rápido garantizado y cuotas sin interés por tiempo limitado. ¡Hacé clic hoy!`;
+      
+      box.style.display = 'block';
+      box.scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
 </body>
 </html>
