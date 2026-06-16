@@ -1,14 +1,10 @@
 {
   "name": "vendly",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "description": "Auditoría de e-commerce con IA",
   "main": "server.js",
-  "engines": {
-    "node": ">=20.0.0"
-  },
-  "scripts": {
-    "start": "node server.js"
-  },
+  "engines": { "node": ">=20.0.0" },
+  "scripts": { "start": "node server.js" },
   "dependencies": {
     "express": "^4.18.2",
     "openai": "^4.20.1",
