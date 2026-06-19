@@ -10,6 +10,7 @@ const jwt = require('jsonwebtoken');
 const initSqlJs = require('sql.js');
 const fs = require('fs');
 const { Resend } = require('resend');
+const Stripe = require('stripe');
 
 const app = express();
 app.use('/api/webhook', express.raw({ type: 'application/json' }));
@@ -19,12 +20,11 @@ app.use(express.static('public', { index: false }));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const resend = new Resend(process.env.RESEND_API_KEY);
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY || '');
 const JWT_SECRET = process.env.JWT_SECRET || 'vendly_secret_change_me';
-const LS_API_KEY = process.env.LEMONSQUEEZY_API_KEY;
-const LS_BASIC_VARIANT = process.env.LEMONSQUEEZY_BASIC_VARIANT_ID || '1776746';
-const LS_PRO_VARIANT = process.env.LEMONSQUEEZY_PRO_VARIANT_ID || '1776774';
-const LS_STORE_URL = process.env.LEMONSQUEEZY_STORE_URL || 'https://vendly-app.lemonsqueezy.com';
-const WEBHOOK_SECRET = process.env.LEMONSQUEEZY_WEBHOOK_SECRET || '';
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+const STRIPE_STARTER_PRICE = process.env.STRIPE_STARTER_PRICE_ID || '';
+const STRIPE_PRO_PRICE = process.env.STRIPE_PRO_PRICE_ID || '';
 const APP_URL = process.env.APP_URL || 'https://vendly-production-e0f2.up.railway.app';
 const DB_PATH = './vendly.db';
 
@@ -49,6 +49,7 @@ async function initDb() {
       audits_used INTEGER DEFAULT 0,
       audits_limit INTEGER DEFAULT 1,
       subscription_id TEXT,
+      stripe_customer_id TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     );
@@ -76,6 +77,8 @@ async function initDb() {
       count INTEGER DEFAULT 0
     );
   `);
+  // Migration: add stripe_customer_id if missing (existing DBs)
+  try { db.run('ALTER TABLE users ADD COLUMN stripe_customer_id TEXT'); } catch(e) {}
   saveDb();
 }
 
@@ -282,59 +285,106 @@ app.get('/api/audits/:id', requireAuth, (req, res) => {
   res.json({ success: true, audit: { ...a, audit_data: JSON.parse(a.audit_data) } });
 });
 
-// Payments
-app.get('/api/checkout', (req, res) => {
-  const { plan, email } = req.query;
-  const variantId = plan === 'pro' ? LS_PRO_VARIANT : LS_BASIC_VARIANT;
-  const url = `${LS_STORE_URL}/checkout/buy/${variantId}${email ? `?checkout[email]=${encodeURIComponent(email)}` : ''}`;
-  res.json({ url });
+// Payments — Stripe
+app.post('/api/checkout', optAuth, async (req, res) => {
+  const { plan } = req.body;
+  const email = req.user?.email || req.body.email;
+  const priceId = plan === 'pro' ? STRIPE_PRO_PRICE : STRIPE_STARTER_PRICE;
+  if (!priceId) return res.status(500).json({ error: 'Pagos no configurados aún.' });
+  try {
+    const sessionParams = {
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${APP_URL}/app?subscribed=true`,
+      cancel_url: `${APP_URL}/app?cancelled=true`,
+      metadata: { plan: plan || 'basic', email: email || '' }
+    };
+    if (email) sessionParams.customer_email = email;
+    const session = await stripe.checkout.sessions.create(sessionParams);
+    res.json({ url: session.url });
+  } catch (e) {
+    console.error('Stripe checkout error:', e.message);
+    res.status(500).json({ error: 'Error creando sesión de pago.' });
+  }
 });
 
+// Stripe Customer Portal
+app.get('/api/portal', requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!user.stripe_customer_id) return res.status(400).json({ error: 'No tenés suscripción activa.' });
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: user.stripe_customer_id,
+      return_url: `${APP_URL}/app`
+    });
+    res.json({ url: session.url });
+  } catch (e) {
+    console.error('Stripe portal error:', e.message);
+    res.status(500).json({ error: 'Error abriendo portal.' });
+  }
+});
+
+// Verificación manual (fallback: chequea la DB por si el webhook ya se procesó)
 app.post('/api/verify-subscription', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email requerido' });
-  try {
-    const r = await axios.get('https://api.lemonsqueezy.com/v1/subscriptions', {
-      headers: { 'Authorization': `Bearer ${LS_API_KEY}`, 'Accept': 'application/vnd.api+json' },
-      params: { 'filter[user_email]': email.toLowerCase() }
-    });
-    const active = (r.data?.data || []).find(s => ['active', 'on_trial'].includes(s.attributes.status));
-    if (!active) return res.status(404).json({ error: 'No encontramos suscripción activa para ese email.' });
-    const plan = String(active.attributes.variant_id) === String(LS_PRO_VARIANT) ? 'pro' : 'basic';
-    const limit = plan === 'pro' ? 999999 : 30;
-    const existing = dbGet('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
-    if (!existing) dbRun('INSERT INTO users (email) VALUES (?)', [email.toLowerCase()]);
-    dbRun('UPDATE users SET plan=?, status=?, audits_limit=?, subscription_id=?, updated_at=datetime("now") WHERE email=?',
-      [plan, 'active', limit, active.id, email.toLowerCase()]);
-    const user = dbGet('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
-    res.json({ success: true, sessionToken: makeJWT(user.id, user.email, plan), plan, auditsLimit: limit });
-  } catch (e) { res.status(500).json({ error: 'Error verificando.' }); }
+  const user = dbGet('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
+  if (!user || user.plan === 'free' || user.status !== 'active') {
+    return res.status(404).json({ error: 'No encontramos suscripción activa. Si acabás de pagar, esperá un momento y volvé a intentar.' });
+  }
+  res.json({ success: true, sessionToken: makeJWT(user.id, user.email, user.plan), plan: user.plan, auditsLimit: user.audits_limit });
 });
 
-app.post('/api/webhook', (req, res) => {
+// Stripe Webhook
+app.post('/api/webhook', async (req, res) => {
+  let event;
   try {
-    if (WEBHOOK_SECRET) {
-      const hmac = crypto.createHmac('sha256', WEBHOOK_SECRET);
-      hmac.update(req.body);
-      if (hmac.digest('hex') !== req.headers['x-signature']) return res.status(401).send('Invalid');
+    event = STRIPE_WEBHOOK_SECRET
+      ? stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], STRIPE_WEBHOOK_SECRET)
+      : JSON.parse(req.body.toString());
+  } catch (e) {
+    console.error('Webhook signature error:', e.message);
+    return res.status(400).send(`Webhook error: ${e.message}`);
+  }
+
+  const { type, data } = event;
+  console.log('Stripe event:', type);
+
+  try {
+    if (type === 'checkout.session.completed') {
+      const session = data.object;
+      const email = (session.customer_details?.email || session.metadata?.email || '').toLowerCase();
+      const plan = session.metadata?.plan || 'basic';
+      const customerId = session.customer;
+      const subscriptionId = session.subscription;
+      if (email) {
+        const limit = plan === 'pro' ? 999999 : 30;
+        const existing = dbGet('SELECT id FROM users WHERE email = ?', [email]);
+        if (!existing) dbRun('INSERT INTO users (email) VALUES (?)', [email]);
+        dbRun('UPDATE users SET plan=?, status=?, audits_limit=?, subscription_id=?, stripe_customer_id=?, updated_at=datetime("now") WHERE email=?',
+          [plan, 'active', limit, subscriptionId, customerId, email]);
+        console.log(`Activated ${plan} for ${email}`);
+      }
+    } else if (type === 'customer.subscription.updated') {
+      const sub = data.object;
+      const customerId = sub.customer;
+      const status = sub.status;
+      if (['active', 'trialing'].includes(status)) {
+        dbRun('UPDATE users SET status=?, updated_at=datetime("now") WHERE stripe_customer_id=?', ['active', customerId]);
+      } else if (['canceled', 'unpaid', 'past_due'].includes(status)) {
+        dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE stripe_customer_id=?', ['cancelled', 'free', customerId]);
+      }
+    } else if (type === 'customer.subscription.deleted') {
+      const sub = data.object;
+      dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE stripe_customer_id=?',
+        ['cancelled', 'free', sub.customer]);
     }
-    const ev = JSON.parse(req.body.toString());
-    const name = ev.meta?.event_name;
-    const attrs = ev.data?.attributes;
-    const email = attrs?.user_email?.toLowerCase();
-    if (!email) return res.status(200).json({ received: true });
-    const plan = String(attrs?.variant_id) === String(LS_PRO_VARIANT) ? 'pro' : 'basic';
-    const limit = plan === 'pro' ? 999999 : 30;
-    if (['subscription_created', 'subscription_resumed'].includes(name)) {
-      const existing = dbGet('SELECT id FROM users WHERE email = ?', [email]);
-      if (!existing) dbRun('INSERT INTO users (email) VALUES (?)', [email]);
-      dbRun('UPDATE users SET plan=?, status=?, audits_limit=?, subscription_id=?, updated_at=datetime("now") WHERE email=?',
-        [plan, 'active', limit, ev.data?.id, email]);
-    } else if (['subscription_cancelled', 'subscription_expired'].includes(name)) {
-      dbRun('UPDATE users SET status=?, updated_at=datetime("now") WHERE email=?', ['cancelled', email]);
-    }
-    res.status(200).json({ received: true });
-  } catch (e) { res.status(200).json({ received: true }); }
+  } catch (e) {
+    console.error('Webhook processing error:', e.message);
+  }
+
+  res.json({ received: true });
 });
 
 // Share
