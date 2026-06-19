@@ -8,41 +8,55 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#07070E;--bg2:#0F0F1A;--bg3:#16161F;--accent:#7C5CFC;--accent2:#A688FA;--accent3:#C4B5FD;--text:#F0EEF8;--muted:#8B89A0;--border:rgba(124,92,252,0.15);--green:#34D399;--red:#F87171;--gold:#F5C842;--blue:#60A5FA;}
+:root{
+  --bg:#07070E;--bg2:#0F0F1A;--bg3:#16161F;--bg4:#1C1C28;
+  --accent:#7C5CFC;--accent2:#A688FA;--accent3:#C4B5FD;
+  --text:#F0EEF8;--muted:#8B89A0;--border:rgba(124,92,252,0.15);
+  --border-s:rgba(255,255,255,0.06);
+  --green:#34D399;--red:#F87171;--gold:#F5C842;--blue:#60A5FA;
+}
 html{scroll-behavior:smooth}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,92,252,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(124,92,252,0.025) 1px,transparent 1px);background-size:56px 56px;pointer-events:none;z-index:0}
-nav{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(7,7,14,0.94);backdrop-filter:blur(16px);z-index:100}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text);display:flex;align-items:center;gap:8px}
+
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border-s);position:sticky;top:0;background:rgba(7,7,14,0.94);backdrop-filter:blur(16px);z-index:100}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text);display:flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none}
 .logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 10px var(--accent)}
 .logo span{color:var(--accent2)}
 .nav-right{display:flex;align-items:center;gap:10px}
 .nav-badge{font-size:12px;color:var(--accent3);background:rgba(124,92,252,0.1);border:1px solid var(--border);padding:5px 12px;border-radius:100px}
-.user-chip{display:none;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);padding:6px 12px;border-radius:100px;font-size:12px;cursor:pointer}
+.user-chip{display:none;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);padding:6px 12px;border-radius:100px;font-size:12px;cursor:pointer;transition:border-color .15s}
+.user-chip:hover{border-color:rgba(124,92,252,0.4)}
 .user-chip.show{display:flex}
 .user-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
-.hero{text-align:center;padding:48px 24px 32px;position:relative;z-index:1}
-.hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--gold);background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.2);padding:6px 14px;border-radius:100px;margin-bottom:16px}
-.hero h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,5vw,50px);letter-spacing:-1.5px;line-height:1.08;margin-bottom:12px}
+.btn-login{font-size:13px;padding:7px 16px;border-radius:10px;border:1px solid rgba(124,92,252,0.35);background:transparent;color:var(--accent3);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:all .15s}
+.btn-login:hover{background:rgba(124,92,252,0.08)}
+
+/* HERO */
+.hero{text-align:center;padding:52px 24px 36px;position:relative;z-index:1}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--gold);background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.2);padding:6px 14px;border-radius:100px;margin-bottom:18px}
+.hero h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,5vw,52px);letter-spacing:-1.5px;line-height:1.08;margin-bottom:12px}
 .hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent2),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .hero p{font-size:16px;color:var(--muted);font-weight:300;max-width:500px;margin:0 auto 18px;line-height:1.6}
 .hero-features{display:flex;justify-content:center;gap:18px;flex-wrap:wrap}
 .hf{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
 .hf::before{content:'✓';color:var(--green);font-size:11px;font-weight:700}
+
+/* WRAP */
 .wrap{max-width:920px;margin:0 auto;padding:0 20px 80px;position:relative;z-index:1}
 
 /* PLAN BANNER */
-.plan-banner{border-radius:14px;padding:12px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.plan-banner{border-radius:14px;padding:11px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .pb-free{background:linear-gradient(135deg,rgba(52,211,153,0.08),rgba(52,211,153,0.04));border:1px solid rgba(52,211,153,0.2)}
 .pb-basic{background:linear-gradient(135deg,rgba(96,165,250,0.08),rgba(96,165,250,0.04));border:1px solid rgba(96,165,250,0.2)}
 .pb-pro{background:linear-gradient(135deg,rgba(124,92,252,0.1),rgba(124,92,252,0.05));border:1px solid rgba(124,92,252,0.25)}
 .pb-text{font-size:13px;font-weight:500}
-.pb-free .pb-text{color:var(--green)}
-.pb-basic .pb-text{color:var(--blue)}
-.pb-pro .pb-text{color:var(--accent3)}
+.pb-free .pb-text{color:var(--green)}.pb-basic .pb-text{color:var(--blue)}.pb-pro .pb-text{color:var(--accent3)}
 .pb-sub{font-size:12px;color:var(--muted)}
+.pb-actions{display:flex;gap:6px}
 
-/* INPUT */
+/* INPUT CARD */
 .input-card{background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:24px;margin-bottom:14px}
 .card-label{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--accent3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .card-label::before{content:'';width:5px;height:5px;background:var(--accent);border-radius:50%;flex-shrink:0}
@@ -67,6 +81,8 @@ textarea{min-height:68px;line-height:1.5}
 .toggle-sw.on .toggle-kn{left:19px}
 .comp-sec{display:none;margin-top:10px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px}
 .comp-sec.show{display:block}
+
+/* BUTTONS */
 .btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 18px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s}
 .btn-primary{background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;width:100%;margin-top:6px;font-size:15px;padding:13px}
 .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(124,92,252,0.35)}
@@ -84,36 +100,6 @@ textarea{min-height:68px;line-height:1.5}
 .url-desc{font-size:12px;color:var(--muted);line-height:1.4}
 .error-msg{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);border-radius:10px;padding:10px 12px;color:var(--red);font-size:13px;margin-bottom:11px;display:none}
 .error-msg.show{display:block}
-
-/* UPGRADE MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
-.modal-overlay.show{display:flex}
-.modal{background:var(--bg3);border:1px solid rgba(124,92,252,0.3);border-radius:24px;padding:32px;max-width:520px;width:100%;position:relative}
-.modal-close{position:absolute;top:16px;right:16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif}
-.modal-close:hover{color:var(--text)}
-.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.5px;margin-bottom:6px;text-align:center}
-.modal-sub{font-size:14px;color:var(--muted);text-align:center;margin-bottom:24px}
-.plans-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
-@media(max-width:420px){.plans-grid{grid-template-columns:1fr}}
-.plan-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;cursor:pointer;transition:all .2s;position:relative}
-.plan-card:hover{border-color:rgba(124,92,252,0.4);transform:translateY(-2px)}
-.plan-card.selected{border-color:var(--accent);background:rgba(124,92,252,0.08)}
-.plan-card.popular{border-color:rgba(124,92,252,0.4)}
-.popular-badge{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;white-space:nowrap}
-.plan-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:4px}
-.plan-price{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;color:var(--accent2);margin-bottom:8px}
-.plan-price span{font-size:14px;font-weight:400;color:var(--muted)}
-.plan-features{list-style:none;display:flex;flex-direction:column;gap:5px}
-.plan-features li{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
-.plan-features li::before{content:'✓';color:var(--green);font-size:10px;font-weight:700;flex-shrink:0}
-.divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
-
-/* VERIFY SECTION */
-.verify-sec{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px}
-.verify-title{font-size:13px;font-weight:500;margin-bottom:10px;color:var(--text)}
-.verify-row{display:flex;gap:8px}
-.verify-row input{flex:1}
 
 /* LOADING */
 .loading{display:none;text-align:center;padding:52px 20px}
@@ -212,15 +198,15 @@ textarea{min-height:68px;line-height:1.5}
 .ig-exp{display:block;text-align:center;font-size:12px;color:var(--accent3);padding:7px;cursor:pointer;border-top:1px solid var(--border);background:var(--bg3)}
 .faq-list{display:flex;flex-direction:column;gap:7px}
 .faq-item{background:var(--bg2);border:1px solid var(--border);border-radius:11px;overflow:hidden}
-.faq-q{display:flex;align-items:flex-start;gap:9px;padding:12px 14px;font-size:14px;font-weight:500}
-.faq-q::before{content:'Q';flex-shrink:0;width:18px;height:18px;background:rgba(124,92,252,0.15);color:var(--accent3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;margin-top:1px}
-.faq-a{padding:0 14px 12px 41px;font-size:13px;color:var(--muted);line-height:1.6}
+.faq-q-text{display:flex;align-items:flex-start;gap:9px;padding:12px 14px;font-size:14px;font-weight:500}
+.faq-q-text::before{content:'Q';flex-shrink:0;width:18px;height:18px;background:rgba(124,92,252,0.15);color:var(--accent3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;margin-top:1px}
+.faq-a-text{padding:0 14px 12px 41px;font-size:13px;color:var(--muted);line-height:1.6}
 .kw-grid{display:flex;flex-wrap:wrap;gap:7px}
 .kw{background:rgba(124,92,252,0.08);border:1px solid var(--border);border-radius:8px;padding:5px 11px;font-size:13px;color:var(--accent3);cursor:pointer;transition:all .15s}
 .kw:hover{background:rgba(124,92,252,0.15)}.kw.copied{background:rgba(52,211,153,0.1);color:var(--green);border-color:rgba(52,211,153,0.2)}
 .kw-hint{font-size:12px;color:var(--muted);margin-top:9px}
 .precio-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 14px;font-size:14px;line-height:1.65}
-.plan-list{display:flex;flex-direction:column;gap:7px}
+.plan-list-items{display:flex;flex-direction:column;gap:7px}
 .plan-item{display:flex;gap:11px;align-items:flex-start;background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:12px 14px}
 .plan-n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#5D3FD3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;margin-top:1px}
 .plan-t{font-size:14px;font-weight:500;margin-bottom:3px}
@@ -228,29 +214,36 @@ textarea{min-height:68px;line-height:1.5}
 .plan-pl{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:100px;background:rgba(124,92,252,0.1);color:var(--accent3);border:1px solid var(--border)}
 .reset-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;margin-top:12px}
 .reset-btn:hover{color:var(--text);border-color:var(--accent)}
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg3);border:1px solid rgba(52,211,153,0.3);border-radius:12px;padding:11px 18px;font-size:13px;color:var(--green);transition:transform .3s;z-index:9999;white-space:nowrap}
-.toast.show{transform:translateX(-50%) translateY(0)}
-footer{text-align:center;padding:22px;border-top:1px solid var(--border);color:var(--muted);font-size:13px;position:relative;z-index:1}
-footer span{color:var(--accent2)}
 
-/* AUTH MODAL */
+/* MODALS */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.show{display:flex}
-.modal{background:var(--bg3);border:1px solid rgba(124,92,252,0.3);border-radius:24px;padding:32px;max-width:440px;width:100%;position:relative;animation:fadeUp .3s ease}
+.modal{background:var(--bg3);border:1px solid rgba(124,92,252,0.3);border-radius:24px;padding:28px;max-width:440px;width:100%;position:relative}
 .modal-close{position:absolute;top:14px;right:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif}
 .modal-close:hover{color:var(--text)}
-.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.5px;margin-bottom:6px;text-align:center}
-.modal-sub{font-size:14px;color:var(--muted);text-align:center;margin-bottom:24px;line-height:1.55}
-.auth-input-row{display:flex;gap:8px;margin-bottom:12px}
-.auth-input-row input{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none}
-.auth-input-row input:focus{border-color:rgba(124,92,252,0.5)}
-.auth-sent{display:none;text-align:center;padding:16px}
+.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.5px;margin-bottom:6px;text-align:center}
+.modal-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:20px;line-height:1.55}
+.auth-row{display:flex;gap:8px;margin-bottom:10px}
+.auth-row input{flex:1}
+.auth-sent{display:none;text-align:center;padding:12px 0}
 .auth-sent.show{display:block}
-.auth-sent-icon{font-size:36px;margin-bottom:12px}
+.auth-sent-icon{font-size:36px;margin-bottom:10px}
 .auth-sent-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:6px}
 .auth-sent-sub{font-size:13px;color:var(--muted);line-height:1.55}
-.divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px}
+.divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--muted);font-size:12px}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.plans-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+@media(max-width:420px){.plans-grid{grid-template-columns:1fr}}
+.plan-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:all .2s;position:relative}
+.plan-card:hover,.plan-card.selected{border-color:rgba(124,92,252,0.4);background:rgba(124,92,252,0.06)}
+.plan-card.popular{border-color:rgba(124,92,252,0.35)}
+.popular-badge{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:100px;white-space:nowrap}
+.plan-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:4px}
+.plan-price{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--accent2);margin-bottom:8px}
+.plan-price span{font-size:13px;font-weight:400;color:var(--muted)}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:4px}
+.plan-features li{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.plan-features li::before{content:'✓';color:var(--green);font-size:10px;font-weight:700;flex-shrink:0}
 
 /* DASHBOARD */
 .dashboard{display:none;position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto}
@@ -258,90 +251,156 @@ footer span{color:var(--accent2)}
 .dash-nav{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);background:rgba(7,7,14,0.9);backdrop-filter:blur(16px);position:sticky;top:0;z-index:10}
 .dash-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text)}
 .dash-logo span{color:var(--accent2)}
-.dash-actions{display:flex;gap:8px}
-.dash-wrap{max-width:900px;margin:0 auto;padding:24px 20px}
-.dash-header{margin-bottom:24px}
-.dash-greeting{font-family:'Syne',sans-serif;font-weight:700;font-size:22px;margin-bottom:4px}
-.dash-email{font-size:13px;color:var(--muted)}
-.dash-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:24px}
-.dash-stat{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px}
-.dash-stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;margin-bottom:3px}
+.dash-wrap{max-width:860px;margin:0 auto;padding:24px 20px}
+.dash-header{margin-bottom:22px}
+.dash-greeting{font-family:'Syne',sans-serif;font-weight:700;font-size:20px;margin-bottom:4px}
+.dash-email-text{font-size:13px;color:var(--muted)}
+.dash-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:22px}
+.dash-stat{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px}
+.dash-stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;margin-bottom:3px}
 .dash-stat-label{font-size:12px;color:var(--muted)}
-.dash-section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:14px}
-.audit-list{display:flex;flex-direction:column;gap:8px}
-.audit-item{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .15s}
-.audit-item:hover{border-color:rgba(124,92,252,0.4)}
-.audit-scores{display:flex;gap:6px;flex-shrink:0}
-.audit-score-pill{font-size:11px;font-weight:600;padding:3px 8px;border-radius:100px}
-.asp-conv{background:rgba(124,92,252,0.12);color:var(--accent3)}
-.asp-conf{background:rgba(52,211,153,0.1);color:var(--green)}
-.asp-seo{background:rgba(245,200,66,0.1);color:var(--gold)}
-.audit-info{flex:1;min-width:0}
-.audit-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
-.audit-date{font-size:12px;color:var(--muted)}
-.audit-arrow{color:var(--muted);font-size:16px;flex-shrink:0}
-.audit-empty{text-align:center;padding:48px 24px;color:var(--muted)}
-.audit-empty-icon{font-size:32px;margin-bottom:12px}
-.plan-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:4px 12px;border-radius:100px}
-.pb-free{background:var(--bg2);color:var(--muted);border:1px solid var(--border)}
-.pb-basic{background:rgba(96,165,250,0.1);color:var(--blue);border:1px solid rgba(96,165,250,0.2)}
-.pb-pro{background:rgba(124,92,252,0.1);color:var(--accent3);border:1px solid var(--border)}
-.progress-bar{background:var(--bg2);border-radius:4px;height:6px;margin-top:6px;overflow:hidden}
+.progress-bar{background:var(--bg2);border-radius:4px;height:5px;margin-top:6px;overflow:hidden}
 .progress-fill{height:100%;border-radius:4px;background:var(--accent);transition:width .4s}
+.plan-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:3px 10px;border-radius:100px;margin-top:6px}
+.pc-free{background:var(--bg2);color:var(--muted);border:1px solid var(--border)}
+.pc-basic{background:rgba(96,165,250,0.1);color:var(--blue);border:1px solid rgba(96,165,250,0.2)}
+.pc-pro{background:rgba(124,92,252,0.1);color:var(--accent3);border:1px solid var(--border)}
+.dash-section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:12px}
+.audit-list-dash{display:flex;flex-direction:column;gap:8px}
+.audit-item{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px 15px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s}
+.audit-item:hover{border-color:rgba(124,92,252,0.4)}
+.audit-scores-row{display:flex;gap:5px;flex-shrink:0}
+.asp{font-size:11px;font-weight:600;padding:2px 7px;border-radius:100px}
+.asp-c{background:rgba(124,92,252,0.12);color:var(--accent3)}
+.asp-f{background:rgba(52,211,153,0.1);color:var(--green)}
+.asp-s{background:rgba(245,200,66,0.1);color:var(--gold)}
+.audit-info-dash{flex:1;min-width:0}
+.audit-name-dash{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.audit-date-dash{font-size:12px;color:var(--muted)}
+.audit-empty{text-align:center;padding:40px 24px;color:var(--muted)}
+.audit-empty-icon{font-size:32px;margin-bottom:10px}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg3);border:1px solid rgba(52,211,153,0.3);border-radius:12px;padding:11px 18px;font-size:13px;color:var(--green);transition:transform .3s;z-index:9999;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+footer{text-align:center;padding:22px;border-top:1px solid var(--border-s);color:var(--muted);font-size:13px;position:relative;z-index:1}
+footer span{color:var(--accent2)}
 </style>
 </head>
 <body>
 
 <div class="toast" id="toast"></div>
 
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeLoginModal()">✕</button>
+    <div id="login-form">
+      <div class="modal-title">Accedé a Vendly</div>
+      <div class="modal-sub">Ingresá tu email y te mandamos un link de acceso. Sin contraseña.</div>
+      <div class="auth-row">
+        <input type="email" id="login-email" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')sendMagicLink()">
+        <button class="btn-sm" style="background:var(--accent);color:#fff;border:none" onclick="sendMagicLink()" id="login-send-btn">Enviar →</button>
+      </div>
+      <div class="error-msg" id="login-error"></div>
+      <div class="divider">ya tengo suscripción activa</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:9px">Ingresá el email con el que pagaste para activar:</div>
+      <div class="auth-row">
+        <input type="email" id="verify-email" placeholder="email con el que pagaste">
+        <button class="btn-sm" onclick="verifyFromLogin()">Activar →</button>
+      </div>
+      <div class="error-msg" id="verify-error"></div>
+    </div>
+    <div class="auth-sent" id="login-sent">
+      <div class="auth-sent-icon">📬</div>
+      <div class="auth-sent-title">¡Link enviado!</div>
+      <div class="auth-sent-sub">Revisá tu email y hacé click en el link. Expira en 10 minutos.</div>
+    </div>
+  </div>
+</div>
+
 <!-- UPGRADE MODAL -->
 <div class="modal-overlay" id="upgrade-modal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal()">✕ Cerrar</button>
+    <button class="modal-close" onclick="closeUpgradeModal()">✕</button>
     <div class="modal-title">Elegí tu plan</div>
-    <div class="modal-sub">Empezá con 3 auditorías gratis. Suscribite para continuar.</div>
+    <div class="modal-sub">Suscribite para continuar usando Vendly.</div>
     <div class="plans-grid">
-      <div class="plan-card" id="pc-basic" onclick="selectPlan('basic')">
-        <div class="plan-name">Plan Básico</div>
-        <div class="plan-price" id="price-basic">Cargando... <span>/mes</span></div>
+      <div class="plan-card selected" id="pc-starter" onclick="selectPlan('basic')">
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">USD 9 <span>/mes</span></div>
         <ul class="plan-features">
-          <li>20 auditorías por mes</li>
-          <li>Exportar a PDF</li>
-          <li>Comparar competidores</li>
-          <li>Compartir por link</li>
-          <li>FAQ automático</li>
+          <li>30 auditorías/mes</li>
+          <li>Historial completo</li>
+          <li>PDF sin marca de agua</li>
+          <li>Comparador competidor</li>
         </ul>
       </div>
       <div class="plan-card popular" id="pc-pro" onclick="selectPlan('pro')">
         <div class="popular-badge">✦ MÁS POPULAR</div>
-        <div class="plan-name">Plan Pro</div>
-        <div class="plan-price" id="price-pro">Cargando... <span>/mes</span></div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">USD 19 <span>/mes</span></div>
         <ul class="plan-features">
-          <li>Auditorías ilimitadas</li>
-          <li>Todo del Plan Básico</li>
-          <li>Prioridad de soporte</li>
-          <li>Nuevas funciones primero</li>
-          <li>Acceso API (próximamente)</li>
+          <li>Ilimitadas</li>
+          <li>Todo lo de Starter</li>
+          <li>Benchmarks</li>
+          <li>Score histórico</li>
         </ul>
       </div>
     </div>
-    <button class="btn btn-primary" id="checkout-btn" onclick="goToCheckout()">Suscribirme ahora →</button>
+    <button class="btn btn-primary" id="checkout-btn" onclick="goToCheckout()" style="margin-top:0">Suscribirme al Plan Starter →</button>
     <div class="divider">ya pagué</div>
-    <div class="verify-sec">
-      <div class="verify-title">¿Ya completaste el pago? Ingresá tu email para activar tu cuenta:</div>
-      <div class="verify-row">
-        <input type="email" id="verify-email" placeholder="tu@email.com">
-        <button class="btn btn-sm" onclick="verifySubscription()">Activar →</button>
+    <div class="auth-row">
+      <input type="email" id="upgrade-email" placeholder="email con el que pagaste">
+      <button class="btn-sm" onclick="verifyFromUpgrade()">Activar →</button>
+    </div>
+    <div class="error-msg" id="upgrade-error"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+  <div class="dash-nav">
+    <div class="dash-logo">Vend<span>ly</span></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-sm" onclick="closeDashboard()">← Nueva auditoría</button>
+      <button class="btn-sm" onclick="logout()">Salir</button>
+    </div>
+  </div>
+  <div class="dash-wrap">
+    <div class="dash-header">
+      <div class="dash-greeting">Bienvenido 👋</div>
+      <div class="dash-email-text" id="dash-email"></div>
+    </div>
+    <div class="dash-stats">
+      <div class="dash-stat">
+        <div class="dash-stat-val" id="dash-total" style="color:var(--accent2)">0</div>
+        <div class="dash-stat-label">Auditorías totales</div>
       </div>
-      <div class="error-msg" id="verify-error" style="margin-top:8px"></div>
+      <div class="dash-stat">
+        <div class="dash-stat-val" id="dash-used">0</div>
+        <div class="dash-stat-label">Usadas este mes</div>
+        <div class="progress-bar"><div class="progress-fill" id="dash-progress" style="width:0%"></div></div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-label" style="margin-bottom:6px">Plan activo</div>
+        <div id="dash-plan-chip" class="plan-chip pc-free">Free</div>
+        <button class="btn-sm" style="margin-top:10px;font-size:11px;width:100%" onclick="closeDashboard();showUpgradeModal()">Mejorar plan →</button>
+      </div>
+    </div>
+    <div class="dash-section-title">Historial de auditorías</div>
+    <div class="audit-list-dash" id="audit-list-dash">
+      <div class="audit-empty"><div class="audit-empty-icon">⏳</div><div>Cargando...</div></div>
     </div>
   </div>
 </div>
 
 <nav>
-  <div class="logo"><div class="logo-dot"></div>Vend<span>ly</span></div>
+  <a href="/" class="logo"><div class="logo-dot"></div>Vend<span>ly</span></a>
   <div class="nav-right">
     <span class="nav-badge">✦ GPT-4o</span>
+    <button class="btn-login" id="btn-login" onclick="showLoginModal()">Iniciar sesión</button>
     <div class="user-chip" id="user-chip" onclick="openDashboard()">
       <div class="user-dot"></div>
       <span id="user-email-display"></span>
@@ -357,15 +416,17 @@ footer span{color:var(--accent2)}
     <span class="hf">Exportar PDF</span>
     <span class="hf">Comparar competidor</span>
     <span class="hf">Compartir por link</span>
-    <span class="hf">3 auditorías gratis</span>
+    <span class="hf">Historial de auditorías</span>
   </div>
 </div>
 
 <div class="wrap">
 
   <div class="plan-banner pb-free" id="plan-banner">
-    <span class="pb-text" id="pb-text">✦ Plan gratuito — 3 auditorías de prueba</span>
-    <span class="pb-sub" id="pb-sub">Sin tarjeta de crédito</span>
+    <span class="pb-text" id="pb-text">✦ 1 auditoría gratuita — creá una cuenta para más</span>
+    <div class="pb-actions">
+      <button class="btn-sm" onclick="showLoginModal()">Crear cuenta</button>
+    </div>
   </div>
 
   <div class="input-card">
@@ -376,10 +437,10 @@ footer span{color:var(--accent2)}
     </div>
     <div class="tab-content active" id="tab-url">
       <div class="form-group">
-        <label>URL del producto</label>
+        <label>URL del producto (Tiendanube, Shopify, MercadoShops...)</label>
         <div class="url-row">
           <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre">
-          <button class="btn btn-sm" onclick="scrapeUrl('product','url-result','url-name','url-desc','scrape-error')">Leer →</button>
+          <button class="btn-sm" onclick="doScrape('product','url-result','url-name','url-desc','scrape-error')">Leer →</button>
         </div>
       </div>
       <div class="error-msg" id="scrape-error"></div>
@@ -403,10 +464,10 @@ footer span{color:var(--accent2)}
       <span style="font-size:11px;color:var(--accent3);background:rgba(124,92,252,0.1);padding:2px 7px;border-radius:100px;border:1px solid var(--border);margin-left:4px">NUEVO</span>
     </div>
     <div class="comp-sec" id="comp-sec">
-      <div style="font-size:12px;color:var(--accent3);font-weight:600;margin-bottom:9px">URL del competidor</div>
+      <div style="font-size:12px;color:var(--accent3);font-weight:600;margin-bottom:8px">URL del competidor</div>
       <div class="url-row">
         <input type="url" id="comp-url" placeholder="https://competidor.com/producto">
-        <button class="btn btn-sm" onclick="scrapeUrl('comp','comp-result','comp-name','comp-desc','comp-error')">Leer →</button>
+        <button class="btn-sm" onclick="doScrape('comp','comp-result','comp-name','comp-desc','comp-error')">Leer →</button>
       </div>
       <div class="error-msg" id="comp-error"></div>
       <div class="url-result" id="comp-result">
@@ -457,7 +518,7 @@ footer span{color:var(--accent2)}
         <button class="btn btn-ghost" onclick="exportPDF()">⬇ Exportar PDF</button>
         <button class="btn btn-outline" onclick="shareReport()">🔗 Compartir</button>
       </div>
-      <button class="btn btn-sm" onclick="resetApp()">← Nueva auditoría</button>
+      <button class="btn-sm" onclick="resetApp()">← Nueva auditoría</button>
     </div>
     <div class="share-link" id="share-link">
       <span>✓ Link copiado:</span>
@@ -504,224 +565,243 @@ footer span{color:var(--accent2)}
     <div class="rc"><div class="rc-head"><div class="rc-ico ico-b">❓</div><div class="rc-tit">Preguntas frecuentes optimizadas</div></div><div class="faq-list" id="r-faq"></div></div>
     <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🔍</div><div class="rc-tit">Keywords SEO</div></div><div class="kw-grid" id="r-kw"></div><div class="kw-hint">Click para copiar</div></div>
     <div class="rc"><div class="rc-head"><div class="rc-ico ico-o">💰</div><div class="rc-tit">Estrategia de precio</div></div><div class="precio-box" id="r-precio"></div></div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div></div><div class="plan-list" id="r-plan"></div></div>
+    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div></div><div class="plan-list-items" id="r-plan"></div></div>
     <button class="reset-btn" onclick="resetApp()">← Analizar otro producto</button>
   </div>
-
 </div>
 
-<footer>Hecho con ❤️ por <span>Vendly</span> — Auditorías que generan ventas</footer>
+<footer>Hecho con ❤️ por <span>Vendly</span> · <a href="/" style="color:var(--muted);text-decoration:none">Inicio</a></footer>
 
 <script>
 // ── STATE ─────────────────────────────────────────────────────
-let currentProduct=null,currentCompetitor=null,currentAudit=null;
-let activeTab='url',compEnabled=false,loadingTimer=null;
-let sessionToken=localStorage.getItem('vendly_session')||null;
-let userPlan='free',userEmail='',selectedPlan='basic';
-let remainingFree=3;
+let sessionToken = localStorage.getItem('v_session') || null;
+let userPlan = 'free', userEmail = '', selectedPlan = 'basic';
+let currentProduct = null, currentCompetitor = null, currentAudit = null;
+let activeTab = 'url', compEnabled = false, loadingTimer = null;
 
 // ── INIT ──────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded',async()=>{
+window.addEventListener('DOMContentLoaded', async () => {
+  const p = new URLSearchParams(window.location.search);
+  const urlSession = p.get('session');
+  const urlError = p.get('error');
+  if (urlSession) {
+    sessionToken = urlSession;
+    localStorage.setItem('v_session', sessionToken);
+    window.history.replaceState({}, '', '/app');
+    showToast('✓ Sesión iniciada correctamente');
+  }
+  if (urlError) {
+    const msgs = { expired:'El link expiró. Pedí uno nuevo.', invalid:'Link inválido.', notfound:'Usuario no encontrado.' };
+    showToast('⚠ ' + (msgs[urlError] || 'Error al iniciar sesión'));
+  }
   await checkSession();
-  await loadPrices();
-  const match=window.location.pathname.match(/^\/informe\/([a-f0-9]+)$/);
-  if(match){
-    const res=await fetch('/api/report/'+match[1]);
-    const data=await res.json();
-    if(data.success){currentAudit=data.audit;renderAudit(data.audit,data.product?.name||'Producto compartido',!!data.audit?.analisis_competidor);}
+  const match = window.location.pathname.match(/^\/informe\/([a-f0-9]+)$/);
+  if (match) {
+    try {
+      const res = await fetch('/api/report/' + match[1]);
+      const data = await res.json();
+      if (data.success) { currentAudit = data.audit; renderAudit(data.audit, data.product?.name || 'Producto', !!data.audit?.analisis_competidor); }
+    } catch(e) {}
   }
 });
 
-async function checkSession(){
-  if(!sessionToken)return;
-  try{
-    const res=await fetch('/api/session',{headers:{'x-session-token':sessionToken}});
-    const data=await res.json();
-    if(data.authenticated){
-      userPlan=data.plan;userEmail=data.email;
-      updatePlanBanner(data.plan,data.auditsUsed,data.auditsLimit);
-      document.getElementById('user-chip').classList.add('show');
-      document.getElementById('user-email-display').textContent=data.email;
-    }else{
-      sessionToken=null;localStorage.removeItem('vendly_session');
+async function checkSession() {
+  if (!sessionToken) { updateUI(false); return; }
+  try {
+    const res = await fetch('/api/session', { headers: { 'x-session-token': sessionToken } });
+    const d = await res.json();
+    if (d.authenticated) {
+      userPlan = d.plan; userEmail = d.email;
+      updateUI(true, d);
+    } else {
+      sessionToken = null; localStorage.removeItem('v_session');
+      updateUI(false);
     }
-  }catch(e){}
+  } catch(e) { updateUI(false); }
 }
 
-async function loadPrices(){
-  try{
-    const [rb,rp]=await Promise.all([
-      fetch('/api/checkout?plan=basic'),
-      fetch('/api/checkout?plan=pro')
-    ]);
-    // Prices are set in Lemon Squeezy — show defaults
-    document.getElementById('price-basic').innerHTML='Desde <span>/mes</span>';
-    document.getElementById('price-pro').innerHTML='Desde <span>/mes</span>';
-  }catch(e){}
+function updateUI(auth, data) {
+  const chip = document.getElementById('user-chip');
+  const loginBtn = document.getElementById('btn-login');
+  const display = document.getElementById('user-email-display');
+  if (auth && data) {
+    chip.classList.add('show');
+    loginBtn.style.display = 'none';
+    display.textContent = data.email;
+    updatePlanBanner(data.plan, data.auditsUsed, data.auditsLimit);
+  } else {
+    chip.classList.remove('show');
+    loginBtn.style.display = '';
+    updatePlanBanner('free', 0, 1);
+  }
 }
 
-function updatePlanBanner(plan,used,limit){
-  const banner=document.getElementById('plan-banner');
-  const text=document.getElementById('pb-text');
-  const sub=document.getElementById('pb-sub');
-  banner.className='plan-banner';
-  if(plan==='pro'){
+function updatePlanBanner(plan, used, limit) {
+  const banner = document.getElementById('plan-banner');
+  const text = document.getElementById('pb-text');
+  banner.className = 'plan-banner';
+  if (plan === 'pro') {
     banner.classList.add('pb-pro');
-    text.textContent='✦ Plan Pro — Auditorías ilimitadas';
-    sub.textContent=userEmail;
-  }else if(plan==='basic'){
+    text.textContent = '✦ Plan Pro — Auditorías ilimitadas';
+  } else if (plan === 'basic') {
     banner.classList.add('pb-basic');
-    text.textContent=`Plan Básico — ${used||0} / ${limit||20} auditorías usadas`;
-    sub.textContent=userEmail;
-  }else{
+    text.textContent = `Plan Starter — ${used || 0} / ${limit || 30} auditorías usadas`;
+  } else {
     banner.classList.add('pb-free');
-    text.textContent='✦ Plan gratuito — 3 auditorías de prueba';
-    sub.textContent='Sin tarjeta de crédito';
+    text.textContent = '✦ 1 auditoría gratuita — creá una cuenta para más';
   }
 }
 
 // ── TABS ──────────────────────────────────────────────────────
-function switchTab(tab,btn){
-  activeTab=tab;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+function switchTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('tab-'+tab).classList.add('active');
-  currentProduct=null;
+  document.getElementById('tab-' + tab).classList.add('active');
+  currentProduct = null;
   document.getElementById('url-result').classList.remove('show');
 }
-function toggleComp(){
-  compEnabled=!compEnabled;
-  document.getElementById('comp-sw').classList.toggle('on',compEnabled);
-  document.getElementById('comp-sec').classList.toggle('show',compEnabled);
-  if(!compEnabled)currentCompetitor=null;
+function toggleComp() {
+  compEnabled = !compEnabled;
+  document.getElementById('comp-sw').classList.toggle('on', compEnabled);
+  document.getElementById('comp-sec').classList.toggle('show', compEnabled);
+  if (!compEnabled) currentCompetitor = null;
 }
 
 // ── SCRAPER ───────────────────────────────────────────────────
-async function scrapeUrl(type,resultId,nameId,descId,errId){
-  const urlId=type==='product'?'product-url':'comp-url';
-  const url=document.getElementById(urlId).value.trim();
-  if(!url)return showErr(errId,'Ingresá una URL válida');
+async function doScrape(type, resultId, nameId, descId, errId) {
+  const urlId = type === 'product' ? 'product-url' : 'comp-url';
+  const url = document.getElementById(urlId).value.trim();
+  if (!url) return showErr(errId, 'Ingresá una URL válida');
   hideErr(errId);
-  const btn=event.target;const orig=btn.textContent;
-  btn.textContent='Leyendo...';btn.disabled=true;
-  try{
-    const res=await fetch('/api/scrape',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
-    const data=await res.json();
-    if(!data.success)throw new Error(data.error);
-    if(type==='product')currentProduct=data.product;else currentCompetitor=data.product;
-    document.getElementById(nameId).textContent=data.product.name||'Sin nombre';
-    document.getElementById(descId).textContent=data.product.description?data.product.description.slice(0,120)+'...':'Sin descripción';
+  const btn = event.target; const orig = btn.textContent;
+  btn.textContent = 'Leyendo...'; btn.disabled = true;
+  try {
+    const res = await fetch('/api/scrape', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url}) });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    if (type === 'product') currentProduct = data.product;
+    else currentCompetitor = data.product;
+    document.getElementById(nameId).textContent = data.product.name || 'Sin nombre';
+    document.getElementById(descId).textContent = data.product.description ? data.product.description.slice(0,120)+'...' : 'Sin descripción';
     document.getElementById(resultId).classList.add('show');
-  }catch(e){showErr(errId,e.message||'Error al leer la URL');}
-  finally{btn.textContent=orig;btn.disabled=false;}
+  } catch(e) { showErr(errId, e.message || 'Error al leer la URL'); }
+  finally { btn.textContent = orig; btn.disabled = false; }
 }
 
 // ── LOADING ───────────────────────────────────────────────────
-function startLoading(){
-  const steps=['ls1','ls2','ls3','ls4','ls5'];
-  let i=0;
-  steps.forEach(s=>document.getElementById(s).className='ls');
+function startLoading() {
+  const steps = ['ls1','ls2','ls3','ls4','ls5'];
+  let i = 0;
+  steps.forEach(s => document.getElementById(s).className = 'ls');
   document.getElementById(steps[0]).classList.add('active');
-  loadingTimer=setInterval(()=>{
-    if(i<steps.length-1){document.getElementById(steps[i]).className='ls done';i++;document.getElementById(steps[i]).classList.add('active');}
-  },6000);
+  loadingTimer = setInterval(() => {
+    if (i < steps.length-1) { document.getElementById(steps[i]).className = 'ls done'; i++; document.getElementById(steps[i]).classList.add('active'); }
+  }, 6000);
 }
-function stopLoading(){
-  if(loadingTimer)clearInterval(loadingTimer);
-  ['ls1','ls2','ls3','ls4','ls5'].forEach(s=>document.getElementById(s).className='ls done');
+function stopLoading() {
+  if (loadingTimer) clearInterval(loadingTimer);
+  ['ls1','ls2','ls3','ls4','ls5'].forEach(s => document.getElementById(s).className = 'ls done');
 }
 
-// ── AUDIT ─────────────────────────────────────────────────────
-async function runAudit(){
+// ── RUN AUDIT ─────────────────────────────────────────────────
+async function runAudit() {
   hideErr('audit-error');
   let product;
-  if(activeTab==='url'){
-    if(!currentProduct){
-      const url=document.getElementById('product-url').value.trim();
-      if(!url)return showErr('audit-error','Pegá una URL o leéla primero');
-      product={url,name:url,description:'',price:''};
-    }else{product=currentProduct;}
-  }else{
-    const name=document.getElementById('manual-name').value.trim();
-    if(!name)return showErr('audit-error','El nombre del producto es obligatorio');
-    product={name,description:document.getElementById('manual-desc').value.trim(),price:document.getElementById('manual-price').value.trim(),url:document.getElementById('manual-url').value.trim()};
+  if (activeTab === 'url') {
+    if (!currentProduct) {
+      const url = document.getElementById('product-url').value.trim();
+      if (!url) return showErr('audit-error', 'Pegá una URL o leéla primero');
+      product = { url, name: url, description:'', price:'' };
+    } else { product = currentProduct; }
+  } else {
+    const name = document.getElementById('manual-name').value.trim();
+    if (!name) return showErr('audit-error', 'El nombre del producto es obligatorio');
+    product = { name, description:document.getElementById('manual-desc').value.trim(), price:document.getElementById('manual-price').value.trim(), url:document.getElementById('manual-url').value.trim() };
   }
-  const country=document.getElementById('country').value;
-  const tone=document.getElementById('tone').value;
-  const competitorProduct=compEnabled?currentCompetitor:null;
-  document.getElementById('audit-btn').disabled=true;
+  const country = document.getElementById('country').value;
+  const tone = document.getElementById('tone').value;
+  const competitorProduct = compEnabled ? currentCompetitor : null;
+  document.getElementById('audit-btn').disabled = true;
   document.getElementById('loading').classList.add('show');
   document.getElementById('results').classList.remove('show');
   startLoading();
-  try{
-    const headers={'Content-Type':'application/json'}; if(sessionToken)headers['x-session-token']=sessionToken;
-    if(sessionToken)headers['x-session-token']=sessionToken;
-    const res=await fetch('/api/audit',{method:'POST',headers,body:JSON.stringify({product,country,tone,competitorProduct})});
-    const data=await res.json();
-    if(data.upgrade){if(!sessionToken){showLoginModal();}else{showUpgradeModal();}return;}
-    if(!data.success)throw new Error(data.error);
-    currentAudit=data.audit;
-    if(data.remaining!==undefined)remainingFree=data.remaining;
-    if(data.plan&&data.plan!=='free')updatePlanBanner(data.plan,data.auditsUsed,data.auditsLimit);
-    renderAudit(data.audit,product.name||product.url,!!competitorProduct);
-  }catch(e){showErr('audit-error',e.message||'Error generando la auditoría. Intentá de nuevo.');}
-  finally{stopLoading();document.getElementById('audit-btn').disabled=false;document.getElementById('loading').classList.remove('show');}
+  try {
+    const headers = { 'Content-Type':'application/json' };
+    if (sessionToken) headers['x-session-token'] = sessionToken;
+    const res = await fetch('/api/audit', { method:'POST', headers, body:JSON.stringify({product, country, tone, competitorProduct}) });
+    const data = await res.json();
+    if (data.upgrade) {
+      if (!sessionToken) showLoginModal();
+      else showUpgradeModal();
+      return;
+    }
+    if (!data.success) throw new Error(data.error);
+    currentAudit = data.audit;
+    if (data.plan && data.plan !== 'free') updatePlanBanner(data.plan, data.auditsUsed, data.auditsLimit);
+    renderAudit(data.audit, product.name || product.url, !!competitorProduct);
+  } catch(e) { showErr('audit-error', e.message || 'Error generando la auditoría. Intentá de nuevo.'); }
+  finally { stopLoading(); document.getElementById('audit-btn').disabled = false; document.getElementById('loading').classList.remove('show'); }
 }
 
 // ── RENDER ────────────────────────────────────────────────────
-function renderAudit(a,productName,hasComp){
-  const now=new Date();
-  document.getElementById('report-date').textContent=now.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
-  document.getElementById('rp-name').textContent=productName;
-  setText('r-resumen',a.resumen_ejecutivo);
-  animScore('sc1','sn1',a.scores.conversion);animScore('sc2','sn2',a.scores.confianza);animScore('sc3','sn3',a.scores.seo);
-  setText('se1',a.scores.conversion_explicacion);setText('se2',a.scores.confianza_explicacion);setText('se3',a.scores.seo_explicacion);
-  const cc=document.getElementById('comp-card');
-  if(hasComp&&a.analisis_competidor){
+function renderAudit(a, productName, hasComp) {
+  const now = new Date();
+  document.getElementById('report-date').textContent = now.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('rp-name').textContent = productName;
+  setText('r-resumen', a.resumen_ejecutivo);
+  animScore('sc1','sn1', a.scores.conversion);
+  animScore('sc2','sn2', a.scores.confianza);
+  animScore('sc3','sn3', a.scores.seo);
+  setText('se1', a.scores.conversion_explicacion);
+  setText('se2', a.scores.confianza_explicacion);
+  setText('se3', a.scores.seo_explicacion);
+  const cc = document.getElementById('comp-card');
+  if (hasComp && a.analisis_competidor) {
     cc.style.display='block';
-    const ac=a.analisis_competidor;
-    const cv=document.getElementById('comp-ventajas');cv.innerHTML='';
+    const ac = a.analisis_competidor;
+    const cv = document.getElementById('comp-ventajas'); cv.innerHTML='';
     ac.ventajas_vs_competidor.forEach(v=>cv.insertAdjacentHTML('beforeend',`<li><span class="ci ci-g">✓</span>${v}</li>`));
-    const cd=document.getElementById('comp-desventajas');cd.innerHTML='';
+    const cd = document.getElementById('comp-desventajas'); cd.innerHTML='';
     ac.desventajas_vs_competidor.forEach(d=>cd.insertAdjacentHTML('beforeend',`<li><span class="ci ci-r">!</span>${d}</li>`));
-    const co=document.getElementById('comp-opps');co.innerHTML='';
+    const co = document.getElementById('comp-opps'); co.innerHTML='';
     ac.oportunidades.forEach(o=>co.insertAdjacentHTML('beforeend',`<li><span class="ci ci-g">→</span>${o}</li>`));
-    setText('comp-conclusion',ac.conclusion);
-  }else{cc.style.display='none';}
-  const fl=document.getElementById('r-fort');fl.innerHTML='';
+    setText('comp-conclusion', ac.conclusion);
+  } else { cc.style.display='none'; }
+  const fl = document.getElementById('r-fort'); fl.innerHTML='';
   a.fortalezas.forEach(f=>fl.insertAdjacentHTML('beforeend',`<li><span class="ci ci-g">✓</span>${f}</li>`));
-  document.getElementById('fort-ct').textContent=a.fortalezas.length;
-  const dl=document.getElementById('r-deb');dl.innerHTML='';
+  document.getElementById('fort-ct').textContent = a.fortalezas.length;
+  const dl = document.getElementById('r-deb'); dl.innerHTML='';
   a.debilidades.forEach(d=>dl.insertAdjacentHTML('beforeend',`<li><span class="ci ci-r">!</span>${d}</li>`));
-  document.getElementById('deb-ct').textContent=a.debilidades.length;
-  const ml=document.getElementById('r-mej');ml.innerHTML='';
+  document.getElementById('deb-ct').textContent = a.debilidades.length;
+  const ml = document.getElementById('r-mej'); ml.innerHTML='';
   a.mejoras_recomendadas.forEach(m=>{
-    const cls=m.impacto==='ALTO'?'imp-a':m.impacto==='MEDIO'?'imp-m':'imp-b';
+    const cls = m.impacto==='ALTO'?'imp-a':m.impacto==='MEDIO'?'imp-m':'imp-b';
     ml.insertAdjacentHTML('beforeend',`<div class="mej"><span class="mej-imp ${cls}">${m.impacto}</span><div><div class="mej-tit">${m.titulo}</div><div class="mej-desc">${m.descripcion}</div></div></div>`);
   });
-  const d=a.descripcion_optimizada;
-  setText('d-tit',d.titulo_seo);setText('d-cor',d.descripcion_corta);setText('d-lar',d.descripcion_larga);
-  const bl=document.getElementById('d-bul');bl.innerHTML='';
-  d.bullet_points.forEach(b=>{const li=document.createElement('li');li.textContent=b;bl.appendChild(li);});
-  const at=document.getElementById('ads-tabs'),ap=document.getElementById('ads-panels');
-  at.innerHTML='';ap.innerHTML='';
+  const d = a.descripcion_optimizada;
+  setText('d-tit', d.titulo_seo); setText('d-cor', d.descripcion_corta); setText('d-lar', d.descripcion_larga);
+  const bl = document.getElementById('d-bul'); bl.innerHTML='';
+  d.bullet_points.forEach(b=>{ const li=document.createElement('li'); li.textContent=b; bl.appendChild(li); });
+  const at = document.getElementById('ads-tabs'), ap = document.getElementById('ads-panels');
+  at.innerHTML=''; ap.innerHTML='';
   a.meta_ads.forEach((ad,i)=>{
     at.insertAdjacentHTML('beforeend',`<button class="ad-tab ${i===0?'active':''}" onclick="switchAdTab(${i},this)">Ad ${i+1}</button>`);
     ap.insertAdjacentHTML('beforeend',`<div class="ad-panel ${i===0?'active':''}" id="adp-${i}"><div class="ad-card"><div class="ad-ch"><span style="font-size:13px;font-weight:500">${ad.nombre}</span><span class="ad-obj">${ad.objetivo}</span></div><div class="ad-hl">${ad.headline}</div><div class="ad-f"><div class="ad-fl">Texto principal</div><div class="ad-ft" id="adt-${i}">${ad.texto_principal}</div><button class="copy-btn" style="position:static;margin-top:7px" onclick="copyEl(this,'adt-${i}')">Copiar</button></div><div class="ad-f"><div class="ad-fl">Descripción</div><div class="ad-ft">${ad.descripcion}</div></div></div></div>`);
   });
-  const ig=document.getElementById('r-ig');ig.innerHTML='';
+  const ig = document.getElementById('r-ig'); ig.innerHTML='';
   a.instagram_posts.forEach((p,i)=>{
     ig.insertAdjacentHTML('beforeend',`<div class="ig-post"><div class="ig-ph"><span class="ig-tipo">${p.tipo}</span></div><div class="ig-hook">"${p.hook}"</div><div class="ig-cap" id="igc-${i}">${(p.caption||'').replace(/\n/g,'<br>')}</div><div class="ig-exp" onclick="toggleIg(${i},this)">Ver más ↓</div></div>`);
   });
-  const fq=document.getElementById('r-faq');fq.innerHTML='';
+  const fq = document.getElementById('r-faq'); fq.innerHTML='';
   (a.preguntas_frecuentes||[]).forEach(f=>{
-    fq.insertAdjacentHTML('beforeend',`<div class="faq-item"><div class="faq-q">${f.pregunta}</div><div class="faq-a">${f.respuesta}</div></div>`);
+    fq.insertAdjacentHTML('beforeend',`<div class="faq-item"><div class="faq-q-text">${f.pregunta}</div><div class="faq-a-text">${f.respuesta}</div></div>`);
   });
-  const kw=document.getElementById('r-kw');kw.innerHTML='';
+  const kw = document.getElementById('r-kw'); kw.innerHTML='';
   (a.keywords_seo||[]).forEach(k=>kw.insertAdjacentHTML('beforeend',`<span class="kw" onclick="copyKw(this,'${k}')">${k}</span>`));
-  setText('r-precio',a.estrategia_precio);
-  const pl=document.getElementById('r-plan');pl.innerHTML='';
+  setText('r-precio', a.estrategia_precio);
+  const pl = document.getElementById('r-plan'); pl.innerHTML='';
   a.plan_accion.forEach(p=>{
     pl.insertAdjacentHTML('beforeend',`<div class="plan-item"><div class="plan-n">${p.prioridad}</div><div><div class="plan-t">${p.accion}</div><div class="plan-d">${p.impacto_esperado}</div><span class="plan-pl">${p.plazo}</span></div></div>`);
   });
@@ -729,242 +809,236 @@ function renderAudit(a,productName,hasComp){
   setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}),100);
 }
 
-// ── MODAL ─────────────────────────────────────────────────────
-function showUpgradeModal(){
-  document.getElementById('upgrade-modal').classList.add('show');
-  selectPlan('basic');
+// ── LOGIN ─────────────────────────────────────────────────────
+function showLoginModal() {
+  document.getElementById('login-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('login-email').focus(), 100);
 }
-function closeModal(){document.getElementById('upgrade-modal').classList.remove('show');}
-function selectPlan(plan){
-  selectedPlan=plan;
-  document.getElementById('pc-basic').classList.toggle('selected',plan==='basic');
-  document.getElementById('pc-pro').classList.toggle('selected',plan==='pro');
-  document.getElementById('checkout-btn').textContent=plan==='pro'?'Suscribirme al Plan Pro →':'Suscribirme al Plan Básico →';
+function closeLoginModal() {
+  document.getElementById('login-modal').classList.remove('show');
+  document.getElementById('login-sent').classList.remove('show');
+  document.getElementById('login-form').style.display='';
+  hideErr('login-error'); hideErr('verify-error');
 }
-async function goToCheckout(){
-  const email=document.getElementById('verify-email').value.trim();
-  const res=await fetch(`/api/checkout?plan=${selectedPlan}${email?'&email='+encodeURIComponent(email):''}`);
-  const data=await res.json();
+async function sendMagicLink() {
+  const email = document.getElementById('login-email').value.trim();
+  if (!email) return showErr('login-error','Ingresá tu email');
+  hideErr('login-error');
+  const btn = document.getElementById('login-send-btn');
+  btn.textContent='Enviando...'; btn.disabled=true;
+  try {
+    const res = await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    document.getElementById('login-form').style.display='none';
+    document.getElementById('login-sent').classList.add('show');
+  } catch(e) { showErr('login-error', e.message||'Error enviando el email.'); }
+  finally { btn.textContent='Enviar →'; btn.disabled=false; }
+}
+async function verifyFromLogin() {
+  const email = document.getElementById('verify-email').value.trim();
+  if (!email) return showErr('verify-error','Ingresá tu email');
+  hideErr('verify-error');
+  await doVerify(email,'verify-error');
+}
+
+// ── UPGRADE ───────────────────────────────────────────────────
+function showUpgradeModal() { document.getElementById('upgrade-modal').classList.add('show'); selectPlan('basic'); }
+function closeUpgradeModal() { document.getElementById('upgrade-modal').classList.remove('show'); hideErr('upgrade-error'); }
+function selectPlan(plan) {
+  selectedPlan = plan;
+  document.getElementById('pc-starter').classList.toggle('selected', plan==='basic');
+  document.getElementById('pc-pro').classList.toggle('selected', plan==='pro');
+  document.getElementById('checkout-btn').textContent = plan==='pro' ? 'Suscribirme al Plan Pro →' : 'Suscribirme al Plan Starter →';
+}
+async function goToCheckout() {
+  const email = userEmail || document.getElementById('upgrade-email').value.trim();
+  const res = await fetch(`/api/checkout?plan=${selectedPlan}${email?'&email='+encodeURIComponent(email):''}`);
+  const data = await res.json();
   window.open(data.url,'_blank');
 }
-async function verifySubscription(){
-  const email=document.getElementById('verify-email').value.trim();
-  if(!email)return showErr('verify-error','Ingresá tu email');
-  hideErr('verify-error');
-  const btn=event.target;const orig=btn.textContent;
-  btn.textContent='Verificando...';btn.disabled=true;
-  try{
-    const res=await fetch('/api/verify-subscription',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
-    const data=await res.json();
-    if(!data.success)throw new Error(data.error);
-    sessionToken=data.sessionToken;
-    localStorage.setItem('vendly_session',sessionToken);
-    userPlan=data.plan;userEmail=email;
-    updatePlanBanner(data.plan,0,data.auditsLimit);
-    document.getElementById('user-chip').classList.add('show');
-    document.getElementById('user-email-display').textContent=email;
-    closeModal();
-    showToast('✓ Suscripción activada. ¡Bienvenido a Vendly Pro!');
-  }catch(e){showErr('verify-error',e.message||'Error verificando. Intentá de nuevo.');}
-  finally{btn.textContent=orig;btn.disabled=false;}
+async function verifyFromUpgrade() {
+  const email = document.getElementById('upgrade-email').value.trim();
+  if (!email) return showErr('upgrade-error','Ingresá tu email');
+  hideErr('upgrade-error');
+  const success = await doVerify(email,'upgrade-error');
+  if (success) closeUpgradeModal();
+}
+async function doVerify(email, errId) {
+  const btn = event.target; const orig = btn.textContent;
+  btn.textContent='Verificando...'; btn.disabled=true;
+  try {
+    const res = await fetch('/api/verify-subscription',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    sessionToken = data.sessionToken;
+    localStorage.setItem('v_session', sessionToken);
+    userPlan = data.plan; userEmail = email;
+    closeLoginModal();
+    await checkSession();
+    showToast('✓ ¡Suscripción activada!');
+    return true;
+  } catch(e) { showErr(errId, e.message||'Error verificando.'); return false; }
+  finally { btn.textContent=orig; btn.disabled=false; }
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+async function openDashboard() {
+  if (!sessionToken) { showLoginModal(); return; }
+  document.getElementById('dashboard').classList.add('show');
+  document.getElementById('dash-email').textContent = userEmail;
+  await loadDashboard();
+}
+function closeDashboard() { document.getElementById('dashboard').classList.remove('show'); }
+
+async function loadDashboard() {
+  try {
+    const [sr, ar] = await Promise.all([
+      fetch('/api/session',{headers:{'x-session-token':sessionToken}}),
+      fetch('/api/audits',{headers:{'x-session-token':sessionToken}})
+    ]);
+    const sd = await sr.json();
+    const ad = await ar.json();
+    document.getElementById('dash-email').textContent = sd.email || userEmail;
+    document.getElementById('dash-used').textContent = sd.auditsUsed || 0;
+    const limit = sd.auditsLimit || 1;
+    const used = sd.auditsUsed || 0;
+    const pct = limit >= 999999 ? 5 : Math.min(100, Math.round((used/limit)*100));
+    document.getElementById('dash-progress').style.width = pct+'%';
+    const chip = document.getElementById('dash-plan-chip');
+    if (sd.plan==='pro') { chip.className='plan-chip pc-pro'; chip.textContent='✦ Pro'; }
+    else if (sd.plan==='basic') { chip.className='plan-chip pc-basic'; chip.textContent='Starter'; }
+    else { chip.className='plan-chip pc-free'; chip.textContent='Free'; }
+    const audits = ad.audits || [];
+    document.getElementById('dash-total').textContent = audits.length;
+    const list = document.getElementById('audit-list-dash');
+    if (audits.length === 0) {
+      list.innerHTML = `<div class="audit-empty"><div class="audit-empty-icon">📊</div><div style="font-size:14px;font-weight:500;margin-bottom:4px">Todavía no generaste ninguna auditoría</div><div style="font-size:13px;color:var(--muted)">Cerrá este panel y auditá tu primer producto</div></div>`;
+    } else {
+      list.innerHTML = audits.map(a => {
+        const date = new Date(a.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
+        const avg = Math.round((a.score_conversion+a.score_confianza+a.score_seo)/3);
+        return `<div class="audit-item" onclick="loadAuditById(${a.id})">
+          <div class="audit-scores-row">
+            <span class="asp asp-c">${a.score_conversion}</span>
+            <span class="asp asp-f">${a.score_confianza}</span>
+            <span class="asp asp-s">${a.score_seo}</span>
+          </div>
+          <div class="audit-info-dash">
+            <div class="audit-name-dash">${a.product_name||a.product_url||'Producto'}</div>
+            <div class="audit-date-dash">${date} · Promedio: ${avg}/100</div>
+          </div>
+          <div style="color:var(--muted);font-size:16px">→</div>
+        </div>`;
+      }).join('');
+    }
+  } catch(e) { document.getElementById('audit-list-dash').innerHTML='<div class="audit-empty">Error cargando historial.</div>'; }
+}
+
+async function loadAuditById(id) {
+  try {
+    const res = await fetch(`/api/audits/${id}`,{headers:{'x-session-token':sessionToken}});
+    const data = await res.json();
+    if (!data.success) return;
+    currentAudit = data.audit.audit_data;
+    closeDashboard();
+    renderAudit(data.audit.audit_data, data.audit.product_name||'Producto', false);
+    showToast('✓ Auditoría cargada');
+  } catch(e) { showToast('Error cargando la auditoría.'); }
+}
+
+function logout() {
+  sessionToken=null; localStorage.removeItem('v_session');
+  userPlan='free'; userEmail='';
+  closeDashboard();
+  updateUI(false);
+  showToast('Sesión cerrada');
 }
 
 // ── SHARE & PDF ───────────────────────────────────────────────
-async function shareReport(){
-  if(!currentAudit)return;
-  try{
-    const res=await fetch('/api/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audit:currentAudit,product:{name:document.getElementById('rp-name').textContent}})});
-    const data=await res.json();
-    if(data.success){
-      const fullUrl=window.location.origin+data.url;
+async function shareReport() {
+  if (!currentAudit) return;
+  try {
+    const res = await fetch('/api/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audit:currentAudit,product:{name:document.getElementById('rp-name').textContent}})});
+    const data = await res.json();
+    if (data.success) {
+      const fullUrl = window.location.origin+data.url;
       navigator.clipboard.writeText(fullUrl);
       document.getElementById('share-url').textContent=fullUrl;
       document.getElementById('share-link').classList.add('show');
-      showToast('✓ Link copiado al portapapeles');
+      showToast('✓ Link copiado');
     }
-  }catch(e){showToast('Error al generar el link.');}
+  } catch(e) { showToast('Error generando link.'); }
 }
 
-function exportPDF(){
-  if(!currentAudit)return;
-  const{jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const a=currentAudit;
-  const productName=document.getElementById('rp-name').textContent;
-  const date=document.getElementById('report-date').textContent;
-  const pageW=doc.internal.pageSize.getWidth();
-  const margin=20,contentW=pageW-margin*2;
-  let y=20;
-  const addPage=()=>{doc.addPage();y=20;doc.setFillColor(7,7,14);doc.rect(0,0,pageW,297,'F');};
-  const checkY=(n=20)=>{if(y+n>275)addPage();};
-  const addText=(text,x,size,color,maxW)=>{
-    doc.setFontSize(size);doc.setTextColor(...color);
-    const lines=doc.splitTextToSize(String(text||''),maxW||contentW);
+function exportPDF() {
+  if (!currentAudit) return;
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const a = currentAudit;
+  const productName = document.getElementById('rp-name').textContent;
+  const date = document.getElementById('report-date').textContent;
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 20, contentW = pageW-margin*2;
+  let y = 20;
+  const addPage = () => { doc.addPage(); y=20; doc.setFillColor(7,7,14); doc.rect(0,0,pageW,297,'F'); };
+  const checkY = (n=20) => { if (y+n>275) addPage(); };
+  const addText = (text,x,size,color,maxW) => {
+    doc.setFontSize(size); doc.setTextColor(...color);
+    const lines = doc.splitTextToSize(String(text||''), maxW||contentW);
     checkY(lines.length*(size*0.45)+3);
-    doc.text(lines,x,y);y+=lines.length*(size*0.45)+3;
+    doc.text(lines,x,y); y+=lines.length*(size*0.45)+3;
   };
-  doc.setFillColor(7,7,14);doc.rect(0,0,pageW,297,'F');
-  doc.setFillColor(124,92,252);doc.rect(margin,28,5,38,'F');
-  doc.setFontSize(30);doc.setTextColor(240,238,248);doc.setFont('helvetica','bold');
-  doc.text('Informe de',margin+11,46);doc.text('Auditoría Vendly',margin+11,58);
-  doc.setFontSize(12);doc.setFont('helvetica','normal');doc.setTextColor(139,137,160);
-  doc.text(productName,margin+11,72);doc.text(date,margin+11,80);
+  doc.setFillColor(7,7,14); doc.rect(0,0,pageW,297,'F');
+  doc.setFillColor(124,92,252); doc.rect(margin,28,5,36,'F');
+  doc.setFontSize(28); doc.setTextColor(240,238,248); doc.setFont('helvetica','bold');
+  doc.text('Informe Vendly',margin+11,46); doc.text('Auditoría de Producto',margin+11,56);
+  doc.setFontSize(11); doc.setFont('helvetica','normal'); doc.setTextColor(139,137,160);
+  doc.text(productName,margin+11,68); doc.text(date,margin+11,75);
   const scores=[{l:'Conversión',v:a.scores.conversion,x:margin},{l:'Confianza',v:a.scores.confianza,x:margin+52},{l:'SEO',v:a.scores.seo,x:margin+104}];
   scores.forEach(s=>{
-    doc.setFillColor(22,22,31);doc.roundedRect(s.x,96,44,26,3,3,'F');
-    doc.setFontSize(18);doc.setTextColor(166,136,250);doc.setFont('helvetica','bold');doc.text(String(s.v),s.x+22,109,{align:'center'});
-    doc.setFontSize(8);doc.setTextColor(139,137,160);doc.setFont('helvetica','normal');doc.text(s.l,s.x+22,116,{align:'center'});
+    doc.setFillColor(22,22,31); doc.roundedRect(s.x,92,44,24,3,3,'F');
+    doc.setFontSize(18); doc.setTextColor(166,136,250); doc.setFont('helvetica','bold');
+    doc.text(String(s.v),s.x+22,105,{align:'center'});
+    doc.setFontSize(8); doc.setTextColor(139,137,160); doc.setFont('helvetica','normal');
+    doc.text(s.l,s.x+22,111,{align:'center'});
   });
-  doc.setFontSize(9);doc.setTextColor(80,80,100);doc.text('vendly-production-e0f2.up.railway.app',margin,284);
+  doc.setFontSize(9); doc.setTextColor(80,80,100); doc.text('vendly-production-e0f2.up.railway.app',margin,282);
   addPage();
-  const sec=(title)=>{checkY(12);doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(196,181,253);doc.text(title,margin,y);y+=2;doc.setDrawColor(124,92,252);doc.setLineWidth(0.25);doc.line(margin,y,pageW-margin,y);y+=6;};
-  sec('Resumen ejecutivo');addText(a.resumen_ejecutivo,margin,10,[200,198,220]);y+=4;
-  sec('Fortalezas');a.fortalezas.forEach(f=>{checkY(7);doc.setFontSize(10);doc.setTextColor(52,211,153);doc.text('✓',margin,y);doc.setTextColor(200,198,220);const ls=doc.splitTextToSize(f,contentW-7);doc.text(ls,margin+6,y);y+=ls.length*5+2;});y+=3;
-  sec('Debilidades');a.debilidades.forEach(d=>{checkY(7);doc.setFontSize(10);doc.setTextColor(248,113,113);doc.text('!',margin,y);doc.setTextColor(200,198,220);const ls=doc.splitTextToSize(d,contentW-7);doc.text(ls,margin+6,y);y+=ls.length*5+2;});y+=3;
-  sec('Mejoras recomendadas');a.mejoras_recomendadas.forEach(m=>{checkY(12);const ic=m.impacto==='ALTO'?[248,113,113]:m.impacto==='MEDIO'?[245,200,66]:[96,165,250];doc.setFontSize(9);doc.setTextColor(...ic);doc.text(`[${m.impacto}]`,margin,y);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(240,238,248);doc.text(m.titulo,margin+18,y);doc.setFont('helvetica','normal');y+=4;addText(m.descripcion,margin+3,9,[139,137,160]);y+=1;});y+=3;
-  sec('Descripción optimizada');addText('Título SEO:',margin,9,[196,181,253]);addText(a.descripcion_optimizada.titulo_seo,margin+3,10,[240,238,248]);y+=2;addText('Descripción larga:',margin,9,[196,181,253]);addText(a.descripcion_optimizada.descripcion_larga,margin+3,10,[200,198,220]);y+=3;
-  sec('Plan de acción');a.plan_accion.forEach(p=>{checkY(12);doc.setFillColor(124,92,252);doc.circle(margin+3,y-1,3,'F');doc.setFontSize(10);doc.setTextColor(255,255,255);doc.text(String(p.prioridad),margin+3,y,{align:'center'});doc.setFont('helvetica','bold');doc.setTextColor(240,238,248);const tl=doc.splitTextToSize(p.accion,contentW-11);doc.text(tl,margin+9,y);y+=tl.length*5;doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(139,137,160);const dl=doc.splitTextToSize(p.impacto_esperado,contentW-11);doc.text(dl,margin+9,y);y+=dl.length*4.5+1;doc.setTextColor(196,181,253);doc.text(p.plazo,margin+9,y);y+=6;});
-  doc.save(`vendly-auditoria-${productName.slice(0,25).replace(/\s+/g,'-').toLowerCase()}.pdf`);
+  const sec=(title)=>{ checkY(12); doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(196,181,253); doc.text(title,margin,y); y+=2; doc.setDrawColor(124,92,252); doc.setLineWidth(0.25); doc.line(margin,y,pageW-margin,y); y+=6; };
+  sec('Resumen ejecutivo'); addText(a.resumen_ejecutivo,margin,10,[200,198,220]); y+=4;
+  sec('Fortalezas'); a.fortalezas.forEach(f=>{ checkY(7); doc.setFontSize(10); doc.setTextColor(52,211,153); doc.text('✓',margin,y); doc.setTextColor(200,198,220); const ls=doc.splitTextToSize(f,contentW-7); doc.text(ls,margin+6,y); y+=ls.length*5+2; }); y+=3;
+  sec('Debilidades'); a.debilidades.forEach(d=>{ checkY(7); doc.setFontSize(10); doc.setTextColor(248,113,113); doc.text('!',margin,y); doc.setTextColor(200,198,220); const ls=doc.splitTextToSize(d,contentW-7); doc.text(ls,margin+6,y); y+=ls.length*5+2; }); y+=3;
+  sec('Mejoras recomendadas'); a.mejoras_recomendadas.forEach(m=>{ checkY(12); const ic=m.impacto==='ALTO'?[248,113,113]:m.impacto==='MEDIO'?[245,200,66]:[96,165,250]; doc.setFontSize(9); doc.setTextColor(...ic); doc.text(`[${m.impacto}]`,margin,y); doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(240,238,248); doc.text(m.titulo,margin+18,y); doc.setFont('helvetica','normal'); y+=4; addText(m.descripcion,margin+3,9,[139,137,160]); y+=1; }); y+=3;
+  sec('Descripción optimizada'); addText('Título SEO:',margin,9,[196,181,253]); addText(a.descripcion_optimizada.titulo_seo,margin+3,10,[240,238,248]); y+=2; addText('Descripción larga:',margin,9,[196,181,253]); addText(a.descripcion_optimizada.descripcion_larga,margin+3,10,[200,198,220]); y+=3;
+  sec('Plan de acción'); a.plan_accion.forEach(p=>{ checkY(12); doc.setFillColor(124,92,252); doc.circle(margin+3,y-1,3,'F'); doc.setFontSize(10); doc.setTextColor(255,255,255); doc.text(String(p.prioridad),margin+3,y,{align:'center'}); doc.setFont('helvetica','bold'); doc.setTextColor(240,238,248); const tl=doc.splitTextToSize(p.accion,contentW-11); doc.text(tl,margin+9,y); y+=tl.length*5; doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(139,137,160); const dl=doc.splitTextToSize(p.impacto_esperado,contentW-11); doc.text(dl,margin+9,y); y+=dl.length*4.5+1; doc.setTextColor(196,181,253); doc.text(p.plazo,margin+9,y); y+=6; });
+  doc.save(`vendly-${productName.slice(0,25).replace(/\s+/g,'-').toLowerCase()}.pdf`);
   showToast('✓ PDF descargado');
 }
 
 // ── HELPERS ───────────────────────────────────────────────────
-function animScore(cId,nId,val){
-  const c=document.getElementById(cId),n=document.getElementById(nId);
-  const circ=169.6,offset=circ-(val/100)*circ;
-  setTimeout(()=>{
-    c.style.strokeDashoffset=offset;
-    let cur=0;const step=val/50;
-    const iv=setInterval(()=>{cur=Math.min(cur+step,val);n.textContent=Math.round(cur);if(cur>=val)clearInterval(iv);},20);
-  },400);
+function animScore(cId,nId,val) {
+  const c=document.getElementById(cId), n=document.getElementById(nId);
+  const circ=169.6, offset=circ-(val/100)*circ;
+  setTimeout(()=>{ c.style.strokeDashoffset=offset; let cur=0; const step=val/50; const iv=setInterval(()=>{ cur=Math.min(cur+step,val); n.textContent=Math.round(cur); if(cur>=val)clearInterval(iv); },20); },400);
 }
-function setText(id,text){const el=document.getElementById(id);if(el)el.textContent=text||'';}
-function switchAdTab(i,btn){document.querySelectorAll('.ad-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.ad-panel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById('adp-'+i).classList.add('active');}
-function toggleIg(i,btn){const c=document.getElementById('igc-'+i);c.classList.toggle('expanded');btn.textContent=c.classList.contains('expanded')?'Ver menos ↑':'Ver más ↓';}
-function copyEl(btn,id){const text=document.getElementById(id).textContent;navigator.clipboard.writeText(text).then(()=>{btn.textContent='✓ Copiado';btn.classList.add('copied');setTimeout(()=>{btn.textContent='Copiar';btn.classList.remove('copied');},2000);});}
-function copyKw(el,text){navigator.clipboard.writeText(text).then(()=>{el.classList.add('copied');setTimeout(()=>el.classList.remove('copied'),1500);});}
-function showErr(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;el.classList.add('show');}}
-function hideErr(id){const el=document.getElementById(id);if(el)el.classList.remove('show');}
+function setText(id,text){ const el=document.getElementById(id); if(el)el.textContent=text||''; }
+function switchAdTab(i,btn){ document.querySelectorAll('.ad-tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.ad-panel').forEach(p=>p.classList.remove('active')); btn.classList.add('active'); document.getElementById('adp-'+i).classList.add('active'); }
+function toggleIg(i,btn){ const c=document.getElementById('igc-'+i); c.classList.toggle('expanded'); btn.textContent=c.classList.contains('expanded')?'Ver menos ↑':'Ver más ↓'; }
+function copyEl(btn,id){ const text=document.getElementById(id).textContent; navigator.clipboard.writeText(text).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar'; btn.classList.remove('copied'); },2000); }); }
+function copyKw(el,text){ navigator.clipboard.writeText(text).then(()=>{ el.classList.add('copied'); setTimeout(()=>el.classList.remove('copied'),1500); }); }
+function showErr(id,msg){ const el=document.getElementById(id); if(el){ el.textContent=msg; el.classList.add('show'); } }
+function hideErr(id){ const el=document.getElementById(id); if(el)el.classList.remove('show'); }
 let toastTimer;
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3000);}
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),3000); }
 function resetApp(){
-  currentProduct=null;currentCompetitor=null;currentAudit=null;
+  currentProduct=null; currentCompetitor=null; currentAudit=null;
   document.getElementById('results').classList.remove('show');
-  ['product-url','manual-name','manual-desc','manual-price','manual-url','comp-url'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['product-url','manual-name','manual-desc','manual-price','manual-url','comp-url'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value=''; });
   ['url-result','comp-result','share-link'].forEach(id=>document.getElementById(id).classList.remove('show'));
   hideErr('audit-error');
   window.scrollTo({top:0,behavior:'smooth'});
 }
 </script>
-
-<!-- LOGIN MODAL -->
-<div class="modal-overlay" id="login-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeLoginModal()">✕</button>
-    <div id="login-form-section">
-      <div class="modal-title">Accedé a Vendly</div>
-      <div class="modal-sub">Ingresá tu email y te mandamos un link mágico. Sin contraseña.</div>
-      <div class="auth-input-row">
-        <input type="email" id="login-email" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')sendLogin()">
-        <button class="btn btn-sm" onclick="sendLogin()" id="login-btn" style="background:var(--accent);color:#fff;border:none">Enviar →</button>
-      </div>
-      <div class="error-msg" id="login-error"></div>
-      <div class="divider">ya tengo una suscripción</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:10px">¿Ya pagaste? Ingresá tu email para activar tu cuenta:</div>
-      <div class="auth-input-row">
-        <input type="email" id="verify-email" placeholder="email con el que pagaste">
-        <button class="btn btn-sm" onclick="verifySubscription()">Activar →</button>
-      </div>
-      <div class="error-msg" id="verify-error"></div>
-    </div>
-    <div class="auth-sent" id="login-sent">
-      <div class="auth-sent-icon">📬</div>
-      <div class="auth-sent-title">¡Link enviado!</div>
-      <div class="auth-sent-sub">Revisá tu email y hacé click en el link para ingresar. Expira en 10 minutos.</div>
-    </div>
-  </div>
-</div>
-
-<!-- UPGRADE MODAL -->
-<div class="modal-overlay" id="upgrade-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-title">Elegí tu plan</div>
-    <div class="modal-sub">Suscribite para continuar usando Vendly.</div>
-    <div class="plans-grid">
-      <div class="plan-card" id="pc-basic" onclick="selectPlan('basic')">
-        <div class="plan-name">Starter</div>
-        <div class="plan-price">USD 9 <span>/mes</span></div>
-        <ul class="plan-features">
-          <li>30 auditorías por mes</li>
-          <li>Historial completo</li>
-          <li>PDF sin marca de agua</li>
-          <li>Comparador competidor</li>
-        </ul>
-      </div>
-      <div class="plan-card popular" id="pc-pro" onclick="selectPlan('pro')">
-        <div class="popular-badge">✦ MÁS POPULAR</div>
-        <div class="plan-name">Pro</div>
-        <div class="plan-price">USD 19 <span>/mes</span></div>
-        <ul class="plan-features">
-          <li>Auditorías ilimitadas</li>
-          <li>Todo lo de Starter</li>
-          <li>Benchmarks industria</li>
-          <li>Score histórico</li>
-        </ul>
-      </div>
-    </div>
-    <button class="btn btn-primary" id="checkout-btn" onclick="goToCheckout()">Suscribirme →</button>
-    <div class="divider">ya pagué</div>
-    <div class="auth-input-row">
-      <input type="email" id="upgrade-verify-email" placeholder="email con el que pagaste">
-      <button class="btn btn-sm" onclick="verifyFromUpgrade()">Activar →</button>
-    </div>
-    <div class="error-msg" id="upgrade-verify-error"></div>
-  </div>
-</div>
-
-<!-- DASHBOARD -->
-<div class="dashboard" id="dashboard">
-  <div class="dash-nav">
-    <div class="dash-logo">Vend<span>ly</span></div>
-    <div class="dash-actions">
-      <button class="btn btn-sm" onclick="closeDashboard()">← Nueva auditoría</button>
-      <button class="btn btn-sm" onclick="logout()">Salir</button>
-    </div>
-  </div>
-  <div class="dash-wrap">
-    <div class="dash-header">
-      <div class="dash-greeting">Bienvenido 👋</div>
-      <div class="dash-email" id="dash-email"></div>
-    </div>
-    <div class="dash-stats">
-      <div class="dash-stat">
-        <div class="dash-stat-val" id="dash-total">0</div>
-        <div class="dash-stat-label">Auditorías totales</div>
-      </div>
-      <div class="dash-stat">
-        <div class="dash-stat-val" id="dash-used" style="color:var(--accent2)">0</div>
-        <div class="dash-stat-label">Usadas este mes</div>
-        <div class="progress-bar"><div class="progress-fill" id="dash-progress" style="width:0%"></div></div>
-      </div>
-      <div class="dash-stat">
-        <div style="margin-bottom:8px"><span class="plan-badge pb-free" id="dash-plan-badge">Free</span></div>
-        <div class="dash-stat-label">Plan activo</div>
-        <button class="btn btn-sm" style="margin-top:8px;font-size:11px" onclick="closeDashboard();showUpgradeModal()">Mejorar plan →</button>
-      </div>
-    </div>
-    <div class="dash-section-title">Historial de auditorías</div>
-    <div class="audit-list" id="audit-list">
-      <div class="audit-empty">
-        <div class="audit-empty-icon">📊</div>
-        <div>Cargando auditorías...</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
 </body>
 </html>
