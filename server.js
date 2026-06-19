@@ -15,7 +15,7 @@ const app = express();
 app.use('/api/webhook', express.raw({ type: 'application/json' }));
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
-app.use(express.static('public', { index: false }));
+app.use(express.static('public'));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -185,13 +185,10 @@ async function sendMagicLink(email, token) {
 }
 
 // ── ROUTES ────────────────────────────────────────────────────
-// Rutas específicas ANTES del static
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/app/*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/informe/:token', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-
-app.use(express.static('public'));
 
 // Auth
 app.post('/api/auth/login', async (req, res) => {
@@ -200,7 +197,16 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     dbRun('DELETE FROM magic_tokens WHERE expires_at < datetime("now")');
     const existing = dbGet('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
-    if (!existing) dbRun('INSERT INTO users (email) VALUES (?)', [email.toLowerCase()]);
+    if (!existing) {
+      // Rate limit: max 3 cuentas nuevas por IP
+      const regIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const ipCount = dbGet('SELECT count FROM ip_usage WHERE ip = ?', [regIp]);
+      if (ipCount && ipCount.count >= 3) {
+        return res.status(429).json({ error: 'Límite de registros por dispositivo alcanzado.' });
+      }
+      dbRun('INSERT INTO users (email) VALUES (?)', [email.toLowerCase()]);
+      dbRun('INSERT INTO ip_usage (ip, count) VALUES (?, 1) ON CONFLICT(ip) DO UPDATE SET count = count + 1', [regIp]);
+    }
     const token = crypto.randomBytes(32).toString('hex');
     const exp = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     dbRun('INSERT INTO magic_tokens (email, token, expires_at) VALUES (?, ?, ?)', [email.toLowerCase(), token, exp]);
@@ -256,14 +262,11 @@ app.post('/api/audit', optAuth, async (req, res) => {
       res.json({ success: true, audit: a, plan: u.plan, auditsUsed: updated.audits_used, auditsLimit: updated.audits_limit });
     } catch (e) { console.error(e); res.status(500).json({ error: 'Error generando auditoría.' }); }
   } else {
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const usage = dbGet('SELECT count FROM ip_usage WHERE ip = ?', [ip]);
-    if (usage && usage.count >= 1) return res.status(403).json({ error: 'Agotaste tu auditoría gratuita. Creá una cuenta para continuar.', upgrade: true, remaining: 0 });
-    try {
-      const a = await generateAudit(product, country || 'general', tone || 'profesional', competitorProduct || null);
-      dbRun('INSERT INTO ip_usage (ip, count) VALUES (?, 1) ON CONFLICT(ip) DO UPDATE SET count = count + 1', [ip]);
-      res.json({ success: true, audit: a, remaining: 0, plan: 'free' });
-    } catch (e) { res.status(500).json({ error: 'Error generando auditoría.' }); }
+    // Sin cuenta — pedir que se registren
+    return res.status(403).json({
+      error: 'Necesitás crear una cuenta gratuita para usar Vendly. Es rápido y sin tarjeta.',
+      requireAuth: true
+    });
   }
 });
 
