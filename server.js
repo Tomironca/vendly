@@ -15,7 +15,7 @@ const app = express();
 app.use('/api/webhook', express.raw({ type: 'application/json' }));
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
-app.use(express.static('public'));
+app.use(express.static('public', { index: false }));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const resend = new Resend(process.env.RESEND_API_KEY);
