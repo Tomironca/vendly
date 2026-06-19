@@ -50,6 +50,8 @@ async function initDb() {
       audits_limit INTEGER DEFAULT 1,
       subscription_id TEXT,
       stripe_customer_id TEXT,
+      audits_reset_at TEXT,
+      welcomed INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     );
@@ -76,9 +78,17 @@ async function initDb() {
       ip TEXT PRIMARY KEY,
       count INTEGER DEFAULT 0
     );
+    CREATE TABLE IF NOT EXISTS shared_reports (
+      token TEXT PRIMARY KEY,
+      audit_data TEXT NOT NULL,
+      product_name TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
-  // Migration: add stripe_customer_id if missing (existing DBs)
+  // Migrations for existing DBs
   try { db.run('ALTER TABLE users ADD COLUMN stripe_customer_id TEXT'); } catch(e) {}
+  try { db.run('ALTER TABLE users ADD COLUMN audits_reset_at TEXT'); } catch(e) {}
+  try { db.run('ALTER TABLE users ADD COLUMN welcomed INTEGER DEFAULT 0'); } catch(e) {}
   saveDb();
 }
 
@@ -153,21 +163,96 @@ async function scrape(url) {
 
 // ── AUDIT ─────────────────────────────────────────────────────
 async function generateAudit(product, country, tone, comp) {
-  const cm = { argentina: 'Argentina (voseo)', mexico: 'México', colombia: 'Colombia', espana: 'España', general: 'Latinoamérica' };
-  const tm = { profesional: 'profesional y confiable', casual: 'casual y cercano', divertido: 'divertido y energético', urgente: 'urgente y persuasivo' };
-  const cs = comp ? `COMPETIDOR: ${comp.name}, ${comp.description}, ${comp.price}` : '';
-  const cj = comp ? `"analisis_competidor":{"ventajas_vs_competidor":["v1","v2","v3"],"desventajas_vs_competidor":["d1","d2"],"oportunidades":["o1","o2","o3"],"conclusion":"2-3 oraciones"},` : '"analisis_competidor":null,';
+  const countryCtx = {
+    argentina: {
+      name: 'Argentina',
+      buyerInsights: 'Los compradores argentinos buscan: precio en cuotas sin interés, envío gratis como factor decisivo, logo de MercadoPago/Visa visible, WhatsApp de atención al cliente, descuento por transferencia bancaria. Desconfían de tiendas sin reseñas ni información de contacto. El voseo genera cercanía y confianza.',
+      copyNote: 'Usá voseo (vos, podés, tenés). Tono directo. Frases cortas. Mencioná cuotas y envío gratis cuando corresponda.'
+    },
+    mexico: {
+      name: 'México',
+      buyerInsights: 'Los compradores mexicanos valoran: envío a todo el país, pago en OXXO o SPEI, garantía de devolución clara, precio en mensualidades. Muy sensibles al precio, buscan valor por su dinero. Las reseñas en español son clave para la decisión de compra.',
+      copyNote: 'Tuteo amigable. Incluir urgencia real. Mencionar opciones de pago accesibles y cobertura de envío nacional.'
+    },
+    colombia: {
+      name: 'Colombia',
+      buyerInsights: 'Los compradores colombianos valoran: contraentrega disponible, envío gratis, precio competitivo. Alta desconfianza al pago online. Prefieren opciones de pago conocidas y marcas que transmitan seguridad y respaldo.',
+      copyNote: 'Tuteo profesional. Enfatizar seguridad, garantías y facilidad de devolución. Mencionar contraentrega si aplica.'
+    },
+    espana: {
+      name: 'España',
+      buyerInsights: 'Los compradores españoles valoran: envío en 24-48h, política de devolución de 14 días (derecho legal), precio con IVA incluido, atención al cliente accesible, reseñas verificadas.',
+      copyNote: 'Tuteo o usted según el segmento. Tono profesional. Mencionar envío rápido, IVA incluido y cumplimiento normativo.'
+    },
+    general: {
+      name: 'Latinoamérica',
+      buyerInsights: 'Los compradores latinoamericanos valoran: precio competitivo, envío confiable, medios de pago locales, atención en español, políticas de devolución claras, prueba social visible.',
+      copyNote: 'Español neutro sin regionalismos. Tono cercano y profesional. Enfatizar confianza y conveniencia.'
+    }
+  };
 
-  const prompt = `Sos consultor senior e-commerce para ${cm[country] || 'Latinoamérica'}.
-PRODUCTO: ${product.name}, ${product.description}, ${product.price}, ${product.url}
-TEXTO: ${(product.bodyText || '').slice(0, 800)}
-${cs}
-TONO: ${tm[tone] || 'profesional'}
-Solo JSON puro sin markdown:
-{"resumen_ejecutivo":"3-4 oraciones","scores":{"conversion":72,"confianza":65,"seo":58,"conversion_explicacion":"2 oraciones","confianza_explicacion":"2 oraciones","seo_explicacion":"2 oraciones"},${cj}"fortalezas":["f1","f2","f3","f4"],"debilidades":["d1","d2","d3","d4"],"mejoras_recomendadas":[{"titulo":"titulo","descripcion":"descripcion","impacto":"ALTO"},{"titulo":"titulo","descripcion":"descripcion","impacto":"ALTO"},{"titulo":"titulo","descripcion":"descripcion","impacto":"MEDIO"},{"titulo":"titulo","descripcion":"descripcion","impacto":"MEDIO"},{"titulo":"titulo","descripcion":"descripcion","impacto":"BAJO"}],"descripcion_optimizada":{"titulo_seo":"60-80 chars","descripcion_corta":"160 chars max","descripcion_larga":"300-400 palabras completas","bullet_points":["b1","b2","b3","b4","b5"]},"meta_ads":[{"nombre":"Ad 1 Beneficio","headline":"max 40 chars","texto_principal":"150-200 palabras","descripcion":"max 90 chars","objetivo":"Conversión"},{"nombre":"Ad 2 Problema","headline":"titular","texto_principal":"texto","descripcion":"desc","objetivo":"Conversión"},{"nombre":"Ad 3 Social","headline":"titular","texto_principal":"texto","descripcion":"desc","objetivo":"Reconocimiento"},{"nombre":"Ad 4 Urgencia","headline":"titular","texto_principal":"texto","descripcion":"desc","objetivo":"Conversión"},{"nombre":"Ad 5 Retargeting","headline":"titular","texto_principal":"texto","descripcion":"desc","objetivo":"Retargeting"}],"instagram_posts":[{"tipo":"Post educativo","caption":"150-200 palabras con hashtags","hook":"primera linea gancho"},{"tipo":"Post producto","caption":"caption completo","hook":"gancho"},{"tipo":"Historia exito","caption":"caption completo","hook":"gancho"}],"plan_accion":[{"prioridad":1,"plazo":"Esta semana","accion":"accion concreta","impacto_esperado":"resultado"},{"prioridad":2,"plazo":"Esta semana","accion":"accion","impacto_esperado":"resultado"},{"prioridad":3,"plazo":"Proximas 2 semanas","accion":"accion","impacto_esperado":"resultado"},{"prioridad":4,"plazo":"Proximas 2 semanas","accion":"accion","impacto_esperado":"resultado"},{"prioridad":5,"plazo":"Proximo mes","accion":"accion","impacto_esperado":"resultado"}],"preguntas_frecuentes":[{"pregunta":"pregunta 1","respuesta":"respuesta 1"},{"pregunta":"pregunta 2","respuesta":"respuesta 2"},{"pregunta":"pregunta 3","respuesta":"respuesta 3"},{"pregunta":"pregunta 4","respuesta":"respuesta 4"}],"estrategia_precio":"2-3 oraciones sobre precio","keywords_seo":["k1","k2","k3","k4","k5","k6","k7","k8"]}`;
+  const toneMap = {
+    profesional: 'profesional, confiable y experto — como una marca consolidada',
+    casual: 'casual, cercano y amigable — como hablarle a un amigo de confianza',
+    divertido: 'divertido, energético y con personalidad — marca joven y moderna',
+    urgente: 'urgente y persuasivo — cada palabra impulsa a la acción inmediata'
+  };
 
-  const r = await openai.chat.completions.create({ model: 'gpt-4o', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 5000 });
-  return JSON.parse(r.choices[0].message.content.trim().replace(/```json|```/g, '').trim());
+  const ctx = countryCtx[country] || countryCtx.general;
+  const toneDesc = toneMap[tone] || toneMap.profesional;
+
+  const compBlock = comp ? `
+COMPETIDOR A COMPARAR:
+- Nombre: ${comp.name || 'Sin nombre'}
+- Descripción: ${comp.description || 'Sin descripción'}
+- Precio: ${comp.price || 'No especificado'}
+` : '';
+
+  const compJson = comp
+    ? `"analisis_competidor":{"ventajas_vs_competidor":["ventaja concreta 1","ventaja concreta 2","ventaja concreta 3"],"desventajas_vs_competidor":["desventaja concreta 1","desventaja concreta 2"],"oportunidades":["oportunidad de diferenciación 1","oportunidad 2","oportunidad 3"],"conclusion":"2-3 oraciones sobre cómo posicionarse estratégicamente frente al competidor"},`
+    : `"analisis_competidor":null,`;
+
+  const prompt = `Sos un consultor senior de e-commerce con 10 años de experiencia en ${ctx.name}, especializado en optimización de conversión. Has auditado más de 500 tiendas y sabés exactamente qué hace que los compradores de la región compren o abandonen.
+
+PRODUCTO A AUDITAR:
+- Nombre: ${product.name || 'Sin nombre detectado'}
+- Descripción actual: ${product.description || 'Sin descripción'}
+- Precio: ${product.price || 'No especificado'}
+- URL: ${product.url || 'No disponible'}
+- Contenido de la página: ${(product.bodyText || '').slice(0, 1500)}
+${compBlock}
+MERCADO: ${ctx.name}
+COMPORTAMIENTO DEL COMPRADOR: ${ctx.buyerInsights}
+TONO DE COMUNICACIÓN: ${toneDesc}
+NOTA DE REDACCIÓN: ${ctx.copyNote}
+
+CRITERIOS DE SCORING (sé específico y realista, no inflés los números):
+- Conversión 90-100: beneficio principal clarísimo, urgencia real, prueba social visible, precio contextualizado, CTA múltiple, garantía explícita
+- Conversión 70-89: tiene varios elementos pero falta alguno clave
+- Conversión 50-69: descripción básica, falta prueba social o urgencia
+- Conversión 0-49: descripción pobre, sin beneficios claros, sin elementos de conversión
+
+- Confianza 90-100: reseñas visibles, devolución clara, medios de pago reconocibles, contacto visible, imágenes profesionales múltiples
+- Confianza 70-89: varios elementos presentes pero faltan algunos
+- Confianza 50-69: pocos elementos de confianza
+- Confianza 0-49: sin reseñas, sin política de devolución, sin contacto
+
+- SEO 90-100: keyword principal en título, URL optimizada, meta descripción con keyword, estructura H1/H2, keywords secundarias en descripción
+- SEO 70-89: bien optimizado pero incompleto
+- SEO 50-69: optimización básica
+- SEO 0-49: sin optimización real
+
+Respondé SOLO con JSON puro sin markdown ni texto adicional:
+{"resumen_ejecutivo":"3-4 oraciones específicas sobre ESTE producto: su mayor fortaleza, su mayor problema de conversión y la oportunidad más importante para vender más en ${ctx.name}.","scores":{"conversion":<número real 0-100>,"confianza":<número real 0-100>,"seo":<número real 0-100>,"conversion_explicacion":"2 oraciones concretas sobre qué sube y qué baja el score de conversión de ESTE producto específico","confianza_explicacion":"2 oraciones específicas sobre qué elementos de confianza tiene y cuáles le faltan","seo_explicacion":"2 oraciones sobre el estado real del SEO con keywords detectadas o ausentes"},${compJson}"fortalezas":["fortaleza concreta y específica de ESTE producto 1","fortaleza 2","fortaleza 3","fortaleza 4"],"debilidades":["debilidad específica con impacto directo en ventas 1","debilidad 2","debilidad 3","debilidad 4"],"mejoras_recomendadas":[{"titulo":"acción concreta y accionable","descripcion":"cómo implementarlo exactamente, paso a paso, en el contexto de ${ctx.name}","impacto":"ALTO"},{"titulo":"segunda mejora ALTO impacto","descripcion":"instrucciones específicas de implementación","impacto":"ALTO"},{"titulo":"mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO"},{"titulo":"segunda mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO"},{"titulo":"mejora BAJO impacto pero rápida","descripcion":"instrucciones específicas","impacto":"BAJO"}],"descripcion_optimizada":{"titulo_seo":"título entre 60-80 caracteres con keyword principal pensada para compradores de ${ctx.name}","descripcion_corta":"máximo 160 caracteres con keyword principal y beneficio clave más importante","descripcion_larga":"ESCRIBÍ 300-400 palabras COMPLETAS en tono ${toneDesc}. Estructura: gancho que enganche en la primera línea + problema que resuelve + características principales + beneficios concretos para el comprador + prueba social implícita + llamado a la acción. NO uses placeholders, redactá el texto real y completo.","bullet_points":["beneficio concreto 1 con resultado específico y medible","beneficio 2 que responde a una objeción común","beneficio 3 diferenciador vs competencia","beneficio 4 de conveniencia o facilidad","beneficio 5 de garantía o confianza"]},"meta_ads":[{"nombre":"Ad 1 — Beneficio Principal","headline":"máx 40 chars, gancho directo al beneficio más fuerte","texto_principal":"ESCRIBÍ 150-200 palabras COMPLETAS. Hook impactante en las primeras 2 líneas que detenga el scroll + problema que resuelve + solución (el producto) + 3 beneficios concretos + CTA claro. Texto real, no placeholder.","descripcion":"máx 90 chars complementando el headline con una razón más para hacer clic","objetivo":"Conversión"},{"nombre":"Ad 2 — Problema/Dolor","headline":"headline que toca el dolor o frustración del cliente potencial","texto_principal":"150-200 palabras reales. Empieza por el dolor, agítalo, presenta el producto como solución, cierra con CTA.","descripcion":"descripción que refuerza la solución al problema","objetivo":"Conversión"},{"nombre":"Ad 3 — Prueba Social","headline":"headline con número, resultado o validación social","texto_principal":"150-200 palabras reales con testimonios hipotéticos realistas o resultados esperados. Específico y creíble.","descripcion":"descripción que refuerza la prueba social","objetivo":"Reconocimiento"},{"nombre":"Ad 4 — Urgencia/Escasez","headline":"headline con urgencia genuina y creíble","texto_principal":"150-200 palabras reales. Urgencia real (stock, tiempo, precio). Beneficio claro. CTA con deadline.","descripcion":"descripción con la limitación o deadline","objetivo":"Conversión"},{"nombre":"Ad 5 — Retargeting","headline":"headline para quien ya vio el producto pero no compró","texto_principal":"150-200 palabras reales. Superar las 2-3 objeciones más comunes. Ofrecer garantía o facilidad. CTA directo.","descripcion":"descripción con garantía o facilidad de compra","objetivo":"Retargeting"}],"instagram_posts":[{"tipo":"Post educativo","hook":"primera línea que detiene el scroll y genera curiosidad — sin emojis vacíos","caption":"ESCRIBÍ 150-200 palabras completas en ${toneDesc}. Empieza con el hook. Da valor educativo relacionado al producto/problema que resuelve. Cierra con CTA a la bio o link. Incluí 8-12 hashtags relevantes para ${ctx.name} al final."},{"tipo":"Post de producto","hook":"hook enfocado en el resultado o transformación que da el producto","caption":"150-200 palabras completas. Muestra el producto en una situación de uso real. Historia corta o escenario. CTA. Hashtags para ${ctx.name}."},{"tipo":"Historia de éxito","hook":"hook con resultado concreto, número o transformación visible","caption":"150-200 palabras completas. Historia antes/después o resultado esperado con el producto. Específico y creíble. CTA. Hashtags."}],"preguntas_frecuentes":[{"pregunta":"la pregunta más común antes de comprar ESTE producto específico","respuesta":"respuesta completa que elimina la duda y empuja sutilmente a la compra"},{"pregunta":"pregunta sobre envío, devolución o garantía — la más relevante para ${ctx.name}","respuesta":"respuesta clara, tranquilizadora y específica"},{"pregunta":"pregunta técnica sobre características, compatibilidad o uso correcto","respuesta":"respuesta técnica útil que demuestra expertise"},{"pregunta":"pregunta sobre precio, cuotas o forma de pago relevante para ${ctx.name}","respuesta":"respuesta que justifica el precio y facilita la decisión de compra"}],"estrategia_precio":"2-3 oraciones muy concretas: si el precio está bien posicionado para ${ctx.name}, cómo comunicarlo mejor (cuotas, precio de referencia, anclaje), y qué cambio de precio o comunicación del precio tendría mayor impacto en conversión.","keywords_seo":["keyword principal con mayor volumen de búsqueda","keyword secundaria 1","keyword secundaria 2","keyword long-tail con intención de compra","keyword long-tail 2 específica del producto","keyword regional o local para ${ctx.name}","keyword de categoría amplia","keyword de problema que resuelve el producto"]}`;
+
+  const r = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+    max_tokens: 6000
+  });
+  const content = r.choices[0].message.content.trim().replace(/```json[\s\S]*?```|```/g, '').trim();
+  return JSON.parse(content);
 }
 
 // ── EMAIL ─────────────────────────────────────────────────────
@@ -183,6 +268,34 @@ async function sendMagicLink(email, token) {
       <p style="color:#8B89A0;margin-bottom:24px;line-height:1.6;">Hacé click para ingresar. Expira en 10 minutos.</p>
       <a href="${link}" style="display:inline-block;background:#7C5CFC;color:#fff;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:500;">Ingresar a Vendly →</a>
       <p style="color:#555;font-size:11px;margin-top:20px;">O copiá: ${link}</p>
+    </div>`
+  });
+}
+
+async function sendWelcomeEmail(email) {
+  const appUrl = APP_URL;
+  await resend.emails.send({
+    from: 'Vendly <onboarding@resend.dev>',
+    to: email,
+    subject: '¡Bienvenido a Vendly! Así sacás el máximo provecho 🚀',
+    html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#07070E;color:#F0EEF8;border-radius:16px;">
+      <div style="font-size:22px;font-weight:800;margin-bottom:20px;">Vend<span style="color:#A688FA">ly</span></div>
+      <h2 style="font-size:20px;margin-bottom:8px;color:#F0EEF8;">¡Tu cuenta está lista! 🎉</h2>
+      <p style="color:#8B89A0;margin-bottom:24px;line-height:1.6;">Estas son las 3 cosas que más resultados dan con Vendly:</p>
+      <div style="background:#0F0F1A;border-radius:12px;padding:16px;margin-bottom:12px;border-left:3px solid #7C5CFC">
+        <div style="font-weight:600;margin-bottom:4px;">1. Auditá tu producto más importante primero</div>
+        <div style="font-size:13px;color:#8B89A0;">Pegá la URL del producto que más vendés o del que querés potenciar. En 30 segundos tenés el análisis completo.</div>
+      </div>
+      <div style="background:#0F0F1A;border-radius:12px;padding:16px;margin-bottom:12px;border-left:3px solid #34D399">
+        <div style="font-weight:600;margin-bottom:4px;">2. Implementá las mejoras de impacto ALTO primero</div>
+        <div style="font-size:13px;color:#8B89A0;">El informe tiene un plan de acción priorizado. Empezá por las 2 mejoras marcadas como ALTO — son las que más mueven el número.</div>
+      </div>
+      <div style="background:#0F0F1A;border-radius:12px;padding:16px;margin-bottom:24px;border-left:3px solid #F5C842">
+        <div style="font-weight:600;margin-bottom:4px;">3. Copiá los anuncios de Meta Ads directo</div>
+        <div style="font-size:13px;color:#8B89A0;">Los 5 copies de Meta Ads están listos para usar. Probá el Ad 1 (Beneficio) y el Ad 4 (Urgencia) — suelen ser los de mayor conversión.</div>
+      </div>
+      <a href="${appUrl}/app" style="display:inline-block;background:#7C5CFC;color:#fff;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:500;margin-bottom:20px;">Ir a Vendly →</a>
+      <p style="color:#555;font-size:12px;margin-top:8px;">Si tenés alguna pregunta, respondé este email.</p>
     </div>`
   });
 }
@@ -229,13 +342,17 @@ app.get('/api/auth/verify', (req, res) => {
   dbRun('UPDATE magic_tokens SET used = 1 WHERE token = ?', [token]);
   const user = dbGet('SELECT * FROM users WHERE email = ?', [rec.email]);
   if (!user) return res.redirect('/app?error=notfound');
+  if (!user.welcomed) {
+    sendWelcomeEmail(user.email).catch(e => console.error('Welcome email error:', e.message));
+    dbRun('UPDATE users SET welcomed = 1 WHERE id = ?', [user.id]);
+  }
   const session = makeJWT(user.id, user.email, user.plan);
   res.redirect(`/app?session=${session}`);
 });
 
 app.get('/api/session', optAuth, (req, res) => {
   if (!req.user) return res.json({ authenticated: false });
-  res.json({ authenticated: true, email: req.user.email, plan: req.user.plan, status: req.user.status, auditsUsed: req.user.audits_used, auditsLimit: req.user.audits_limit });
+  res.json({ authenticated: true, email: req.user.email, plan: req.user.plan, status: req.user.status, auditsUsed: req.user.audits_used, auditsLimit: req.user.audits_limit, auditsResetAt: req.user.audits_reset_at });
 });
 
 // Scrape
@@ -252,7 +369,15 @@ app.post('/api/audit', optAuth, async (req, res) => {
   if (!product || !product.name) return res.status(400).json({ error: 'Datos requeridos' });
 
   if (req.user) {
-    const u = req.user;
+    let u = req.user;
+    // Reset mensual para plan basic
+    if (u.plan === 'basic' && u.audits_reset_at) {
+      const msDiff = Date.now() - new Date(u.audits_reset_at).getTime();
+      if (msDiff >= 30 * 24 * 60 * 60 * 1000) {
+        dbRun('UPDATE users SET audits_used = 0, audits_reset_at = datetime("now"), updated_at = datetime("now") WHERE id = ?', [u.id]);
+        u = dbGet('SELECT * FROM users WHERE id = ?', [u.id]);
+      }
+    }
     if (u.status !== 'active') return res.status(403).json({ error: 'Suscripción inactiva', upgrade: true });
     if (u.plan !== 'pro' && u.plan !== 'agency' && u.audits_used >= u.audits_limit)
       return res.status(403).json({ error: 'Límite alcanzado', upgrade: true });
@@ -362,7 +487,7 @@ app.post('/api/webhook', async (req, res) => {
         const limit = plan === 'pro' ? 999999 : 30;
         const existing = dbGet('SELECT id FROM users WHERE email = ?', [email]);
         if (!existing) dbRun('INSERT INTO users (email) VALUES (?)', [email]);
-        dbRun('UPDATE users SET plan=?, status=?, audits_limit=?, subscription_id=?, stripe_customer_id=?, updated_at=datetime("now") WHERE email=?',
+        dbRun('UPDATE users SET plan=?, status=?, audits_limit=?, subscription_id=?, stripe_customer_id=?, audits_reset_at=datetime("now"), updated_at=datetime("now") WHERE email=?',
           [plan, 'active', limit, subscriptionId, customerId, email]);
         console.log(`Activated ${plan} for ${email}`);
       }
@@ -388,20 +513,20 @@ app.post('/api/webhook', async (req, res) => {
 });
 
 // Share
-const shared = new Map();
 app.post('/api/share', (req, res) => {
   const { audit, product } = req.body;
   if (!audit) return res.status(400).json({ error: 'Datos requeridos' });
   const token = crypto.randomBytes(16).toString('hex');
-  shared.set(token, { audit, product, createdAt: new Date() });
-  for (const [k, v] of shared) { if (Date.now() - new Date(v.createdAt) > 7 * 24 * 60 * 60 * 1000) shared.delete(k); }
+  dbRun('INSERT INTO shared_reports (token, audit_data, product_name) VALUES (?, ?, ?)',
+    [token, JSON.stringify(audit), product?.name || '']);
+  dbRun('DELETE FROM shared_reports WHERE created_at < datetime("now", "-30 days")');
   res.json({ success: true, token, url: `/informe/${token}` });
 });
 
 app.get('/api/report/:token', (req, res) => {
-  const r = shared.get(req.params.token);
-  if (!r) return res.status(404).json({ error: 'No encontrado' });
-  res.json({ success: true, ...r });
+  const r = dbGet('SELECT * FROM shared_reports WHERE token = ?', [req.params.token]);
+  if (!r) return res.status(404).json({ error: 'No encontrado o expirado' });
+  res.json({ success: true, audit: JSON.parse(r.audit_data), product: { name: r.product_name } });
 });
 
 app.get('/api/stats', (req, res) => {
