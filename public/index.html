@@ -386,7 +386,8 @@ footer span{color:var(--accent2)}
       <div class="dash-stat">
         <div class="dash-stat-label" style="margin-bottom:6px">Plan activo</div>
         <div id="dash-plan-chip" class="plan-chip pc-free">Free</div>
-        <button class="btn-sm" style="margin-top:10px;font-size:11px;width:100%" onclick="closeDashboard();showUpgradeModal()">Mejorar plan →</button>
+        <button class="btn-sm" id="dash-upgrade-btn" style="margin-top:10px;font-size:11px;width:100%" onclick="closeDashboard();showUpgradeModal()">Mejorar plan →</button>
+        <button class="btn-sm" id="dash-portal-btn" style="margin-top:6px;font-size:11px;width:100%;display:none" onclick="openPortal()">Gestionar suscripción →</button>
       </div>
     </div>
     <div class="dash-section-title">Historial de auditorías</div>
@@ -594,6 +595,16 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (urlError) {
     const msgs = { expired:'El link expiró. Pedí uno nuevo.', invalid:'Link inválido.', notfound:'Usuario no encontrado.' };
     showToast('⚠ ' + (msgs[urlError] || 'Error al iniciar sesión'));
+  }
+  if (p.get('subscribed') === 'true') {
+    window.history.replaceState({}, '', '/app');
+    await checkSession();
+    showToast('🎉 ¡Suscripción activada! Ya podés usar Vendly.');
+    return;
+  }
+  if (p.get('cancelled') === 'true') {
+    window.history.replaceState({}, '', '/app');
+    showToast('Pago cancelado. Podés intentar de nuevo cuando quieras.');
   }
   await checkSession();
   // Abrir modal de login si viene desde la landing con #login
@@ -863,9 +874,22 @@ function selectPlan(plan) {
 }
 async function goToCheckout() {
   const email = userEmail || document.getElementById('upgrade-email').value.trim();
-  const res = await fetch(`/api/checkout?plan=${selectedPlan}${email?'&email='+encodeURIComponent(email):''}`);
-  const data = await res.json();
-  window.open(data.url,'_blank');
+  const btn = document.getElementById('checkout-btn');
+  btn.textContent = 'Redirigiendo...'; btn.disabled = true;
+  try {
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan: selectedPlan, email })
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+    else throw new Error(data.error || 'Error');
+  } catch(e) {
+    showToast('Error iniciando pago. Intentá de nuevo.');
+    btn.textContent = selectedPlan === 'pro' ? 'Suscribirme al Plan Pro →' : 'Suscribirme al Plan Starter →';
+    btn.disabled = false;
+  }
 }
 async function verifyFromUpgrade() {
   const email = document.getElementById('upgrade-email').value.trim();
@@ -919,6 +943,9 @@ async function loadDashboard() {
     if (sd.plan==='pro') { chip.className='plan-chip pc-pro'; chip.textContent='✦ Pro'; }
     else if (sd.plan==='basic') { chip.className='plan-chip pc-basic'; chip.textContent='Starter'; }
     else { chip.className='plan-chip pc-free'; chip.textContent='Free'; }
+    const hasPaid = sd.plan==='pro' || sd.plan==='basic';
+    document.getElementById('dash-upgrade-btn').style.display = hasPaid ? 'none' : '';
+    document.getElementById('dash-portal-btn').style.display = hasPaid ? '' : 'none';
     const audits = ad.audits || [];
     document.getElementById('dash-total').textContent = audits.length;
     const list = document.getElementById('audit-list-dash');
@@ -955,6 +982,15 @@ async function loadAuditById(id) {
     renderAudit(data.audit.audit_data, data.audit.product_name||'Producto', false);
     showToast('✓ Auditoría cargada');
   } catch(e) { showToast('Error cargando la auditoría.'); }
+}
+
+async function openPortal() {
+  try {
+    const res = await fetch('/api/portal', { headers: { 'x-session-token': sessionToken } });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+    else showToast(data.error || 'Error abriendo portal.');
+  } catch(e) { showToast('Error abriendo portal.'); }
 }
 
 function logout() {
