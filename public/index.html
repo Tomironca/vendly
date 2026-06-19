@@ -399,6 +399,7 @@ footer span{color:var(--accent2)}
 <nav>
   <a href="/" class="logo"><div class="logo-dot"></div>Vend<span>ly</span></a>
   <div class="nav-right">
+    <a href="/" style="font-size:13px;color:var(--muted);text-decoration:none;transition:color .15s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">← Inicio</a>
     <span class="nav-badge">✦ GPT-4o</span>
     <button class="btn-login" id="btn-login" onclick="showLoginModal()">Iniciar sesión</button>
     <div class="user-chip" id="user-chip" onclick="openDashboard()">
@@ -653,7 +654,7 @@ function updatePlanBanner(plan, used, limit) {
     text.textContent = `Plan Starter — ${used || 0} / ${limit || 30} auditorías usadas`;
   } else {
     banner.classList.add('pb-free');
-    text.textContent = '✦ 1 auditoría gratuita — creá una cuenta para más';
+    text.textContent = '✦ Creá una cuenta gratuita para empezar';
   }
 }
 
@@ -737,6 +738,10 @@ async function runAudit() {
     if (sessionToken) headers['x-session-token'] = sessionToken;
     const res = await fetch('/api/audit', { method:'POST', headers, body:JSON.stringify({product, country, tone, competitorProduct}) });
     const data = await res.json();
+    if (data.requireAuth) {
+      showLoginModal();
+      return;
+    }
     if (data.upgrade) {
       if (!sessionToken) showLoginModal();
       else showUpgradeModal();
