@@ -595,6 +595,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     showToast('⚠ ' + (msgs[urlError] || 'Error al iniciar sesión'));
   }
   await checkSession();
+  // Abrir modal de login si viene desde la landing con #login
+  if (window.location.hash === '#login') {
+    window.history.replaceState({}, '', '/app');
+    showLoginModal();
+  }
   const match = window.location.pathname.match(/^\/informe\/([a-f0-9]+)$/);
   if (match) {
     try {
