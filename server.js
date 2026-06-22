@@ -10,8 +10,6 @@ const jwt = require('jsonwebtoken');
 const initSqlJs = require('sql.js');
 const fs = require('fs');
 const { Resend } = require('resend');
-const Stripe = require('stripe');
-
 const app = express();
 app.use('/api/webhook', express.raw({ type: 'application/json' }));
 app.use(cors());
@@ -20,11 +18,12 @@ app.use(express.static('public', { index: false }));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const resend = new Resend(process.env.RESEND_API_KEY);
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY || '');
 const JWT_SECRET = process.env.JWT_SECRET || 'vendly_secret_change_me';
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
-const STRIPE_STARTER_PRICE = process.env.STRIPE_STARTER_PRICE_ID || '';
-const STRIPE_PRO_PRICE = process.env.STRIPE_PRO_PRICE_ID || '';
+const LS_API_KEY = process.env.LEMONSQUEEZY_API_KEY || '';
+const LS_WEBHOOK_SECRET = process.env.LEMONSQUEEZY_WEBHOOK_SECRET || '';
+const LS_STARTER_VARIANT = process.env.LEMONSQUEEZY_BASIC_VARIANT_ID || '';
+const LS_PRO_VARIANT = process.env.LEMONSQUEEZY_PRO_VARIANT_ID || '';
+const LS_STORE_URL = (process.env.LEMONSQUEEZY_STORE_URL || '').replace(/\/$/, '');
 const APP_URL = process.env.APP_URL || 'https://vendly-production-e0f2.up.railway.app';
 const DB_PATH = './vendly.db';
 
@@ -450,44 +449,40 @@ app.get('/api/audits/:id', requireAuth, (req, res) => {
   res.json({ success: true, audit: { ...a, audit_data: JSON.parse(a.audit_data) } });
 });
 
-// Payments — Stripe
+// Payments — Lemon Squeezy
 app.post('/api/checkout', optAuth, async (req, res) => {
   const { plan } = req.body;
-  const email = req.user?.email || req.body.email;
-  const priceId = plan === 'pro' ? STRIPE_PRO_PRICE : STRIPE_STARTER_PRICE;
-  if (!priceId) return res.status(500).json({ error: 'Pagos no configurados aún.' });
-  try {
-    const sessionParams = {
-      mode: 'subscription',
-      payment_method_types: ['card'],
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${APP_URL}/app?subscribed=true`,
-      cancel_url: `${APP_URL}/app?cancelled=true`,
-      metadata: { plan: plan || 'basic', email: email || '' }
-    };
-    if (email) sessionParams.customer_email = email;
-    const session = await stripe.checkout.sessions.create(sessionParams);
-    res.json({ url: session.url });
-  } catch (e) {
-    console.error('Stripe checkout error:', e.message);
-    res.status(500).json({ error: 'Error creando sesión de pago.' });
-  }
+  const email = req.user?.email || req.body.email || '';
+  const variantId = plan === 'pro' ? LS_PRO_VARIANT : LS_STARTER_VARIANT;
+  if (!variantId || !LS_STORE_URL) return res.status(500).json({ error: 'Pagos no configurados aún.' });
+  // Construir URL de checkout de Lemon Squeezy con email prefill y metadata del plan
+  const params = new URLSearchParams({
+    'checkout[email]': email,
+    'checkout[custom][plan]': plan || 'basic',
+    'checkout[custom][app_url]': APP_URL,
+  });
+  const url = `${LS_STORE_URL}/checkout/buy/${variantId}?${params.toString()}`;
+  res.json({ url });
 });
 
-// Stripe Customer Portal
+// Lemon Squeezy Customer Portal (redirige al portal de gestión de LS)
 app.get('/api/portal', requireAuth, async (req, res) => {
   const user = req.user;
-  if (!user.stripe_customer_id) return res.status(400).json({ error: 'No tenés suscripción activa.' });
-  try {
-    const session = await stripe.billingPortal.sessions.create({
-      customer: user.stripe_customer_id,
-      return_url: `${APP_URL}/app`
-    });
-    res.json({ url: session.url });
-  } catch (e) {
-    console.error('Stripe portal error:', e.message);
-    res.status(500).json({ error: 'Error abriendo portal.' });
+  if (!user.subscription_id) return res.status(400).json({ error: 'No tenés suscripción activa.' });
+  // Intentar obtener URL del portal vía API de LS si hay customer_id
+  if (user.stripe_customer_id && LS_API_KEY) {
+    try {
+      const r = await axios.get(`https://api.lemonsqueezy.com/v1/customers/${user.stripe_customer_id}`, {
+        headers: { Authorization: `Bearer ${LS_API_KEY}`, Accept: 'application/vnd.api+json' }
+      });
+      const portalUrl = r.data?.data?.attributes?.urls?.customer_portal;
+      if (portalUrl) return res.json({ url: portalUrl });
+    } catch (e) {
+      console.error('LS portal API error:', e.message);
+    }
   }
+  // Fallback: portal genérico de Lemon Squeezy
+  res.json({ url: 'https://app.lemonsqueezy.com/my-orders' });
 });
 
 // Verificación manual (fallback: chequea la DB por si el webhook ya se procesó)
@@ -501,49 +496,64 @@ app.post('/api/verify-subscription', async (req, res) => {
   res.json({ success: true, sessionToken: makeJWT(user.id, user.email, user.plan), plan: user.plan, auditsLimit: user.audits_limit });
 });
 
-// Stripe Webhook
+// Lemon Squeezy Webhook
 app.post('/api/webhook', async (req, res) => {
-  let event;
-  try {
-    event = STRIPE_WEBHOOK_SECRET
-      ? stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], STRIPE_WEBHOOK_SECRET)
-      : JSON.parse(req.body.toString());
-  } catch (e) {
-    console.error('Webhook signature error:', e.message);
-    return res.status(400).send(`Webhook error: ${e.message}`);
+  // Verificar firma HMAC-SHA256
+  if (LS_WEBHOOK_SECRET) {
+    const sig = req.headers['x-signature'] || '';
+    const hmac = crypto.createHmac('sha256', LS_WEBHOOK_SECRET).update(req.body).digest('hex');
+    if (hmac !== sig) {
+      console.error('Webhook signature mismatch');
+      return res.status(400).send('Invalid signature');
+    }
   }
 
-  const { type, data } = event;
-  console.log('Stripe event:', type);
+  let event;
+  try { event = JSON.parse(req.body.toString()); }
+  catch (e) { return res.status(400).send('Invalid JSON'); }
+
+  const eventName = event.meta?.event_name || '';
+  const attrs = event.data?.attributes || {};
+  console.log('LS webhook event:', eventName);
 
   try {
-    if (type === 'checkout.session.completed') {
-      const session = data.object;
-      const email = (session.customer_details?.email || session.metadata?.email || '').toLowerCase();
-      const plan = session.metadata?.plan || 'basic';
-      const customerId = session.customer;
-      const subscriptionId = session.subscription;
-      if (email) {
+    // subscription_created / subscription_updated
+    if (eventName === 'subscription_created' || eventName === 'subscription_updated') {
+      const email = (attrs.user_email || '').toLowerCase();
+      const status = attrs.status; // active, cancelled, expired, past_due, unpaid, paused
+      const variantId = String(attrs.variant_id || '');
+      const subscriptionId = String(event.data?.id || '');
+      const customerId = String(attrs.customer_id || '');
+
+      if (!email) { console.error('LS webhook: no email'); return res.json({ received: true }); }
+
+      if (status === 'active') {
+        const plan = variantId === String(LS_PRO_VARIANT) ? 'pro' : 'basic';
         const limit = plan === 'pro' ? 999999 : 30;
         const existing = dbGet('SELECT id FROM users WHERE email = ?', [email]);
         if (!existing) dbRun('INSERT INTO users (email) VALUES (?)', [email]);
         dbRun('UPDATE users SET plan=?, status=?, audits_limit=?, subscription_id=?, stripe_customer_id=?, audits_reset_at=datetime("now"), updated_at=datetime("now") WHERE email=?',
           [plan, 'active', limit, subscriptionId, customerId, email]);
         console.log(`Activated ${plan} for ${email}`);
+      } else if (['cancelled', 'expired', 'past_due', 'unpaid', 'paused'].includes(status)) {
+        dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
+          ['cancelled', 'free', subscriptionId]);
+        console.log(`Deactivated subscription ${subscriptionId} (${status})`);
       }
-    } else if (type === 'customer.subscription.updated') {
-      const sub = data.object;
-      const customerId = sub.customer;
-      const status = sub.status;
-      if (['active', 'trialing'].includes(status)) {
-        dbRun('UPDATE users SET status=?, updated_at=datetime("now") WHERE stripe_customer_id=?', ['active', customerId]);
-      } else if (['canceled', 'unpaid', 'past_due'].includes(status)) {
-        dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE stripe_customer_id=?', ['cancelled', 'free', customerId]);
-      }
-    } else if (type === 'customer.subscription.deleted') {
-      const sub = data.object;
-      dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE stripe_customer_id=?',
-        ['cancelled', 'free', sub.customer]);
+    }
+
+    // subscription_cancelled (evento explícito de cancelación)
+    if (eventName === 'subscription_cancelled') {
+      const subscriptionId = String(event.data?.id || '');
+      dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
+        ['cancelled', 'free', subscriptionId]);
+    }
+
+    // subscription_expired
+    if (eventName === 'subscription_expired') {
+      const subscriptionId = String(event.data?.id || '');
+      dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
+        ['cancelled', 'free', subscriptionId]);
     }
   } catch (e) {
     console.error('Webhook processing error:', e.message);
