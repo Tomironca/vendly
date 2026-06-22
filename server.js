@@ -479,9 +479,7 @@ app.post('/api/auth/login', async (req, res) => {
         dbRun('INSERT INTO referrals (referrer_id, referred_id) VALUES (?, ?)', [referredBy, newUser.id]);
       }
     }
-    const token = crypto.randomBytes(32).toString('hex');
-    const exp = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-    dbRun('INSERT INTO magic_tokens (email, token, expires_at) VALUES (?, ?, ?)', [email.toLowerCase(), token, exp]);
+    const token = jwt.sign({ email: email.toLowerCase(), purpose: 'magic_link' }, JWT_SECRET, { expiresIn: '30m' });
     await sendMagicLink(email.toLowerCase(), token);
     res.json({ success: true, message: 'Link enviado. Revisá tu email.' });
   } catch (e) {
@@ -493,11 +491,18 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/auth/verify', (req, res) => {
   const { token } = req.query;
   if (!token) return res.redirect('/app?error=invalid');
-  const rec = dbGet('SELECT * FROM magic_tokens WHERE token = ? AND used = 0 AND expires_at > datetime("now")', [token]);
-  if (!rec) return res.redirect('/app?error=expired');
-  dbRun('UPDATE magic_tokens SET used = 1 WHERE token = ?', [token]);
-  const user = dbGet('SELECT * FROM users WHERE email = ?', [rec.email]);
-  if (!user) return res.redirect('/app?error=notfound');
+  let payload;
+  try { payload = jwt.verify(token, JWT_SECRET); } catch { return res.redirect('/app?error=expired'); }
+  if (payload.purpose !== 'magic_link') return res.redirect('/app?error=invalid');
+  const email = payload.email;
+  let user = dbGet('SELECT * FROM users WHERE email = ?', [email]);
+  if (!user) {
+    dbRun('INSERT INTO users (email) VALUES (?)', [email]);
+    const newUser = dbGet('SELECT id FROM users WHERE email = ?', [email]);
+    const newCode = crypto.createHash('sha256').update(`${newUser.id}-${JWT_SECRET}`).digest('hex').slice(0, 8);
+    dbRun('UPDATE users SET ref_code = ? WHERE id = ?', [newCode, newUser.id]);
+    user = dbGet('SELECT * FROM users WHERE email = ?', [email]);
+  }
   if (!user.welcomed) {
     sendWelcomeEmail(user.email).catch(e => console.error('Welcome email error:', e.message));
     dbRun('UPDATE users SET welcomed = 1 WHERE id = ?', [user.id]);
