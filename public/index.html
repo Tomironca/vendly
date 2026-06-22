@@ -280,6 +280,23 @@ textarea{min-height:68px;line-height:1.5}
 .audit-empty{text-align:center;padding:40px 24px;color:var(--muted)}
 .audit-empty-icon{font-size:32px;margin-bottom:10px}
 
+/* SCORE CHART */
+.score-chart-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:22px}
+.score-chart-title{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.score-chart-legend{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap}
+.scl-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.scl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ONBOARDING BANNER */
+.onboard-banner{background:linear-gradient(135deg,rgba(124,92,252,0.12),rgba(166,136,250,0.06));border:1px solid rgba(124,92,252,0.25);border-radius:16px;padding:18px 20px;margin-bottom:14px;display:none}
+.onboard-banner.show{display:block}
+.onboard-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:6px}
+.onboard-steps{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.onboard-step{flex:1;min-width:140px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.onboard-step-n{font-size:11px;font-weight:700;color:var(--accent3);margin-bottom:3px}
+.onboard-step-t{font-size:13px;font-weight:500;margin-bottom:2px}
+.onboard-step-d{font-size:12px;color:var(--muted);line-height:1.4}
+
 /* TOAST */
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg3);border:1px solid rgba(52,211,153,0.3);border-radius:12px;padding:11px 18px;font-size:13px;color:var(--green);transition:transform .3s;z-index:9999;white-space:nowrap}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -370,8 +387,17 @@ footer span{color:var(--accent2)}
   </div>
   <div class="dash-wrap">
     <div class="dash-header">
-      <div class="dash-greeting">Bienvenido 👋</div>
+      <div class="dash-greeting" id="dash-greeting">Bienvenido 👋</div>
       <div class="dash-email-text" id="dash-email"></div>
+    </div>
+    <div class="onboard-banner" id="onboard-banner">
+      <div class="onboard-title">¡Empezá a vender más en 3 pasos!</div>
+      <div style="font-size:13px;color:var(--muted)">Tenés 1 auditoría gratuita. Hacé que cuente.</div>
+      <div class="onboard-steps">
+        <div class="onboard-step"><div class="onboard-step-n">Paso 1</div><div class="onboard-step-t">Pegá la URL</div><div class="onboard-step-d">De tu producto más vendido o el que querés potenciar</div></div>
+        <div class="onboard-step"><div class="onboard-step-n">Paso 2</div><div class="onboard-step-t">Leé los scores</div><div class="onboard-step-d">Conversión, confianza y SEO — sabés dónde estás perdiendo ventas</div></div>
+        <div class="onboard-step"><div class="onboard-step-n">Paso 3</div><div class="onboard-step-t">Implementá en orden</div><div class="onboard-step-d">Empezá por las mejoras marcadas como ALTO impacto</div></div>
+      </div>
     </div>
     <div class="dash-stats">
       <div class="dash-stat">
@@ -388,6 +414,15 @@ footer span{color:var(--accent2)}
         <div id="dash-plan-chip" class="plan-chip pc-free">Free</div>
         <button class="btn-sm" id="dash-upgrade-btn" style="margin-top:10px;font-size:11px;width:100%" onclick="closeDashboard();showUpgradeModal()">Mejorar plan →</button>
         <button class="btn-sm" id="dash-portal-btn" style="margin-top:6px;font-size:11px;width:100%;display:none" onclick="openPortal()">Gestionar suscripción →</button>
+      </div>
+    </div>
+    <div class="score-chart-wrap" id="chart-wrap" style="display:none">
+      <div class="score-chart-title">Evolución de scores</div>
+      <svg id="score-chart" width="100%" height="80" style="overflow:visible"></svg>
+      <div class="score-chart-legend">
+        <div class="scl-item"><div class="scl-dot" style="background:var(--accent2)"></div>Conversión</div>
+        <div class="scl-item"><div class="scl-dot" style="background:var(--green)"></div>Confianza</div>
+        <div class="scl-item"><div class="scl-dot" style="background:var(--gold)"></div>SEO</div>
       </div>
     </div>
     <div class="dash-section-title">Historial de auditorías</div>
@@ -823,7 +858,10 @@ function renderAudit(a, productName, hasComp) {
   (a.keywords_seo||[]).forEach(k=>kw.insertAdjacentHTML('beforeend',`<span class="kw" onclick="copyKw(this,'${k}')">${k}</span>`));
   setText('r-precio', a.estrategia_precio);
   const pl = document.getElementById('r-plan'); pl.innerHTML='';
-  a.plan_accion.forEach(p=>{
+  const planItems = a.plan_accion || a.mejoras_recomendadas?.map((m,i) => ({
+    prioridad: i+1, accion: m.titulo, impacto_esperado: m.descripcion, plazo: m.impacto === 'ALTO' ? 'Esta semana' : m.impacto === 'MEDIO' ? 'Próximas 2 semanas' : 'Este mes'
+  })) || [];
+  planItems.forEach(p=>{
     pl.insertAdjacentHTML('beforeend',`<div class="plan-item"><div class="plan-n">${p.prioridad}</div><div><div class="plan-t">${p.accion}</div><div class="plan-d">${p.impacto_esperado}</div><span class="plan-pl">${p.plazo}</span></div></div>`);
   });
   document.getElementById('results').classList.add('show');
@@ -948,6 +986,11 @@ async function loadDashboard() {
     document.getElementById('dash-portal-btn').style.display = hasPaid ? '' : 'none';
     const audits = ad.audits || [];
     document.getElementById('dash-total').textContent = audits.length;
+    renderScoreChart(audits);
+    showOnboardingIfNeeded(audits.length, sd.plan);
+    const hour = new Date().getHours();
+    const greet = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+    document.getElementById('dash-greeting').textContent = `${greet} 👋`;
 
     // Mostrar fecha de renovación para plan basic
     if (sd.plan === 'basic' && sd.auditsResetAt) {
@@ -1096,6 +1139,43 @@ function resetApp(){
   ['url-result','comp-result','share-link'].forEach(id=>document.getElementById(id).classList.remove('show'));
   hideErr('audit-error');
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── SCORE CHART ───────────────────────────────────────────────
+function renderScoreChart(audits) {
+  if (!audits || audits.length < 2) { document.getElementById('chart-wrap').style.display = 'none'; return; }
+  document.getElementById('chart-wrap').style.display = '';
+  const svg = document.getElementById('score-chart');
+  const W = svg.parentElement.clientWidth || 500;
+  const H = 80, PAD = 8;
+  const pts = [...audits].reverse().slice(-10); // últimas 10 en orden cronológico
+  const n = pts.length;
+  const xStep = (W - PAD * 2) / Math.max(n - 1, 1);
+  const toY = v => H - PAD - ((v / 100) * (H - PAD * 2));
+  const makePath = (vals, color) => {
+    const d = vals.map((v, i) => `${i === 0 ? 'M' : 'L'}${PAD + i * xStep},${toY(v)}`).join(' ');
+    return `<path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>`;
+  };
+  const makeDots = (vals, color) => vals.map((v, i) =>
+    `<circle cx="${PAD + i * xStep}" cy="${toY(v)}" r="3" fill="${color}"/>`
+  ).join('');
+  const colors = { conversion: '#A688FA', confianza: '#34D399', seo: '#F5C842' };
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = [
+    makePath(pts.map(a => a.score_conversion), colors.conversion),
+    makePath(pts.map(a => a.score_confianza), colors.confianza),
+    makePath(pts.map(a => a.score_seo), colors.seo),
+    makeDots(pts.map(a => a.score_conversion), colors.conversion),
+    makeDots(pts.map(a => a.score_confianza), colors.confianza),
+    makeDots(pts.map(a => a.score_seo), colors.seo),
+  ].join('');
+}
+
+// ── ONBOARDING ────────────────────────────────────────────────
+function showOnboardingIfNeeded(auditsCount, plan) {
+  const banner = document.getElementById('onboard-banner');
+  if (auditsCount === 0 && plan === 'free') banner.classList.add('show');
+  else banner.classList.remove('show');
 }
 </script>
 </body>
