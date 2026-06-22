@@ -51,8 +51,18 @@ async function initDb() {
       stripe_customer_id TEXT,
       audits_reset_at TEXT,
       welcomed INTEGER DEFAULT 0,
+      ref_code TEXT,
+      referred_by INTEGER,
+      followup_day3 INTEGER DEFAULT 0,
+      followup_day7 INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS referrals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      referrer_id INTEGER NOT NULL,
+      referred_id INTEGER NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS magic_tokens (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -88,6 +98,17 @@ async function initDb() {
   try { db.run('ALTER TABLE users ADD COLUMN stripe_customer_id TEXT'); } catch(e) {}
   try { db.run('ALTER TABLE users ADD COLUMN audits_reset_at TEXT'); } catch(e) {}
   try { db.run('ALTER TABLE users ADD COLUMN welcomed INTEGER DEFAULT 0'); } catch(e) {}
+  try { db.run('ALTER TABLE users ADD COLUMN ref_code TEXT'); } catch(e) {}
+  try { db.run('ALTER TABLE users ADD COLUMN referred_by INTEGER'); } catch(e) {}
+  try { db.run('ALTER TABLE users ADD COLUMN followup_day3 INTEGER DEFAULT 0'); } catch(e) {}
+  try { db.run('ALTER TABLE users ADD COLUMN followup_day7 INTEGER DEFAULT 0'); } catch(e) {}
+
+  // Generar ref_code para usuarios que no tienen uno
+  const usersWithoutCode = dbAll('SELECT id FROM users WHERE ref_code IS NULL');
+  for (const u of usersWithoutCode) {
+    const code = crypto.createHash('sha256').update(`${u.id}-${JWT_SECRET}`).digest('hex').slice(0, 8);
+    db.run('UPDATE users SET ref_code = ? WHERE id = ?', [code, u.id]);
+  }
   saveDb();
 }
 
@@ -339,6 +360,62 @@ async function sendWelcomeEmail(email) {
   });
 }
 
+// ── FOLLOW-UP EMAILS ──────────────────────────────────────────
+async function sendDay3Email(email, refCode) {
+  const refLink = `${APP_URL}/app?ref=${refCode}`;
+  await resend.emails.send({
+    from: 'Tomás de Vendly <onboarding@resend.dev>',
+    to: email,
+    subject: '¿Implementaste las mejoras de tu auditoría?',
+    html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#07070E;color:#F0EEF8;border-radius:16px;">
+      <div style="font-size:22px;font-weight:800;margin-bottom:20px;">Vend<span style="color:#A688FA">ly</span></div>
+      <p style="color:#F0EEF8;font-size:16px;font-weight:600;margin-bottom:12px;">Hola 👋</p>
+      <p style="color:#8B89A0;line-height:1.7;margin-bottom:16px;">Hace 3 días generaste tu primera auditoría con Vendly. Quería preguntarte: <strong style="color:#F0EEF8;">¿ya implementaste alguna mejora?</strong></p>
+      <p style="color:#8B89A0;line-height:1.7;margin-bottom:16px;">Los vendedores que implementan las mejoras de impacto ALTO en los primeros 3 días ven resultados en menos de una semana. Empezá por el título SEO y la descripción — son los cambios más rápidos y con más retorno.</p>
+      <div style="background:#0F0F1A;border-radius:12px;padding:16px;margin-bottom:20px;border-left:3px solid #7C5CFC">
+        <div style="font-size:13px;color:#C4B5FD;font-weight:600;margin-bottom:6px;">💡 Tip rápido</div>
+        <div style="font-size:13px;color:#8B89A0;line-height:1.6;">Copiá la descripción larga que generó Vendly y reemplazá la que tenés en tu tienda. Es el cambio más simple y uno de los que más impacto tiene en conversión.</div>
+      </div>
+      <p style="color:#8B89A0;line-height:1.7;margin-bottom:20px;">Si querés analizar otro producto, acordate que podés <strong style="color:#F0EEF8;">ganar auditorías gratis</strong> compartiendo Vendly con otros vendedores:</p>
+      <a href="${refLink}" style="display:inline-block;background:#16161F;color:#A688FA;padding:10px 20px;border-radius:10px;text-decoration:none;font-size:13px;border:1px solid rgba(124,92,252,0.3);margin-bottom:20px;">Tu link de referido → ${refLink}</a>
+      <p style="color:#555;font-size:12px;">Por cada amigo que se registre con tu link, te damos 5 auditorías gratis.</p>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid #1C1C28">
+        <a href="${APP_URL}/app" style="display:inline-block;background:#7C5CFC;color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:500;">Ir a Vendly →</a>
+      </div>
+    </div>`
+  });
+}
+
+async function sendDay7Email(email) {
+  await resend.emails.send({
+    from: 'Tomás de Vendly <onboarding@resend.dev>',
+    to: email,
+    subject: 'Lo que están haciendo los vendedores que más venden en LATAM',
+    html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#07070E;color:#F0EEF8;border-radius:16px;">
+      <div style="font-size:22px;font-weight:800;margin-bottom:20px;">Vend<span style="color:#A688FA">ly</span></div>
+      <p style="color:#F0EEF8;font-size:16px;font-weight:600;margin-bottom:12px;">Un patrón que encontramos en las tiendas que más venden 📊</p>
+      <p style="color:#8B89A0;line-height:1.7;margin-bottom:16px;">Analizamos cientos de tiendas en Argentina, México y Colombia. Las que más convierten tienen 3 cosas en común:</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+        <div style="background:#0F0F1A;border-radius:10px;padding:14px;border-left:3px solid #34D399">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px;">1. Auditan sus productos regularmente</div>
+          <div style="font-size:12px;color:#8B89A0;">No una vez — cada vez que cambian precio, fotos o descripción, vuelven a auditar para ver el impacto.</div>
+        </div>
+        <div style="background:#0F0F1A;border-radius:10px;padding:14px;border-left:3px solid #A688FA">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px;">2. Usan los copies de Meta Ads directamente</div>
+          <div style="font-size:12px;color:#8B89A0;">Los 5 anuncios de Vendly son el punto de partida — no los reescriben, los prueban tal cual y optimizan el que mejor funciona.</div>
+        </div>
+        <div style="background:#0F0F1A;border-radius:10px;padding:14px;border-left:3px solid #F5C842">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px;">3. Priorizan por impacto, no por facilidad</div>
+          <div style="font-size:12px;color:#8B89A0;">Hacen primero lo que más mueve el número. Vendly ya tiene ese orden — el Plan de Acción está ordenado de mayor a menor impacto.</div>
+        </div>
+      </div>
+      <p style="color:#8B89A0;line-height:1.7;margin-bottom:20px;">Con el plan Starter (USD 9/mes) podés auditar hasta 30 productos por mes y hacer seguimiento de cómo evolucionan tus scores con el tiempo.</p>
+      <a href="${APP_URL}/app" style="display:inline-block;background:#7C5CFC;color:#fff;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:500;">Ver planes →</a>
+      <p style="color:#555;font-size:12px;margin-top:20px;">Respondé este email si tenés alguna pregunta. Leo todo personalmente.</p>
+    </div>`
+  });
+}
+
 // ── ROUTES ────────────────────────────────────────────────────
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
@@ -347,7 +424,7 @@ app.get('/informe/:token', (req, res) => res.sendFile(path.join(__dirname, 'publ
 
 // Auth
 app.post('/api/auth/login', async (req, res) => {
-  const { email } = req.body;
+  const { email, ref } = req.body;
   if (!email || !email.includes('@')) return res.status(400).json({ error: 'Email inválido' });
   try {
     dbRun('DELETE FROM magic_tokens WHERE expires_at < datetime("now")');
@@ -359,8 +436,23 @@ app.post('/api/auth/login', async (req, res) => {
       if (ipCount && ipCount.count >= 3) {
         return res.status(429).json({ error: 'Límite de registros por dispositivo alcanzado.' });
       }
-      dbRun('INSERT INTO users (email) VALUES (?)', [email.toLowerCase()]);
+      // Crear usuario — si viene con ref_code, buscar al referidor
+      let referredBy = null;
+      let bonusAudits = 1; // auditoría gratuita base
+      if (ref) {
+        const referrer = dbGet('SELECT id FROM users WHERE ref_code = ?', [ref]);
+        if (referrer) { referredBy = referrer.id; bonusAudits = 3; } // referido empieza con 3 auditorías
+      }
+      dbRun('INSERT INTO users (email, referred_by, audits_limit) VALUES (?, ?, ?)', [email.toLowerCase(), referredBy, bonusAudits]);
+      const newUser = dbGet('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
+      const newCode = crypto.createHash('sha256').update(`${newUser.id}-${JWT_SECRET}`).digest('hex').slice(0, 8);
+      dbRun('UPDATE users SET ref_code = ? WHERE id = ?', [newCode, newUser.id]);
       dbRun('INSERT INTO ip_usage (ip, count) VALUES (?, 1) ON CONFLICT(ip) DO UPDATE SET count = count + 1', [regIp]);
+      // Dar bonus al referidor (+5 auditorías)
+      if (referredBy) {
+        dbRun('UPDATE users SET audits_limit = audits_limit + 5 WHERE id = ? AND plan = "free"', [referredBy]);
+        dbRun('INSERT INTO referrals (referrer_id, referred_id) VALUES (?, ?)', [referredBy, newUser.id]);
+      }
     }
     const token = crypto.randomBytes(32).toString('hex');
     const exp = new Date(Date.now() + 10 * 60 * 1000).toISOString();
@@ -391,7 +483,7 @@ app.get('/api/auth/verify', (req, res) => {
 
 app.get('/api/session', optAuth, (req, res) => {
   if (!req.user) return res.json({ authenticated: false });
-  res.json({ authenticated: true, email: req.user.email, plan: req.user.plan, status: req.user.status, auditsUsed: req.user.audits_used, auditsLimit: req.user.audits_limit, auditsResetAt: req.user.audits_reset_at });
+  res.json({ authenticated: true, email: req.user.email, plan: req.user.plan, status: req.user.status, auditsUsed: req.user.audits_used, auditsLimit: req.user.audits_limit, auditsResetAt: req.user.audits_reset_at, refCode: req.user.ref_code });
 });
 
 // Scrape
@@ -579,9 +671,68 @@ app.get('/api/report/:token', (req, res) => {
   res.json({ success: true, audit: JSON.parse(r.audit_data), product: { name: r.product_name } });
 });
 
+// Referral info del usuario
+app.get('/api/referral', requireAuth, (req, res) => {
+  const user = req.user;
+  if (!user.ref_code) {
+    const code = crypto.createHash('sha256').update(`${user.id}-${JWT_SECRET}`).digest('hex').slice(0, 8);
+    dbRun('UPDATE users SET ref_code = ? WHERE id = ?', [code, user.id]);
+    user.ref_code = code;
+  }
+  const referrals = dbAll('SELECT COUNT(*) as total FROM referrals WHERE referrer_id = ?', [user.id]);
+  res.json({
+    success: true,
+    refCode: user.ref_code,
+    refUrl: `${APP_URL}/app?ref=${user.ref_code}`,
+    referralCount: referrals[0]?.total || 0,
+    bonusEarned: (referrals[0]?.total || 0) * 5
+  });
+});
+
+// Admin: enviar follow-ups a usuarios que corresponda
+app.post('/api/admin/followups', async (req, res) => {
+  const { secret } = req.body;
+  if (secret !== (process.env.ADMIN_SECRET || 'vendly_admin_2024')) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  // Día 3: usuarios con al menos 1 auditoría, sin follow-up día 3
+  const day3Users = dbAll(`
+    SELECT u.id, u.email, u.ref_code FROM users u
+    WHERE u.followup_day3 = 0
+    AND u.welcomed = 1
+    AND julianday('now') - julianday(u.created_at) >= 3
+    AND EXISTS (SELECT 1 FROM audits a WHERE a.user_id = u.id)
+  `);
+  // Día 7: usuarios sin follow-up día 7
+  const day7Users = dbAll(`
+    SELECT u.id, u.email FROM users u
+    WHERE u.followup_day7 = 0
+    AND u.welcomed = 1
+    AND u.plan = 'free'
+    AND julianday('now') - julianday(u.created_at) >= 7
+  `);
+  let sent3 = 0, sent7 = 0;
+  for (const u of day3Users) {
+    try {
+      await sendDay3Email(u.email, u.ref_code || '');
+      dbRun('UPDATE users SET followup_day3 = 1 WHERE id = ?', [u.id]);
+      sent3++;
+    } catch(e) { console.error('Day3 email error:', u.email, e.message); }
+  }
+  for (const u of day7Users) {
+    try {
+      await sendDay7Email(u.email);
+      dbRun('UPDATE users SET followup_day7 = 1 WHERE id = ?', [u.id]);
+      sent7++;
+    } catch(e) { console.error('Day7 email error:', u.email, e.message); }
+  }
+  res.json({ success: true, sent3, sent7 });
+});
+
 app.get('/api/stats', (req, res) => {
   const total = dbGet('SELECT COUNT(*) as total FROM audits');
-  res.json({ totalAudits: total ? total.total : 0 });
+  const users = dbGet('SELECT COUNT(*) as total FROM users');
+  res.json({ totalAudits: total ? total.total : 0, totalUsers: users ? users.total : 0 });
 });
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '6.0.0' }));
