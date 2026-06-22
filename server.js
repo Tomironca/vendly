@@ -149,15 +149,49 @@ function optAuth(req, res, next) {
 
 // ── SCRAPER ───────────────────────────────────────────────────
 async function scrape(url) {
-  const { data } = await axios.get(url, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Vendly/6.0)' } });
+  const { data } = await axios.get(url, { timeout: 12000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' } });
   const $ = cheerio.load(data);
+
+  // Extraer precio de múltiples patrones comunes (Tiendanube, Shopify, MercadoShops)
+  const priceSelectors = [
+    '[class*="price"]', '[class*="precio"]', '[itemprop="price"]',
+    '[class*="Price"]', '.product-price', '.price-item', '.js-price',
+    '[data-price]', '.money'
+  ];
+  let price = '';
+  for (const sel of priceSelectors) {
+    const p = $(sel).first().text().trim();
+    if (p && p.length < 30) { price = p; break; }
+  }
+
+  // Extraer descripción del producto (no solo meta)
+  const descSelectors = [
+    '[class*="description"]', '[class*="descripcion"]', '[itemprop="description"]',
+    '.product-description', '.product__description', '#product-description'
+  ];
+  let productDesc = '';
+  for (const sel of descSelectors) {
+    const d = $(sel).first().text().replace(/\s+/g, ' ').trim();
+    if (d && d.length > 50) { productDesc = d.slice(0, 800); break; }
+  }
+
+  // Detectar si tiene reseñas visibles
+  const hasReviews = $('[class*="review"], [class*="rating"], [class*="stars"], [itemprop="ratingValue"]').length > 0;
+  // Detectar imágenes del producto
+  const imgCount = $('[class*="product"] img, [class*="gallery"] img').length;
+
+  const bodyText = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 2500);
+
   return {
     name: $('h1').first().text().trim() || $('meta[property="og:title"]').attr('content') || '',
-    description: $('meta[property="og:description"]').attr('content') || $('meta[name="description"]').attr('content') || '',
-    price: $('[class*="price"]').first().text().trim() || '',
+    description: $('meta[property="og:description"]').attr('content') || $('meta[name="description"]').attr('content') || productDesc || '',
+    productDescription: productDesc,
+    price,
     image: $('meta[property="og:image"]').attr('content') || '',
+    hasReviews,
+    imageCount: imgCount,
     url,
-    bodyText: $('body').text().replace(/\s+/g, ' ').trim().slice(0, 2000)
+    bodyText
   };
 }
 
@@ -212,14 +246,20 @@ COMPETIDOR A COMPARAR:
     ? `"analisis_competidor":{"ventajas_vs_competidor":["ventaja concreta 1","ventaja concreta 2","ventaja concreta 3"],"desventajas_vs_competidor":["desventaja concreta 1","desventaja concreta 2"],"oportunidades":["oportunidad de diferenciación 1","oportunidad 2","oportunidad 3"],"conclusion":"2-3 oraciones sobre cómo posicionarse estratégicamente frente al competidor"},`
     : `"analisis_competidor":null,`;
 
+  // Plan de acción — 5 pasos priorizados con plazo estimado
+  const planAccionSchema = `"plan_accion":[{"prioridad":1,"accion":"primera acción concreta y específica con el mayor ROI — qué hacer exactamente, no un consejo genérico","impacto_esperado":"resultado medible esperado en ventas, conversión o confianza","plazo":"Inmediato (hoy)"},{"prioridad":2,"accion":"segunda acción de alto impacto, implementable sin desarrollador","impacto_esperado":"resultado específico esperado","plazo":"Esta semana"},{"prioridad":3,"accion":"tercera acción de impacto medio, puede requerir algo de tiempo","impacto_esperado":"resultado esperado a mediano plazo","plazo":"Próximas 2 semanas"},{"prioridad":4,"accion":"cuarta acción de optimización continua","impacto_esperado":"mejora incremental esperada","plazo":"Este mes"},{"prioridad":5,"accion":"quinta acción estratégica de más largo plazo","impacto_esperado":"impacto esperado a largo plazo","plazo":"Próximo mes"}]`;
+
   const prompt = `Sos un consultor senior de e-commerce con 10 años de experiencia en ${ctx.name}, especializado en optimización de conversión. Has auditado más de 500 tiendas y sabés exactamente qué hace que los compradores de la región compren o abandonen.
 
 PRODUCTO A AUDITAR:
 - Nombre: ${product.name || 'Sin nombre detectado'}
-- Descripción actual: ${product.description || 'Sin descripción'}
+- Descripción meta: ${product.description || 'Sin descripción'}
+- Descripción en página: ${product.productDescription || 'No detectada'}
 - Precio: ${product.price || 'No especificado'}
 - URL: ${product.url || 'No disponible'}
-- Contenido de la página: ${(product.bodyText || '').slice(0, 1500)}
+- Reseñas visibles: ${product.hasReviews ? 'Sí' : 'No detectadas'}
+- Cantidad de imágenes del producto: ${product.imageCount || 0}
+- Contenido de la página: ${(product.bodyText || '').slice(0, 1800)}
 ${compBlock}
 MERCADO: ${ctx.name}
 COMPORTAMIENTO DEL COMPRADOR: ${ctx.buyerInsights}
@@ -242,8 +282,8 @@ CRITERIOS DE SCORING (sé específico y realista, no inflés los números):
 - SEO 50-69: optimización básica
 - SEO 0-49: sin optimización real
 
-Respondé SOLO con JSON puro sin markdown ni texto adicional:
-{"resumen_ejecutivo":"3-4 oraciones específicas sobre ESTE producto: su mayor fortaleza, su mayor problema de conversión y la oportunidad más importante para vender más en ${ctx.name}.","scores":{"conversion":<número real 0-100>,"confianza":<número real 0-100>,"seo":<número real 0-100>,"conversion_explicacion":"2 oraciones concretas sobre qué sube y qué baja el score de conversión de ESTE producto específico","confianza_explicacion":"2 oraciones específicas sobre qué elementos de confianza tiene y cuáles le faltan","seo_explicacion":"2 oraciones sobre el estado real del SEO con keywords detectadas o ausentes"},${compJson}"fortalezas":["fortaleza concreta y específica de ESTE producto 1","fortaleza 2","fortaleza 3","fortaleza 4"],"debilidades":["debilidad específica con impacto directo en ventas 1","debilidad 2","debilidad 3","debilidad 4"],"mejoras_recomendadas":[{"titulo":"acción concreta y accionable","descripcion":"cómo implementarlo exactamente, paso a paso, en el contexto de ${ctx.name}","impacto":"ALTO"},{"titulo":"segunda mejora ALTO impacto","descripcion":"instrucciones específicas de implementación","impacto":"ALTO"},{"titulo":"mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO"},{"titulo":"segunda mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO"},{"titulo":"mejora BAJO impacto pero rápida","descripcion":"instrucciones específicas","impacto":"BAJO"}],"descripcion_optimizada":{"titulo_seo":"título entre 60-80 caracteres con keyword principal pensada para compradores de ${ctx.name}","descripcion_corta":"máximo 160 caracteres con keyword principal y beneficio clave más importante","descripcion_larga":"ESCRIBÍ 300-400 palabras COMPLETAS en tono ${toneDesc}. Estructura: gancho que enganche en la primera línea + problema que resuelve + características principales + beneficios concretos para el comprador + prueba social implícita + llamado a la acción. NO uses placeholders, redactá el texto real y completo.","bullet_points":["beneficio concreto 1 con resultado específico y medible","beneficio 2 que responde a una objeción común","beneficio 3 diferenciador vs competencia","beneficio 4 de conveniencia o facilidad","beneficio 5 de garantía o confianza"]},"meta_ads":[{"nombre":"Ad 1 — Beneficio Principal","headline":"máx 40 chars, gancho directo al beneficio más fuerte","texto_principal":"ESCRIBÍ 150-200 palabras COMPLETAS. Hook impactante en las primeras 2 líneas que detenga el scroll + problema que resuelve + solución (el producto) + 3 beneficios concretos + CTA claro. Texto real, no placeholder.","descripcion":"máx 90 chars complementando el headline con una razón más para hacer clic","objetivo":"Conversión"},{"nombre":"Ad 2 — Problema/Dolor","headline":"headline que toca el dolor o frustración del cliente potencial","texto_principal":"150-200 palabras reales. Empieza por el dolor, agítalo, presenta el producto como solución, cierra con CTA.","descripcion":"descripción que refuerza la solución al problema","objetivo":"Conversión"},{"nombre":"Ad 3 — Prueba Social","headline":"headline con número, resultado o validación social","texto_principal":"150-200 palabras reales con testimonios hipotéticos realistas o resultados esperados. Específico y creíble.","descripcion":"descripción que refuerza la prueba social","objetivo":"Reconocimiento"},{"nombre":"Ad 4 — Urgencia/Escasez","headline":"headline con urgencia genuina y creíble","texto_principal":"150-200 palabras reales. Urgencia real (stock, tiempo, precio). Beneficio claro. CTA con deadline.","descripcion":"descripción con la limitación o deadline","objetivo":"Conversión"},{"nombre":"Ad 5 — Retargeting","headline":"headline para quien ya vio el producto pero no compró","texto_principal":"150-200 palabras reales. Superar las 2-3 objeciones más comunes. Ofrecer garantía o facilidad. CTA directo.","descripcion":"descripción con garantía o facilidad de compra","objetivo":"Retargeting"}],"instagram_posts":[{"tipo":"Post educativo","hook":"primera línea que detiene el scroll y genera curiosidad — sin emojis vacíos","caption":"ESCRIBÍ 150-200 palabras completas en ${toneDesc}. Empieza con el hook. Da valor educativo relacionado al producto/problema que resuelve. Cierra con CTA a la bio o link. Incluí 8-12 hashtags relevantes para ${ctx.name} al final."},{"tipo":"Post de producto","hook":"hook enfocado en el resultado o transformación que da el producto","caption":"150-200 palabras completas. Muestra el producto en una situación de uso real. Historia corta o escenario. CTA. Hashtags para ${ctx.name}."},{"tipo":"Historia de éxito","hook":"hook con resultado concreto, número o transformación visible","caption":"150-200 palabras completas. Historia antes/después o resultado esperado con el producto. Específico y creíble. CTA. Hashtags."}],"preguntas_frecuentes":[{"pregunta":"la pregunta más común antes de comprar ESTE producto específico","respuesta":"respuesta completa que elimina la duda y empuja sutilmente a la compra"},{"pregunta":"pregunta sobre envío, devolución o garantía — la más relevante para ${ctx.name}","respuesta":"respuesta clara, tranquilizadora y específica"},{"pregunta":"pregunta técnica sobre características, compatibilidad o uso correcto","respuesta":"respuesta técnica útil que demuestra expertise"},{"pregunta":"pregunta sobre precio, cuotas o forma de pago relevante para ${ctx.name}","respuesta":"respuesta que justifica el precio y facilita la decisión de compra"}],"estrategia_precio":"2-3 oraciones muy concretas: si el precio está bien posicionado para ${ctx.name}, cómo comunicarlo mejor (cuotas, precio de referencia, anclaje), y qué cambio de precio o comunicación del precio tendría mayor impacto en conversión.","keywords_seo":["keyword principal con mayor volumen de búsqueda","keyword secundaria 1","keyword secundaria 2","keyword long-tail con intención de compra","keyword long-tail 2 específica del producto","keyword regional o local para ${ctx.name}","keyword de categoría amplia","keyword de problema que resuelve el producto"]}`;
+Respondé SOLO con JSON puro sin markdown ni texto adicional. IMPORTANTE: todos los textos deben estar completamente redactados, nunca uses placeholders ni instrucciones dentro del valor:
+{"resumen_ejecutivo":"3-4 oraciones específicas sobre ESTE producto: su mayor fortaleza, su mayor problema de conversión y la oportunidad más importante para vender más en ${ctx.name}.","scores":{"conversion":<número real 0-100>,"confianza":<número real 0-100>,"seo":<número real 0-100>,"conversion_explicacion":"2 oraciones concretas sobre qué sube y qué baja el score de conversión de ESTE producto específico","confianza_explicacion":"2 oraciones específicas sobre qué elementos de confianza tiene y cuáles le faltan","seo_explicacion":"2 oraciones sobre el estado real del SEO con keywords detectadas o ausentes"},${compJson}"fortalezas":["fortaleza concreta y específica de ESTE producto 1","fortaleza 2","fortaleza 3","fortaleza 4"],"debilidades":["debilidad específica con impacto directo en ventas 1","debilidad 2","debilidad 3","debilidad 4"],"mejoras_recomendadas":[{"titulo":"acción concreta y accionable","descripcion":"cómo implementarlo exactamente, paso a paso, en el contexto de ${ctx.name}","impacto":"ALTO"},{"titulo":"segunda mejora ALTO impacto","descripcion":"instrucciones específicas de implementación","impacto":"ALTO"},{"titulo":"mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO"},{"titulo":"segunda mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO"},{"titulo":"mejora BAJO impacto pero rápida","descripcion":"instrucciones específicas","impacto":"BAJO"}],"descripcion_optimizada":{"titulo_seo":"título entre 60-80 caracteres con keyword principal pensada para compradores de ${ctx.name}","descripcion_corta":"máximo 160 caracteres con keyword principal y beneficio clave más importante","descripcion_larga":"ESCRIBÍ 300-400 palabras COMPLETAS en tono ${toneDesc}. Estructura: gancho que enganche en la primera línea + problema que resuelve + características principales + beneficios concretos para el comprador + prueba social implícita + llamado a la acción. NO uses placeholders, redactá el texto real y completo.","bullet_points":["beneficio concreto 1 con resultado específico y medible","beneficio 2 que responde a una objeción común","beneficio 3 diferenciador vs competencia","beneficio 4 de conveniencia o facilidad","beneficio 5 de garantía o confianza"]},"meta_ads":[{"nombre":"Ad 1 — Beneficio Principal","headline":"máx 40 chars, gancho directo al beneficio más fuerte","texto_principal":"ESCRIBÍ 150-200 palabras COMPLETAS. Hook impactante en las primeras 2 líneas que detenga el scroll + problema que resuelve + solución (el producto) + 3 beneficios concretos + CTA claro. Texto real, no placeholder.","descripcion":"máx 90 chars complementando el headline con una razón más para hacer clic","objetivo":"Conversión"},{"nombre":"Ad 2 — Problema/Dolor","headline":"headline que toca el dolor o frustración del cliente potencial","texto_principal":"150-200 palabras reales. Empieza por el dolor, agítalo, presenta el producto como solución, cierra con CTA.","descripcion":"descripción que refuerza la solución al problema","objetivo":"Conversión"},{"nombre":"Ad 3 — Prueba Social","headline":"headline con número, resultado o validación social","texto_principal":"150-200 palabras reales con testimonios hipotéticos realistas o resultados esperados. Específico y creíble.","descripcion":"descripción que refuerza la prueba social","objetivo":"Reconocimiento"},{"nombre":"Ad 4 — Urgencia/Escasez","headline":"headline con urgencia genuina y creíble","texto_principal":"150-200 palabras reales. Urgencia real (stock, tiempo, precio). Beneficio claro. CTA con deadline.","descripcion":"descripción con la limitación o deadline","objetivo":"Conversión"},{"nombre":"Ad 5 — Retargeting","headline":"headline para quien ya vio el producto pero no compró","texto_principal":"150-200 palabras reales. Superar las 2-3 objeciones más comunes. Ofrecer garantía o facilidad. CTA directo.","descripcion":"descripción con garantía o facilidad de compra","objetivo":"Retargeting"}],"instagram_posts":[{"tipo":"Post educativo","hook":"primera línea que detiene el scroll y genera curiosidad — sin emojis vacíos","caption":"ESCRIBÍ 150-200 palabras completas en ${toneDesc}. Empieza con el hook. Da valor educativo relacionado al producto/problema que resuelve. Cierra con CTA a la bio o link. Incluí 8-12 hashtags relevantes para ${ctx.name} al final."},{"tipo":"Post de producto","hook":"hook enfocado en el resultado o transformación que da el producto","caption":"150-200 palabras completas. Muestra el producto en una situación de uso real. Historia corta o escenario. CTA. Hashtags para ${ctx.name}."},{"tipo":"Historia de éxito","hook":"hook con resultado concreto, número o transformación visible","caption":"150-200 palabras completas. Historia antes/después o resultado esperado con el producto. Específico y creíble. CTA. Hashtags."}],"preguntas_frecuentes":[{"pregunta":"la pregunta más común antes de comprar ESTE producto específico","respuesta":"respuesta completa que elimina la duda y empuja sutilmente a la compra"},{"pregunta":"pregunta sobre envío, devolución o garantía — la más relevante para ${ctx.name}","respuesta":"respuesta clara, tranquilizadora y específica"},{"pregunta":"pregunta técnica sobre características, compatibilidad o uso correcto","respuesta":"respuesta técnica útil que demuestra expertise"},{"pregunta":"pregunta sobre precio, cuotas o forma de pago relevante para ${ctx.name}","respuesta":"respuesta que justifica el precio y facilita la decisión de compra"}],"estrategia_precio":"2-3 oraciones muy concretas: si el precio está bien posicionado para ${ctx.name}, cómo comunicarlo mejor (cuotas, precio de referencia, anclaje), y qué cambio de precio o comunicación del precio tendría mayor impacto en conversión.","keywords_seo":["keyword principal con mayor volumen de búsqueda","keyword secundaria 1","keyword secundaria 2","keyword long-tail con intención de compra","keyword long-tail 2 específica del producto","keyword regional o local para ${ctx.name}","keyword de categoría amplia","keyword de problema que resuelve el producto"],${planAccionSchema}}`;
 
   const r = await openai.chat.completions.create({
     model: 'gpt-4o',
