@@ -297,6 +297,18 @@ textarea{min-height:68px;line-height:1.5}
 .onboard-step-t{font-size:13px;font-weight:500;margin-bottom:2px}
 .onboard-step-d{font-size:12px;color:var(--muted);line-height:1.4}
 
+/* UPGRADE NUDGE BAR */
+.upgrade-nudge{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,var(--accent),#5D3FD3);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;z-index:500;transform:translateY(100%);transition:transform .4s ease;box-shadow:0 -4px 32px rgba(124,92,252,0.4)}
+.upgrade-nudge.show{transform:translateY(0)}
+.un-text{font-size:14px;font-weight:500;color:#fff}
+.un-text span{opacity:.8;font-size:13px}
+.un-actions{display:flex;gap:8px;flex-shrink:0}
+.un-btn{padding:8px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;text-decoration:none}
+.un-btn-primary{background:#fff;color:var(--accent);border:none}
+.un-btn-primary:hover{background:#F0EEF8}
+.un-btn-dismiss{background:transparent;color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.25)}
+.un-btn-dismiss:hover{color:#fff}
+
 /* TOAST */
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg3);border:1px solid rgba(52,211,153,0.3);border-radius:12px;padding:11px 18px;font-size:13px;color:var(--green);transition:transform .3s;z-index:9999;white-space:nowrap}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -308,6 +320,16 @@ footer span{color:var(--accent2)}
 <body>
 
 <div class="toast" id="toast"></div>
+
+<div class="upgrade-nudge" id="upgrade-nudge">
+  <div class="un-text">
+    ¿Querés auditar más productos? <span>· Starter desde USD 9/mes — 30 auditorías mensuales</span>
+  </div>
+  <div class="un-actions">
+    <button class="un-btn un-btn-primary" onclick="closeNudge();showUpgradeModal()">Ver planes →</button>
+    <button class="un-btn un-btn-dismiss" onclick="closeNudge()">Ahora no</button>
+  </div>
+</div>
 
 <!-- LOGIN MODAL -->
 <div class="modal-overlay" id="login-modal">
@@ -425,6 +447,25 @@ footer span{color:var(--accent2)}
         <div class="scl-item"><div class="scl-dot" style="background:var(--gold)"></div>SEO</div>
       </div>
     </div>
+    <!-- REFERRAL WIDGET -->
+    <div id="referral-widget" style="display:none;background:linear-gradient(135deg,rgba(52,211,153,0.06),rgba(52,211,153,0.02));border:1px solid rgba(52,211,153,0.2);border-radius:16px;padding:18px 20px;margin-bottom:22px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:4px;color:var(--green)">🎁 Compartí y ganás auditorías gratis</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:12px">Por cada amigo que se registre con tu link, <strong style="color:var(--text)">vos ganás 5 auditorías</strong> y él empieza con 3 en vez de 1.</div>
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12px;font-family:monospace;color:var(--accent3);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="ref-url-display">Cargando...</div>
+            <button class="btn-sm" onclick="copyRefLink()" id="ref-copy-btn" style="flex-shrink:0;background:var(--green);color:#000;border:none;font-weight:600">Copiar →</button>
+          </div>
+        </div>
+        <div style="text-align:center;flex-shrink:0">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--green)" id="ref-count">0</div>
+          <div style="font-size:11px;color:var(--muted)">referidos</div>
+          <div style="font-size:11px;color:var(--green);margin-top:2px" id="ref-bonus">+0 auditorías ganadas</div>
+        </div>
+      </div>
+    </div>
+
     <div class="dash-section-title">Historial de auditorías</div>
     <div class="audit-list-dash" id="audit-list-dash">
       <div class="audit-empty"><div class="audit-empty-icon">⏳</div><div>Cargando...</div></div>
@@ -619,6 +660,9 @@ let activeTab = 'url', compEnabled = false, loadingTimer = null;
 // ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
   const p = new URLSearchParams(window.location.search);
+  // Guardar ref code si viene en la URL
+  const urlRef = p.get('ref');
+  if (urlRef) sessionStorage.setItem('vendly_ref', urlRef);
   const urlSession = p.get('session');
   const urlError = p.get('error');
   if (urlSession) {
@@ -797,6 +841,10 @@ async function runAudit() {
     currentAudit = data.audit;
     if (data.plan && data.plan !== 'free') updatePlanBanner(data.plan, data.auditsUsed, data.auditsLimit);
     renderAudit(data.audit, product.name || product.url, !!competitorProduct);
+    // Nudge de upgrade si el usuario free acaba de agotar su auditoría gratuita
+    if (data.plan === 'free' && data.auditsUsed >= data.auditsLimit) {
+      setTimeout(() => showUpgradeNudge(), 8000);
+    }
   } catch(e) { showErr('audit-error', e.message || 'Error generando la auditoría. Intentá de nuevo.'); }
   finally { stopLoading(); document.getElementById('audit-btn').disabled = false; document.getElementById('loading').classList.remove('show'); }
 }
@@ -886,7 +934,8 @@ async function sendMagicLink() {
   const btn = document.getElementById('login-send-btn');
   btn.textContent='Enviando...'; btn.disabled=true;
   try {
-    const res = await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    const ref = getRefFromUrl();
+    const res = await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email, ref: ref || undefined})});
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
     document.getElementById('login-form').style.display='none';
@@ -959,7 +1008,7 @@ async function openDashboard() {
   if (!sessionToken) { showLoginModal(); return; }
   document.getElementById('dashboard').classList.add('show');
   document.getElementById('dash-email').textContent = userEmail;
-  await loadDashboard();
+  await Promise.all([loadDashboard(), loadReferralWidget()]);
 }
 function closeDashboard() { document.getElementById('dashboard').classList.remove('show'); }
 
@@ -1132,6 +1181,13 @@ function showErr(id,msg){ const el=document.getElementById(id); if(el){ el.textC
 function hideErr(id){ const el=document.getElementById(id); if(el)el.classList.remove('show'); }
 let toastTimer;
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),3000); }
+function showUpgradeNudge() {
+  document.getElementById('upgrade-nudge').classList.add('show');
+}
+function closeNudge() {
+  document.getElementById('upgrade-nudge').classList.remove('show');
+}
+
 function resetApp(){
   currentProduct=null; currentCompetitor=null; currentAudit=null;
   document.getElementById('results').classList.remove('show');
@@ -1176,6 +1232,37 @@ function showOnboardingIfNeeded(auditsCount, plan) {
   const banner = document.getElementById('onboard-banner');
   if (auditsCount === 0 && plan === 'free') banner.classList.add('show');
   else banner.classList.remove('show');
+}
+
+// ── REFERRAL WIDGET ───────────────────────────────────────────
+let userRefUrl = '';
+async function loadReferralWidget() {
+  if (!sessionToken) return;
+  try {
+    const res = await fetch('/api/referral', { headers: { 'x-session-token': sessionToken } });
+    const data = await res.json();
+    if (!data.success) return;
+    userRefUrl = data.refUrl;
+    document.getElementById('ref-url-display').textContent = data.refUrl;
+    document.getElementById('ref-count').textContent = data.referralCount;
+    document.getElementById('ref-bonus').textContent = `+${data.bonusEarned} auditorías ganadas`;
+    document.getElementById('referral-widget').style.display = '';
+  } catch(e) {}
+}
+
+function copyRefLink() {
+  if (!userRefUrl) return;
+  navigator.clipboard.writeText(userRefUrl).then(() => {
+    const btn = document.getElementById('ref-copy-btn');
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = 'Copiar →'; }, 2000);
+    showToast('✓ Link copiado — compartilo con otros vendedores');
+  });
+}
+
+// ── REF CODE EN LOGIN ─────────────────────────────────────────
+function getRefFromUrl() {
+  return new URLSearchParams(window.location.search).get('ref') || sessionStorage.getItem('vendly_ref') || '';
 }
 </script>
 </body>
