@@ -319,7 +319,7 @@ Respondé SOLO con JSON puro sin markdown ni texto adicional. IMPORTANTE: todos 
 async function sendMagicLink(email, token) {
   const link = `${APP_URL}/api/auth/verify?token=${token}`;
   await resend.emails.send({
-    from: 'Vendly <onboarding@resend.dev>',
+    from: 'Vendly <hola@vend-ly.store>',
     to: email,
     subject: 'Tu link de acceso a Vendly',
     html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#07070E;color:#F0EEF8;border-radius:16px;">
@@ -335,7 +335,7 @@ async function sendMagicLink(email, token) {
 async function sendWelcomeEmail(email) {
   const appUrl = APP_URL;
   await resend.emails.send({
-    from: 'Vendly <onboarding@resend.dev>',
+    from: 'Vendly <hola@vend-ly.store>',
     to: email,
     subject: '¡Bienvenido a Vendly! Así sacás el máximo provecho 🚀',
     html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#07070E;color:#F0EEF8;border-radius:16px;">
@@ -364,7 +364,7 @@ async function sendWelcomeEmail(email) {
 async function sendDay3Email(email, refCode) {
   const refLink = `${APP_URL}/app?ref=${refCode}`;
   await resend.emails.send({
-    from: 'Tomás de Vendly <onboarding@resend.dev>',
+    from: 'Tomás de Vendly <hola@vend-ly.store>',
     to: email,
     subject: '¿Implementaste las mejoras de tu auditoría?',
     html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#07070E;color:#F0EEF8;border-radius:16px;">
@@ -388,7 +388,7 @@ async function sendDay3Email(email, refCode) {
 
 async function sendDay7Email(email) {
   await resend.emails.send({
-    from: 'Tomás de Vendly <onboarding@resend.dev>',
+    from: 'Tomás de Vendly <hola@vend-ly.store>',
     to: email,
     subject: 'Lo que están haciendo los vendedores que más venden en LATAM',
     html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#07070E;color:#F0EEF8;border-radius:16px;">
