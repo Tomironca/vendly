@@ -350,9 +350,9 @@ async function sendMagicLink(email, token) {
     html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#07070E;color:#F0EEF8;border-radius:16px;">
       <div style="font-size:22px;font-weight:800;margin-bottom:8px;">Vend<span style="color:#A688FA">ly</span></div>
       <h2 style="font-size:20px;margin-bottom:12px;color:#F0EEF8;">Tu link de acceso</h2>
-      <p style="color:#8B89A0;margin-bottom:24px;line-height:1.6;">Hacé click para ingresar. Expira en 10 minutos.</p>
-      <a href="${link}" style="display:inline-block;background:#7C5CFC;color:#fff;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:500;">Ingresar a Vendly →</a>
-      <p style="color:#555;font-size:11px;margin-top:20px;">O copiá: ${link}</p>
+      <p style="color:#8B89A0;margin-bottom:24px;line-height:1.6;">Hacé click para ingresar. Expira en 30 minutos.</p>
+      <a href="${link}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:#7C5CFC;color:#fff;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:500;">Ingresar a Vendly →</a>
+      <p style="color:#8B89A0;font-size:12px;margin-top:20px;line-height:1.6;">Si el botón no funciona, copiá y pegá este link en Chrome o Safari:<br><a href="${link}" target="_blank" style="color:#A688FA;word-break:break-all;">${link}</a></p>
     </div>`
   });
 }
