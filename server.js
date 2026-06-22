@@ -120,6 +120,31 @@ function saveDb() {
 // Auto-save every 30 seconds
 setInterval(saveDb, 30000);
 
+// Auto follow-up emails cada 6 horas
+setInterval(async () => {
+  try {
+    const day3Users = dbAll(`
+      SELECT u.id, u.email, u.ref_code FROM users u
+      WHERE u.followup_day3 = 0 AND u.welcomed = 1
+      AND julianday('now') - julianday(u.created_at) >= 3
+      AND EXISTS (SELECT 1 FROM audits a WHERE a.user_id = u.id)
+    `);
+    for (const u of day3Users) {
+      try { await sendDay3Email(u.email, u.ref_code || ''); dbRun('UPDATE users SET followup_day3 = 1 WHERE id = ?', [u.id]); }
+      catch(e) { console.error('Day3 email error:', u.email, e.message); }
+    }
+    const day7Users = dbAll(`
+      SELECT u.id, u.email FROM users u
+      WHERE u.followup_day7 = 0 AND u.welcomed = 1 AND u.plan = 'free'
+      AND julianday('now') - julianday(u.created_at) >= 7
+    `);
+    for (const u of day7Users) {
+      try { await sendDay7Email(u.email); dbRun('UPDATE users SET followup_day7 = 1 WHERE id = ?', [u.id]); }
+      catch(e) { console.error('Day7 email error:', u.email, e.message); }
+    }
+  } catch(e) { console.error('Follow-up cron error:', e.message); }
+}, 6 * 60 * 60 * 1000);
+
 // DB helpers
 function dbGet(sql, params = []) {
   const stmt = db.prepare(sql);
