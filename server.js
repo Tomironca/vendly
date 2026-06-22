@@ -480,7 +480,7 @@ app.post('/api/auth/login', async (req, res) => {
       }
     }
     const token = crypto.randomBytes(32).toString('hex');
-    const exp = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    const exp = new Date(Date.now() + 30 * 60 * 1000).toISOString();
     dbRun('INSERT INTO magic_tokens (email, token, expires_at) VALUES (?, ?, ?)', [email.toLowerCase(), token, exp]);
     await sendMagicLink(email.toLowerCase(), token);
     res.json({ success: true, message: 'Link enviado. Revisá tu email.' });
@@ -534,7 +534,7 @@ app.post('/api/audit', optAuth, async (req, res) => {
         u = dbGet('SELECT * FROM users WHERE id = ?', [u.id]);
       }
     }
-    if (u.status !== 'active') return res.status(403).json({ error: 'Suscripción inactiva', upgrade: true });
+    if (u.plan !== 'free' && u.status !== 'active') return res.status(403).json({ error: 'Suscripción inactiva', upgrade: true });
     if (u.plan !== 'pro' && u.plan !== 'agency' && u.audits_used >= u.audits_limit)
       return res.status(403).json({ error: 'Límite alcanzado', upgrade: true });
     try {
@@ -654,7 +654,7 @@ app.post('/api/webhook', async (req, res) => {
         console.log(`Activated ${plan} for ${email}`);
       } else if (['cancelled', 'expired', 'past_due', 'unpaid', 'paused'].includes(status)) {
         dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
-          ['cancelled', 'free', subscriptionId]);
+          ['active', 'free', subscriptionId]);
         console.log(`Deactivated subscription ${subscriptionId} (${status})`);
       }
     }
@@ -663,7 +663,7 @@ app.post('/api/webhook', async (req, res) => {
     if (eventName === 'subscription_cancelled') {
       const subscriptionId = String(event.data?.id || '');
       dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
-        ['cancelled', 'free', subscriptionId]);
+        ['active', 'free', subscriptionId]);
     }
 
     // subscription_expired
