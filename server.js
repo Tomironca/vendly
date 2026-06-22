@@ -10,8 +10,6 @@ const jwt = require('jsonwebtoken');
 const initSqlJs = require('sql.js');
 const fs = require('fs');
 const { Resend } = require('resend');
-const Stripe = require('stripe');
-
 const app = express();
 app.use('/api/webhook', express.raw({ type: 'application/json' }));
 app.use(cors());
@@ -20,11 +18,12 @@ app.use(express.static('public', { index: false }));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const resend = new Resend(process.env.RESEND_API_KEY);
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY || '');
 const JWT_SECRET = process.env.JWT_SECRET || 'vendly_secret_change_me';
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
-const STRIPE_STARTER_PRICE = process.env.STRIPE_STARTER_PRICE_ID || '';
-const STRIPE_PRO_PRICE = process.env.STRIPE_PRO_PRICE_ID || '';
+const LS_API_KEY = process.env.LEMONSQUEEZY_API_KEY || '';
+const LS_WEBHOOK_SECRET = process.env.LEMONSQUEEZY_WEBHOOK_SECRET || '';
+const LS_STARTER_VARIANT = process.env.LEMONSQUEEZY_BASIC_VARIANT_ID || '';
+const LS_PRO_VARIANT = process.env.LEMONSQUEEZY_PRO_VARIANT_ID || '';
+const LS_STORE_URL = (process.env.LEMONSQUEEZY_STORE_URL || '').replace(/\/$/, '');
 const APP_URL = process.env.APP_URL || 'https://vendly-production-e0f2.up.railway.app';
 const DB_PATH = './vendly.db';
 
@@ -149,15 +148,49 @@ function optAuth(req, res, next) {
 
 // ── SCRAPER ───────────────────────────────────────────────────
 async function scrape(url) {
-  const { data } = await axios.get(url, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Vendly/6.0)' } });
+  const { data } = await axios.get(url, { timeout: 12000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' } });
   const $ = cheerio.load(data);
+
+  // Extraer precio de múltiples patrones comunes (Tiendanube, Shopify, MercadoShops)
+  const priceSelectors = [
+    '[class*="price"]', '[class*="precio"]', '[itemprop="price"]',
+    '[class*="Price"]', '.product-price', '.price-item', '.js-price',
+    '[data-price]', '.money'
+  ];
+  let price = '';
+  for (const sel of priceSelectors) {
+    const p = $(sel).first().text().trim();
+    if (p && p.length < 30) { price = p; break; }
+  }
+
+  // Extraer descripción del producto (no solo meta)
+  const descSelectors = [
+    '[class*="description"]', '[class*="descripcion"]', '[itemprop="description"]',
+    '.product-description', '.product__description', '#product-description'
+  ];
+  let productDesc = '';
+  for (const sel of descSelectors) {
+    const d = $(sel).first().text().replace(/\s+/g, ' ').trim();
+    if (d && d.length > 50) { productDesc = d.slice(0, 800); break; }
+  }
+
+  // Detectar si tiene reseñas visibles
+  const hasReviews = $('[class*="review"], [class*="rating"], [class*="stars"], [itemprop="ratingValue"]').length > 0;
+  // Detectar imágenes del producto
+  const imgCount = $('[class*="product"] img, [class*="gallery"] img').length;
+
+  const bodyText = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 2500);
+
   return {
     name: $('h1').first().text().trim() || $('meta[property="og:title"]').attr('content') || '',
-    description: $('meta[property="og:description"]').attr('content') || $('meta[name="description"]').attr('content') || '',
-    price: $('[class*="price"]').first().text().trim() || '',
+    description: $('meta[property="og:description"]').attr('content') || $('meta[name="description"]').attr('content') || productDesc || '',
+    productDescription: productDesc,
+    price,
     image: $('meta[property="og:image"]').attr('content') || '',
+    hasReviews,
+    imageCount: imgCount,
     url,
-    bodyText: $('body').text().replace(/\s+/g, ' ').trim().slice(0, 2000)
+    bodyText
   };
 }
 
@@ -212,14 +245,20 @@ COMPETIDOR A COMPARAR:
     ? `"analisis_competidor":{"ventajas_vs_competidor":["ventaja concreta 1","ventaja concreta 2","ventaja concreta 3"],"desventajas_vs_competidor":["desventaja concreta 1","desventaja concreta 2"],"oportunidades":["oportunidad de diferenciación 1","oportunidad 2","oportunidad 3"],"conclusion":"2-3 oraciones sobre cómo posicionarse estratégicamente frente al competidor"},`
     : `"analisis_competidor":null,`;
 
+  // Plan de acción — 5 pasos priorizados con plazo estimado
+  const planAccionSchema = `"plan_accion":[{"prioridad":1,"accion":"primera acción concreta y específica con el mayor ROI — qué hacer exactamente, no un consejo genérico","impacto_esperado":"resultado medible esperado en ventas, conversión o confianza","plazo":"Inmediato (hoy)"},{"prioridad":2,"accion":"segunda acción de alto impacto, implementable sin desarrollador","impacto_esperado":"resultado específico esperado","plazo":"Esta semana"},{"prioridad":3,"accion":"tercera acción de impacto medio, puede requerir algo de tiempo","impacto_esperado":"resultado esperado a mediano plazo","plazo":"Próximas 2 semanas"},{"prioridad":4,"accion":"cuarta acción de optimización continua","impacto_esperado":"mejora incremental esperada","plazo":"Este mes"},{"prioridad":5,"accion":"quinta acción estratégica de más largo plazo","impacto_esperado":"impacto esperado a largo plazo","plazo":"Próximo mes"}]`;
+
   const prompt = `Sos un consultor senior de e-commerce con 10 años de experiencia en ${ctx.name}, especializado en optimización de conversión. Has auditado más de 500 tiendas y sabés exactamente qué hace que los compradores de la región compren o abandonen.
 
 PRODUCTO A AUDITAR:
 - Nombre: ${product.name || 'Sin nombre detectado'}
-- Descripción actual: ${product.description || 'Sin descripción'}
+- Descripción meta: ${product.description || 'Sin descripción'}
+- Descripción en página: ${product.productDescription || 'No detectada'}
 - Precio: ${product.price || 'No especificado'}
 - URL: ${product.url || 'No disponible'}
-- Contenido de la página: ${(product.bodyText || '').slice(0, 1500)}
+- Reseñas visibles: ${product.hasReviews ? 'Sí' : 'No detectadas'}
+- Cantidad de imágenes del producto: ${product.imageCount || 0}
+- Contenido de la página: ${(product.bodyText || '').slice(0, 1800)}
 ${compBlock}
 MERCADO: ${ctx.name}
 COMPORTAMIENTO DEL COMPRADOR: ${ctx.buyerInsights}
@@ -242,8 +281,8 @@ CRITERIOS DE SCORING (sé específico y realista, no inflés los números):
 - SEO 50-69: optimización básica
 - SEO 0-49: sin optimización real
 
-Respondé SOLO con JSON puro sin markdown ni texto adicional:
-{"resumen_ejecutivo":"3-4 oraciones específicas sobre ESTE producto: su mayor fortaleza, su mayor problema de conversión y la oportunidad más importante para vender más en ${ctx.name}.","scores":{"conversion":<número real 0-100>,"confianza":<número real 0-100>,"seo":<número real 0-100>,"conversion_explicacion":"2 oraciones concretas sobre qué sube y qué baja el score de conversión de ESTE producto específico","confianza_explicacion":"2 oraciones específicas sobre qué elementos de confianza tiene y cuáles le faltan","seo_explicacion":"2 oraciones sobre el estado real del SEO con keywords detectadas o ausentes"},${compJson}"fortalezas":["fortaleza concreta y específica de ESTE producto 1","fortaleza 2","fortaleza 3","fortaleza 4"],"debilidades":["debilidad específica con impacto directo en ventas 1","debilidad 2","debilidad 3","debilidad 4"],"mejoras_recomendadas":[{"titulo":"acción concreta y accionable","descripcion":"cómo implementarlo exactamente, paso a paso, en el contexto de ${ctx.name}","impacto":"ALTO"},{"titulo":"segunda mejora ALTO impacto","descripcion":"instrucciones específicas de implementación","impacto":"ALTO"},{"titulo":"mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO"},{"titulo":"segunda mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO"},{"titulo":"mejora BAJO impacto pero rápida","descripcion":"instrucciones específicas","impacto":"BAJO"}],"descripcion_optimizada":{"titulo_seo":"título entre 60-80 caracteres con keyword principal pensada para compradores de ${ctx.name}","descripcion_corta":"máximo 160 caracteres con keyword principal y beneficio clave más importante","descripcion_larga":"ESCRIBÍ 300-400 palabras COMPLETAS en tono ${toneDesc}. Estructura: gancho que enganche en la primera línea + problema que resuelve + características principales + beneficios concretos para el comprador + prueba social implícita + llamado a la acción. NO uses placeholders, redactá el texto real y completo.","bullet_points":["beneficio concreto 1 con resultado específico y medible","beneficio 2 que responde a una objeción común","beneficio 3 diferenciador vs competencia","beneficio 4 de conveniencia o facilidad","beneficio 5 de garantía o confianza"]},"meta_ads":[{"nombre":"Ad 1 — Beneficio Principal","headline":"máx 40 chars, gancho directo al beneficio más fuerte","texto_principal":"ESCRIBÍ 150-200 palabras COMPLETAS. Hook impactante en las primeras 2 líneas que detenga el scroll + problema que resuelve + solución (el producto) + 3 beneficios concretos + CTA claro. Texto real, no placeholder.","descripcion":"máx 90 chars complementando el headline con una razón más para hacer clic","objetivo":"Conversión"},{"nombre":"Ad 2 — Problema/Dolor","headline":"headline que toca el dolor o frustración del cliente potencial","texto_principal":"150-200 palabras reales. Empieza por el dolor, agítalo, presenta el producto como solución, cierra con CTA.","descripcion":"descripción que refuerza la solución al problema","objetivo":"Conversión"},{"nombre":"Ad 3 — Prueba Social","headline":"headline con número, resultado o validación social","texto_principal":"150-200 palabras reales con testimonios hipotéticos realistas o resultados esperados. Específico y creíble.","descripcion":"descripción que refuerza la prueba social","objetivo":"Reconocimiento"},{"nombre":"Ad 4 — Urgencia/Escasez","headline":"headline con urgencia genuina y creíble","texto_principal":"150-200 palabras reales. Urgencia real (stock, tiempo, precio). Beneficio claro. CTA con deadline.","descripcion":"descripción con la limitación o deadline","objetivo":"Conversión"},{"nombre":"Ad 5 — Retargeting","headline":"headline para quien ya vio el producto pero no compró","texto_principal":"150-200 palabras reales. Superar las 2-3 objeciones más comunes. Ofrecer garantía o facilidad. CTA directo.","descripcion":"descripción con garantía o facilidad de compra","objetivo":"Retargeting"}],"instagram_posts":[{"tipo":"Post educativo","hook":"primera línea que detiene el scroll y genera curiosidad — sin emojis vacíos","caption":"ESCRIBÍ 150-200 palabras completas en ${toneDesc}. Empieza con el hook. Da valor educativo relacionado al producto/problema que resuelve. Cierra con CTA a la bio o link. Incluí 8-12 hashtags relevantes para ${ctx.name} al final."},{"tipo":"Post de producto","hook":"hook enfocado en el resultado o transformación que da el producto","caption":"150-200 palabras completas. Muestra el producto en una situación de uso real. Historia corta o escenario. CTA. Hashtags para ${ctx.name}."},{"tipo":"Historia de éxito","hook":"hook con resultado concreto, número o transformación visible","caption":"150-200 palabras completas. Historia antes/después o resultado esperado con el producto. Específico y creíble. CTA. Hashtags."}],"preguntas_frecuentes":[{"pregunta":"la pregunta más común antes de comprar ESTE producto específico","respuesta":"respuesta completa que elimina la duda y empuja sutilmente a la compra"},{"pregunta":"pregunta sobre envío, devolución o garantía — la más relevante para ${ctx.name}","respuesta":"respuesta clara, tranquilizadora y específica"},{"pregunta":"pregunta técnica sobre características, compatibilidad o uso correcto","respuesta":"respuesta técnica útil que demuestra expertise"},{"pregunta":"pregunta sobre precio, cuotas o forma de pago relevante para ${ctx.name}","respuesta":"respuesta que justifica el precio y facilita la decisión de compra"}],"estrategia_precio":"2-3 oraciones muy concretas: si el precio está bien posicionado para ${ctx.name}, cómo comunicarlo mejor (cuotas, precio de referencia, anclaje), y qué cambio de precio o comunicación del precio tendría mayor impacto en conversión.","keywords_seo":["keyword principal con mayor volumen de búsqueda","keyword secundaria 1","keyword secundaria 2","keyword long-tail con intención de compra","keyword long-tail 2 específica del producto","keyword regional o local para ${ctx.name}","keyword de categoría amplia","keyword de problema que resuelve el producto"]}`;
+Respondé SOLO con JSON puro sin markdown ni texto adicional. IMPORTANTE: todos los textos deben estar completamente redactados, nunca uses placeholders ni instrucciones dentro del valor:
+{"resumen_ejecutivo":"3-4 oraciones específicas sobre ESTE producto: su mayor fortaleza, su mayor problema de conversión y la oportunidad más importante para vender más en ${ctx.name}.","scores":{"conversion":<número real 0-100>,"confianza":<número real 0-100>,"seo":<número real 0-100>,"conversion_explicacion":"2 oraciones concretas sobre qué sube y qué baja el score de conversión de ESTE producto específico","confianza_explicacion":"2 oraciones específicas sobre qué elementos de confianza tiene y cuáles le faltan","seo_explicacion":"2 oraciones sobre el estado real del SEO con keywords detectadas o ausentes"},${compJson}"fortalezas":["fortaleza concreta y específica de ESTE producto 1","fortaleza 2","fortaleza 3","fortaleza 4"],"debilidades":["debilidad específica con impacto directo en ventas 1","debilidad 2","debilidad 3","debilidad 4"],"mejoras_recomendadas":[{"titulo":"acción concreta y accionable","descripcion":"cómo implementarlo exactamente, paso a paso, en el contexto de ${ctx.name}","impacto":"ALTO"},{"titulo":"segunda mejora ALTO impacto","descripcion":"instrucciones específicas de implementación","impacto":"ALTO"},{"titulo":"mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO"},{"titulo":"segunda mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO"},{"titulo":"mejora BAJO impacto pero rápida","descripcion":"instrucciones específicas","impacto":"BAJO"}],"descripcion_optimizada":{"titulo_seo":"título entre 60-80 caracteres con keyword principal pensada para compradores de ${ctx.name}","descripcion_corta":"máximo 160 caracteres con keyword principal y beneficio clave más importante","descripcion_larga":"ESCRIBÍ 300-400 palabras COMPLETAS en tono ${toneDesc}. Estructura: gancho que enganche en la primera línea + problema que resuelve + características principales + beneficios concretos para el comprador + prueba social implícita + llamado a la acción. NO uses placeholders, redactá el texto real y completo.","bullet_points":["beneficio concreto 1 con resultado específico y medible","beneficio 2 que responde a una objeción común","beneficio 3 diferenciador vs competencia","beneficio 4 de conveniencia o facilidad","beneficio 5 de garantía o confianza"]},"meta_ads":[{"nombre":"Ad 1 — Beneficio Principal","headline":"máx 40 chars, gancho directo al beneficio más fuerte","texto_principal":"ESCRIBÍ 150-200 palabras COMPLETAS. Hook impactante en las primeras 2 líneas que detenga el scroll + problema que resuelve + solución (el producto) + 3 beneficios concretos + CTA claro. Texto real, no placeholder.","descripcion":"máx 90 chars complementando el headline con una razón más para hacer clic","objetivo":"Conversión"},{"nombre":"Ad 2 — Problema/Dolor","headline":"headline que toca el dolor o frustración del cliente potencial","texto_principal":"150-200 palabras reales. Empieza por el dolor, agítalo, presenta el producto como solución, cierra con CTA.","descripcion":"descripción que refuerza la solución al problema","objetivo":"Conversión"},{"nombre":"Ad 3 — Prueba Social","headline":"headline con número, resultado o validación social","texto_principal":"150-200 palabras reales con testimonios hipotéticos realistas o resultados esperados. Específico y creíble.","descripcion":"descripción que refuerza la prueba social","objetivo":"Reconocimiento"},{"nombre":"Ad 4 — Urgencia/Escasez","headline":"headline con urgencia genuina y creíble","texto_principal":"150-200 palabras reales. Urgencia real (stock, tiempo, precio). Beneficio claro. CTA con deadline.","descripcion":"descripción con la limitación o deadline","objetivo":"Conversión"},{"nombre":"Ad 5 — Retargeting","headline":"headline para quien ya vio el producto pero no compró","texto_principal":"150-200 palabras reales. Superar las 2-3 objeciones más comunes. Ofrecer garantía o facilidad. CTA directo.","descripcion":"descripción con garantía o facilidad de compra","objetivo":"Retargeting"}],"instagram_posts":[{"tipo":"Post educativo","hook":"primera línea que detiene el scroll y genera curiosidad — sin emojis vacíos","caption":"ESCRIBÍ 150-200 palabras completas en ${toneDesc}. Empieza con el hook. Da valor educativo relacionado al producto/problema que resuelve. Cierra con CTA a la bio o link. Incluí 8-12 hashtags relevantes para ${ctx.name} al final."},{"tipo":"Post de producto","hook":"hook enfocado en el resultado o transformación que da el producto","caption":"150-200 palabras completas. Muestra el producto en una situación de uso real. Historia corta o escenario. CTA. Hashtags para ${ctx.name}."},{"tipo":"Historia de éxito","hook":"hook con resultado concreto, número o transformación visible","caption":"150-200 palabras completas. Historia antes/después o resultado esperado con el producto. Específico y creíble. CTA. Hashtags."}],"preguntas_frecuentes":[{"pregunta":"la pregunta más común antes de comprar ESTE producto específico","respuesta":"respuesta completa que elimina la duda y empuja sutilmente a la compra"},{"pregunta":"pregunta sobre envío, devolución o garantía — la más relevante para ${ctx.name}","respuesta":"respuesta clara, tranquilizadora y específica"},{"pregunta":"pregunta técnica sobre características, compatibilidad o uso correcto","respuesta":"respuesta técnica útil que demuestra expertise"},{"pregunta":"pregunta sobre precio, cuotas o forma de pago relevante para ${ctx.name}","respuesta":"respuesta que justifica el precio y facilita la decisión de compra"}],"estrategia_precio":"2-3 oraciones muy concretas: si el precio está bien posicionado para ${ctx.name}, cómo comunicarlo mejor (cuotas, precio de referencia, anclaje), y qué cambio de precio o comunicación del precio tendría mayor impacto en conversión.","keywords_seo":["keyword principal con mayor volumen de búsqueda","keyword secundaria 1","keyword secundaria 2","keyword long-tail con intención de compra","keyword long-tail 2 específica del producto","keyword regional o local para ${ctx.name}","keyword de categoría amplia","keyword de problema que resuelve el producto"],${planAccionSchema}}`;
 
   const r = await openai.chat.completions.create({
     model: 'gpt-4o',
@@ -410,44 +449,40 @@ app.get('/api/audits/:id', requireAuth, (req, res) => {
   res.json({ success: true, audit: { ...a, audit_data: JSON.parse(a.audit_data) } });
 });
 
-// Payments — Stripe
+// Payments — Lemon Squeezy
 app.post('/api/checkout', optAuth, async (req, res) => {
   const { plan } = req.body;
-  const email = req.user?.email || req.body.email;
-  const priceId = plan === 'pro' ? STRIPE_PRO_PRICE : STRIPE_STARTER_PRICE;
-  if (!priceId) return res.status(500).json({ error: 'Pagos no configurados aún.' });
-  try {
-    const sessionParams = {
-      mode: 'subscription',
-      payment_method_types: ['card'],
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${APP_URL}/app?subscribed=true`,
-      cancel_url: `${APP_URL}/app?cancelled=true`,
-      metadata: { plan: plan || 'basic', email: email || '' }
-    };
-    if (email) sessionParams.customer_email = email;
-    const session = await stripe.checkout.sessions.create(sessionParams);
-    res.json({ url: session.url });
-  } catch (e) {
-    console.error('Stripe checkout error:', e.message);
-    res.status(500).json({ error: 'Error creando sesión de pago.' });
-  }
+  const email = req.user?.email || req.body.email || '';
+  const variantId = plan === 'pro' ? LS_PRO_VARIANT : LS_STARTER_VARIANT;
+  if (!variantId || !LS_STORE_URL) return res.status(500).json({ error: 'Pagos no configurados aún.' });
+  // Construir URL de checkout de Lemon Squeezy con email prefill y metadata del plan
+  const params = new URLSearchParams({
+    'checkout[email]': email,
+    'checkout[custom][plan]': plan || 'basic',
+    'checkout[custom][app_url]': APP_URL,
+  });
+  const url = `${LS_STORE_URL}/checkout/buy/${variantId}?${params.toString()}`;
+  res.json({ url });
 });
 
-// Stripe Customer Portal
+// Lemon Squeezy Customer Portal (redirige al portal de gestión de LS)
 app.get('/api/portal', requireAuth, async (req, res) => {
   const user = req.user;
-  if (!user.stripe_customer_id) return res.status(400).json({ error: 'No tenés suscripción activa.' });
-  try {
-    const session = await stripe.billingPortal.sessions.create({
-      customer: user.stripe_customer_id,
-      return_url: `${APP_URL}/app`
-    });
-    res.json({ url: session.url });
-  } catch (e) {
-    console.error('Stripe portal error:', e.message);
-    res.status(500).json({ error: 'Error abriendo portal.' });
+  if (!user.subscription_id) return res.status(400).json({ error: 'No tenés suscripción activa.' });
+  // Intentar obtener URL del portal vía API de LS si hay customer_id
+  if (user.stripe_customer_id && LS_API_KEY) {
+    try {
+      const r = await axios.get(`https://api.lemonsqueezy.com/v1/customers/${user.stripe_customer_id}`, {
+        headers: { Authorization: `Bearer ${LS_API_KEY}`, Accept: 'application/vnd.api+json' }
+      });
+      const portalUrl = r.data?.data?.attributes?.urls?.customer_portal;
+      if (portalUrl) return res.json({ url: portalUrl });
+    } catch (e) {
+      console.error('LS portal API error:', e.message);
+    }
   }
+  // Fallback: portal genérico de Lemon Squeezy
+  res.json({ url: 'https://app.lemonsqueezy.com/my-orders' });
 });
 
 // Verificación manual (fallback: chequea la DB por si el webhook ya se procesó)
@@ -461,49 +496,64 @@ app.post('/api/verify-subscription', async (req, res) => {
   res.json({ success: true, sessionToken: makeJWT(user.id, user.email, user.plan), plan: user.plan, auditsLimit: user.audits_limit });
 });
 
-// Stripe Webhook
+// Lemon Squeezy Webhook
 app.post('/api/webhook', async (req, res) => {
-  let event;
-  try {
-    event = STRIPE_WEBHOOK_SECRET
-      ? stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], STRIPE_WEBHOOK_SECRET)
-      : JSON.parse(req.body.toString());
-  } catch (e) {
-    console.error('Webhook signature error:', e.message);
-    return res.status(400).send(`Webhook error: ${e.message}`);
+  // Verificar firma HMAC-SHA256
+  if (LS_WEBHOOK_SECRET) {
+    const sig = req.headers['x-signature'] || '';
+    const hmac = crypto.createHmac('sha256', LS_WEBHOOK_SECRET).update(req.body).digest('hex');
+    if (hmac !== sig) {
+      console.error('Webhook signature mismatch');
+      return res.status(400).send('Invalid signature');
+    }
   }
 
-  const { type, data } = event;
-  console.log('Stripe event:', type);
+  let event;
+  try { event = JSON.parse(req.body.toString()); }
+  catch (e) { return res.status(400).send('Invalid JSON'); }
+
+  const eventName = event.meta?.event_name || '';
+  const attrs = event.data?.attributes || {};
+  console.log('LS webhook event:', eventName);
 
   try {
-    if (type === 'checkout.session.completed') {
-      const session = data.object;
-      const email = (session.customer_details?.email || session.metadata?.email || '').toLowerCase();
-      const plan = session.metadata?.plan || 'basic';
-      const customerId = session.customer;
-      const subscriptionId = session.subscription;
-      if (email) {
+    // subscription_created / subscription_updated
+    if (eventName === 'subscription_created' || eventName === 'subscription_updated') {
+      const email = (attrs.user_email || '').toLowerCase();
+      const status = attrs.status; // active, cancelled, expired, past_due, unpaid, paused
+      const variantId = String(attrs.variant_id || '');
+      const subscriptionId = String(event.data?.id || '');
+      const customerId = String(attrs.customer_id || '');
+
+      if (!email) { console.error('LS webhook: no email'); return res.json({ received: true }); }
+
+      if (status === 'active') {
+        const plan = variantId === String(LS_PRO_VARIANT) ? 'pro' : 'basic';
         const limit = plan === 'pro' ? 999999 : 30;
         const existing = dbGet('SELECT id FROM users WHERE email = ?', [email]);
         if (!existing) dbRun('INSERT INTO users (email) VALUES (?)', [email]);
         dbRun('UPDATE users SET plan=?, status=?, audits_limit=?, subscription_id=?, stripe_customer_id=?, audits_reset_at=datetime("now"), updated_at=datetime("now") WHERE email=?',
           [plan, 'active', limit, subscriptionId, customerId, email]);
         console.log(`Activated ${plan} for ${email}`);
+      } else if (['cancelled', 'expired', 'past_due', 'unpaid', 'paused'].includes(status)) {
+        dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
+          ['cancelled', 'free', subscriptionId]);
+        console.log(`Deactivated subscription ${subscriptionId} (${status})`);
       }
-    } else if (type === 'customer.subscription.updated') {
-      const sub = data.object;
-      const customerId = sub.customer;
-      const status = sub.status;
-      if (['active', 'trialing'].includes(status)) {
-        dbRun('UPDATE users SET status=?, updated_at=datetime("now") WHERE stripe_customer_id=?', ['active', customerId]);
-      } else if (['canceled', 'unpaid', 'past_due'].includes(status)) {
-        dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE stripe_customer_id=?', ['cancelled', 'free', customerId]);
-      }
-    } else if (type === 'customer.subscription.deleted') {
-      const sub = data.object;
-      dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE stripe_customer_id=?',
-        ['cancelled', 'free', sub.customer]);
+    }
+
+    // subscription_cancelled (evento explícito de cancelación)
+    if (eventName === 'subscription_cancelled') {
+      const subscriptionId = String(event.data?.id || '');
+      dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
+        ['cancelled', 'free', subscriptionId]);
+    }
+
+    // subscription_expired
+    if (eventName === 'subscription_expired') {
+      const subscriptionId = String(event.data?.id || '');
+      dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
+        ['cancelled', 'free', subscriptionId]);
     }
   } catch (e) {
     console.error('Webhook processing error:', e.message);
