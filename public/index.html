@@ -364,7 +364,7 @@ footer span{color:var(--accent2)}
   <div class="modal">
     <button class="modal-close" onclick="closeUpgradeModal()">✕</button>
     <div class="modal-title">Elegí tu plan</div>
-    <div class="modal-sub">Suscribite para continuar usando Vendly.</div>
+    <div class="modal-sub">Suscribite para continuar usando Vendly. <span style="color:var(--green)">🛡️ 30 días garantía.</span></div>
     <div class="plans-grid">
       <div class="plan-card selected" id="pc-starter" onclick="selectPlan('basic')">
         <div class="plan-name">Starter</div>
@@ -389,6 +389,9 @@ footer span{color:var(--accent2)}
       </div>
     </div>
     <button class="btn btn-primary" id="checkout-btn" onclick="goToCheckout()" style="margin-top:0">Suscribirme al Plan Starter →</button>
+    <div style="text-align:center;font-size:12px;color:var(--muted);margin:8px 0 4px;display:flex;align-items:center;justify-content:center;gap:5px;">
+      <span style="color:var(--green)">🛡️</span> 30 días garantía de devolución · Cancelá cuando quieras
+    </div>
     <div class="divider">ya pagué</div>
     <div class="auth-row">
       <input type="email" id="upgrade-email" placeholder="email con el que pagaste">
@@ -595,6 +598,7 @@ footer span{color:var(--accent2)}
       <div class="action-bar-left">
         <button class="btn btn-ghost" onclick="exportPDF()">⬇ Exportar PDF</button>
         <button class="btn btn-outline" onclick="shareReport()">🔗 Compartir</button>
+        <button class="btn btn-outline" id="wa-share-btn" style="display:none;background:rgba(37,211,102,0.08);border-color:rgba(37,211,102,0.3);color:#25D366" onclick="shareWhatsApp()">WhatsApp</button>
       </div>
       <button class="btn-sm" onclick="resetApp()">← Nueva auditoría</button>
     </div>
@@ -1106,6 +1110,13 @@ function logout() {
 }
 
 // ── SHARE & PDF ───────────────────────────────────────────────
+function shareWhatsApp() {
+  const url = document.getElementById('share-url').textContent;
+  const product = document.getElementById('rp-name').textContent;
+  const text = `Mirá el análisis de "${product}" que hice con Vendly — scores de conversión, anuncios para Meta Ads y plan de acción: ${url}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
+
 async function shareReport() {
   if (!currentAudit) return;
   try {
@@ -1116,6 +1127,7 @@ async function shareReport() {
       navigator.clipboard.writeText(fullUrl);
       document.getElementById('share-url').textContent=fullUrl;
       document.getElementById('share-link').classList.add('show');
+      document.getElementById('wa-share-btn').style.display='';
       showToast('✓ Link copiado');
     }
   } catch(e) { showToast('Error generando link.'); }
@@ -1193,6 +1205,7 @@ function resetApp(){
   document.getElementById('results').classList.remove('show');
   ['product-url','manual-name','manual-desc','manual-price','manual-url','comp-url'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value=''; });
   ['url-result','comp-result','share-link'].forEach(id=>document.getElementById(id).classList.remove('show'));
+  document.getElementById('wa-share-btn').style.display='none';
   hideErr('audit-error');
   window.scrollTo({top:0,behavior:'smooth'});
 }
