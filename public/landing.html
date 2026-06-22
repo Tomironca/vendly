@@ -3,11 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vendly — Auditá tu tienda y vendé más con IA</title>
-<meta name="description" content="Vendly analiza cualquier producto de tu tienda online en 30 segundos. Scores de conversión, copies para Meta Ads, plan de acción y más. Probá gratis.">
-<meta property="og:title" content="Vendly — Auditá tu tienda y vendé más con IA">
-<meta property="og:description" content="Scores de conversión, SEO y confianza. Copies para Meta Ads. Plan de acción. Todo en 30 segundos.">
+<title>Vendly — ¿Por qué tu producto no vende lo que debería?</title>
+<meta name="description" content="Vendly analiza cualquier producto de tu tienda en 30 segundos. Scores de conversión, copies para Meta Ads, descripción optimizada y plan de acción. Gratis para empezar.">
+<meta property="og:title" content="Vendly — Auditá tu producto y vendé más en 30 segundos">
+<meta property="og:description" content="Scores de conversión, SEO y confianza. 5 anuncios para Meta Ads listos para copiar. Plan de acción priorizado. Gratis para empezar.">
 <meta property="og:type" content="website">
+<meta property="og:image" content="https://vendly-production-e0f2.up.railway.app/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Vendly — Auditá tu producto y vendé más">
+<meta name="twitter:description" content="Scores de conversión, SEO y confianza en 30 segundos. Copies para Meta Ads incluidos. Gratis para empezar.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Vendly",
+  "applicationCategory": "BusinessApplication",
+  "description": "Herramienta de auditoría de e-commerce con IA para vendedores de LATAM. Analiza productos y genera scores de conversión, copies para Meta Ads y plan de acción en 30 segundos.",
+  "operatingSystem": "Web",
+  "offers": [
+    { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD" },
+    { "@type": "Offer", "name": "Starter", "price": "9", "priceCurrency": "USD", "billingIncrement": "month" },
+    { "@type": "Offer", "name": "Pro", "price": "19", "priceCurrency": "USD", "billingIncrement": "month" }
+  ]
+}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -53,6 +72,23 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:18px 4
 .btn-hero-ghost:hover{color:var(--text);border-color:var(--border)}
 .hero-trust{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);animation:fadeUp .6s .4s ease both}
 .trust-dot{width:5px;height:5px;border-radius:50%;background:var(--green)}
+
+.hero-social-proof{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px;animation:fadeUp .6s .5s ease both}
+.hsp-item{font-size:12px;color:var(--muted);font-style:italic}
+.hsp-sep{color:var(--border);font-size:16px}
+
+/* VS CHATGPT */
+.vs-section{padding:80px 24px;position:relative;z-index:1}
+.vs-grid{max-width:860px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.vs-grid{grid-template-columns:1fr}}
+.vs-col{border-radius:18px;padding:24px}
+.vs-col-bad{background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.15)}
+.vs-col-good{background:rgba(52,211,153,0.04);border:1px solid rgba(52,211,153,0.2)}
+.vs-col-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.vs-col-bad .vs-col-title{color:var(--red)}
+.vs-col-good .vs-col-title{color:var(--green)}
+.vs-item{display:flex;align-items:flex-start;gap:9px;font-size:14px;line-height:1.55;margin-bottom:10px;color:var(--muted)}
+.vs-icon{flex-shrink:0;margin-top:2px;font-size:13px}
 
 /* HERO VISUAL */
 .hero-visual{margin-top:60px;position:relative;width:100%;max-width:780px;animation:fadeUp .7s .5s ease both}
@@ -219,18 +255,23 @@ footer{border-top:1px solid var(--border-subtle);padding:40px;display:flex;align
 <section class="hero">
   <div class="hero-glow"></div>
   <div class="hero-announce">
-    <span class="announce-pill">NUEVO</span>
-    Comparación vs competidores · PDF descargable · Benchmarks de industria
+    <span class="announce-pill">GRATIS</span>
+    Sin tarjeta · Resultado en 30 segundos · Para Tiendanube, Shopify y más
   </div>
-  <h1>Auditá tu tienda y<br><span class="grad">vendé más con IA</span></h1>
-  <p class="hero-sub">Pegá la URL de cualquier producto y recibí en 30 segundos un informe completo con scores de conversión, copies para Meta Ads y un plan de acción listo para ejecutar.</p>
+  <h1>¿Por qué tu producto<br><span class="grad">no vende lo que debería?</span></h1>
+  <p class="hero-sub">Vendly analiza cualquier producto de tu tienda y te dice exactamente qué está fallando — y cómo arreglarlo. Antes de gastar un peso más en publicidad.</p>
   <div class="hero-actions">
-    <a href="/app" class="btn-hero btn-hero-primary">Empezar gratis — sin tarjeta →</a>
-    <a href="#como-funciona" class="btn-hero btn-hero-ghost">Ver cómo funciona</a>
+    <a href="/app" class="btn-hero btn-hero-primary">Auditar mi producto gratis →</a>
+    <a href="#como-funciona" class="btn-hero btn-hero-ghost">Ver ejemplo</a>
   </div>
   <div class="hero-trust">
     <div class="trust-dot"></div>
-    <span>Más de 1.000 auditorías generadas · Sin tarjeta de crédito · Cancelá cuando quieras</span>
+    <span id="hero-counter">Cargando...</span>
+  </div>
+  <div class="hero-social-proof">
+    <div class="hsp-item">"Subí la conversión un 23% en una semana" — Martina G., Bs As</div>
+    <div class="hsp-sep">·</div>
+    <div class="hsp-item">"Me ahorra 3 horas por producto" — Javier R., dropshipper</div>
   </div>
 
   <!-- MOCK APP PREVIEW -->
@@ -240,7 +281,7 @@ footer{border-top:1px solid var(--border-subtle);padding:40px;display:flex;align
         <div class="browser-dot bd-r"></div>
         <div class="browser-dot bd-y"></div>
         <div class="browser-dot bd-g"></div>
-        <div class="browser-url">vendly-production-e0f2.up.railway.app/app</div>
+        <div class="browser-url">vendly.app/auditoría</div>
       </div>
       <div class="browser-content">
         <div class="mock-scores">
@@ -276,6 +317,38 @@ footer{border-top:1px solid var(--border-subtle);padding:40px;display:flex;align
   </div>
 </section>
 
+<!-- VS CHATGPT -->
+<section class="vs-section fade-up">
+  <div class="section-header">
+    <div class="section-tag">Por qué Vendly</div>
+    <h2 class="section-title">No es lo mismo que preguntarle<br>a ChatGPT</h2>
+    <p class="section-sub">ChatGPT es un asistente general. Vendly es un especialista en e-commerce de LATAM.</p>
+  </div>
+  <div class="vs-grid">
+    <div class="vs-col vs-col-bad">
+      <div class="vs-col-title">✗ ChatGPT genérico</div>
+      <div class="vs-item"><span class="vs-icon">✗</span>Respuestas genéricas sin contexto de tu producto real</div>
+      <div class="vs-item"><span class="vs-icon">✗</span>No lee tu tienda — tenés que copiar y pegar todo a mano</div>
+      <div class="vs-item"><span class="vs-icon">✗</span>No conoce el comportamiento del comprador en Argentina, México o Colombia</div>
+      <div class="vs-item"><span class="vs-icon">✗</span>No genera copies para Meta Ads estructurados listos para usar</div>
+      <div class="vs-item"><span class="vs-icon">✗</span>Sin scores ni métricas — no sabés qué tan bien o mal estás</div>
+      <div class="vs-item"><span class="vs-icon">✗</span>Sin historial — no podés ver si mejorás con el tiempo</div>
+    </div>
+    <div class="vs-col vs-col-good">
+      <div class="vs-col-title">✓ Vendly especializado</div>
+      <div class="vs-item"><span class="vs-icon" style="color:var(--green)">✓</span>Lee tu producto automáticamente desde la URL — sin copiar nada</div>
+      <div class="vs-item"><span class="vs-icon" style="color:var(--green)">✓</span>Entrenado con patrones de e-commerce específicos de LATAM</div>
+      <div class="vs-item"><span class="vs-icon" style="color:var(--green)">✓</span>Sabe qué convierte en Argentina (voseo, cuotas, MercadoPago) y en México</div>
+      <div class="vs-item"><span class="vs-icon" style="color:var(--green)">✓</span>5 anuncios para Meta Ads completos con headline, texto y descripción</div>
+      <div class="vs-item"><span class="vs-icon" style="color:var(--green)">✓</span>Scores 0-100 de conversión, SEO y confianza con explicación concreta</div>
+      <div class="vs-item"><span class="vs-icon" style="color:var(--green)">✓</span>Historial con evolución de scores — ves el impacto de cada mejora</div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:32px">
+    <a href="/app" class="btn-hero btn-hero-primary" style="display:inline-flex">Probarlo gratis ahora →</a>
+  </div>
+</section>
+
 <!-- LOGOS -->
 <section class="logos-section">
   <div class="logos-title">Compatible con las principales plataformas de e-commerce</div>
@@ -292,7 +365,7 @@ footer{border-top:1px solid var(--border-subtle);padding:40px;display:flex;align
 <section class="stats fade-up">
   <div class="stats-inner">
     <div class="stat-item">
-      <div class="stat-num" style="color:var(--accent2)">1.200+</div>
+      <div class="stat-num" id="stat-audits" style="color:var(--accent2)">—</div>
       <div class="stat-label">Auditorías generadas</div>
     </div>
     <div class="stat-item">
@@ -503,10 +576,11 @@ footer{border-top:1px solid var(--border-subtle);padding:40px;display:flex;align
         <li><span class="pf-check">✓</span>5 sub-cuentas incluidas</li>
         <li><span class="pf-check">✓</span>Acceso API</li>
       </ul>
-      <a href="/app" class="btn-price btn-price-ghost">Contactar →</a>
+      <a href="https://wa.me/message/XXXXXXXXX" target="_blank" class="btn-price btn-price-ghost">Hablar por WhatsApp →</a>
     </div>
 
   </div>
+  <p style="text-align:center;font-size:13px;color:var(--muted);margin-top:20px">✓ Sin contrato · Cancelás cuando querés · Soporte por email incluido</p>
 </section>
 
 <!-- FAQ -->
@@ -571,6 +645,7 @@ footer{border-top:1px solid var(--border-subtle);padding:40px;display:flex;align
 function toggleFaq(btn) {
   btn.closest('.faq-item').classList.toggle('open');
 }
+
 const observer = new IntersectionObserver((entries) => {
   entries.forEach((e, i) => {
     if (e.isIntersecting) {
@@ -580,6 +655,36 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.08 });
 document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Contador dinámico real desde /api/stats
+async function loadStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const data = await res.json();
+    const total = data.totalAudits || 0;
+    const display = total > 0 ? (total >= 1000 ? `${(total/1000).toFixed(1).replace('.0','')}K+` : `${total}+`) : '—';
+    const statEl = document.getElementById('stat-audits');
+    if (statEl) statEl.textContent = display;
+    const heroEl = document.getElementById('hero-counter');
+    if (heroEl) heroEl.textContent = `${display} auditorías generadas · Sin tarjeta de crédito · Cancelá cuando quieras`;
+  } catch(e) {
+    const heroEl = document.getElementById('hero-counter');
+    if (heroEl) heroEl.textContent = 'Sin tarjeta de crédito · Resultado en 30 segundos · Cancelá cuando quieras';
+  }
+}
+loadStats();
+
+// Pasar ref code de la URL al botón CTA si viene referido
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('ref');
+  if (ref) {
+    document.querySelectorAll('a[href="/app"]').forEach(a => {
+      a.href = `/app?ref=${ref}`;
+    });
+    sessionStorage.setItem('vendly_ref', ref);
+  }
+})();
 </script>
 </body>
 </html>
