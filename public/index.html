@@ -364,7 +364,7 @@ footer span{color:var(--accent2)}
   <div class="modal">
     <button class="modal-close" onclick="closeUpgradeModal()">✕</button>
     <div class="modal-title">Elegí tu plan</div>
-    <div class="modal-sub">Suscribite para continuar usando Vendly.</div>
+    <div class="modal-sub">Suscribite para continuar usando Vendly. <span style="color:var(--green)">🛡️ 30 días garantía.</span></div>
     <div class="plans-grid">
       <div class="plan-card selected" id="pc-starter" onclick="selectPlan('basic')">
         <div class="plan-name">Starter</div>
@@ -389,6 +389,9 @@ footer span{color:var(--accent2)}
       </div>
     </div>
     <button class="btn btn-primary" id="checkout-btn" onclick="goToCheckout()" style="margin-top:0">Suscribirme al Plan Starter →</button>
+    <div style="text-align:center;font-size:12px;color:var(--muted);margin:8px 0 4px;display:flex;align-items:center;justify-content:center;gap:5px;">
+      <span style="color:var(--green)">🛡️</span> 30 días garantía de devolución · Cancelá cuando quieras
+    </div>
     <div class="divider">ya pagué</div>
     <div class="auth-row">
       <input type="email" id="upgrade-email" placeholder="email con el que pagaste">
@@ -595,6 +598,7 @@ footer span{color:var(--accent2)}
       <div class="action-bar-left">
         <button class="btn btn-ghost" onclick="exportPDF()">⬇ Exportar PDF</button>
         <button class="btn btn-outline" onclick="shareReport()">🔗 Compartir</button>
+        <button class="btn btn-outline" id="wa-share-btn" style="display:none;background:rgba(37,211,102,0.08);border-color:rgba(37,211,102,0.3);color:#25D366" onclick="shareWhatsApp()">WhatsApp</button>
       </div>
       <button class="btn-sm" onclick="resetApp()">← Nueva auditoría</button>
     </div>
@@ -610,10 +614,21 @@ footer span{color:var(--accent2)}
       <div class="report-product">Producto: <strong id="rp-name"></strong></div>
       <div class="resumen-text" id="r-resumen"></div>
     </div>
+    <div id="diagnostico-critico-wrap" style="display:none;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.25);border-radius:14px;padding:14px 16px;margin-bottom:14px;align-items:flex-start;gap:10px">
+      <span style="font-size:18px;flex-shrink:0;margin-top:1px">⚠️</span>
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--red);margin-bottom:5px">Diagnóstico crítico</div>
+        <div id="r-diagnostico" style="font-size:13px;line-height:1.6;color:var(--text)"></div>
+      </div>
+    </div>
     <div class="scores-grid">
-      <div class="score-card sc-conv"><div class="score-label">Conversión</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc1" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn1">0</div></div><div class="score-exp" id="se1"></div></div>
-      <div class="score-card sc-conf"><div class="score-label">Confianza</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc2" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn2">0</div></div><div class="score-exp" id="se2"></div></div>
-      <div class="score-card sc-seo"><div class="score-label">SEO</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc3" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn3">0</div></div><div class="score-exp" id="se3"></div></div>
+      <div class="score-card sc-conv"><div class="score-label">Conversión</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc1" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn1">0</div></div><div id="sb1" style="font-size:10px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:4px"></div><div class="score-exp" id="se1"></div></div>
+      <div class="score-card sc-conf"><div class="score-label">Confianza</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc2" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn2">0</div></div><div id="sb2" style="font-size:10px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:4px"></div><div class="score-exp" id="se2"></div></div>
+      <div class="score-card sc-seo"><div class="score-label">SEO</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc3" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn3">0</div></div><div id="sb3" style="font-size:10px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:4px"></div><div class="score-exp" id="se3"></div></div>
+    </div>
+    <div class="rc" id="ganancias-rapidas-wrap" style="display:none">
+      <div class="rc-head"><div class="rc-ico" style="background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.25);color:var(--gold)">⚡</div><div class="rc-tit">Ganancias rápidas — hacé esto hoy</div></div>
+      <div id="r-ganancias" style="display:flex;flex-direction:column;gap:10px"></div>
     </div>
     <div class="rc" id="comp-card" style="display:none">
       <div class="rc-head"><div class="rc-ico ico-r">⚔</div><div class="rc-tit">Análisis vs competidor</div></div>
@@ -855,12 +870,33 @@ function renderAudit(a, productName, hasComp) {
   document.getElementById('report-date').textContent = now.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
   document.getElementById('rp-name').textContent = productName;
   setText('r-resumen', a.resumen_ejecutivo);
+
+  // Diagnóstico crítico
+  const dcWrap = document.getElementById('diagnostico-critico-wrap');
+  if (a.diagnostico_critico) {
+    document.getElementById('r-diagnostico').textContent = a.diagnostico_critico;
+    dcWrap.style.display = 'flex';
+  } else { dcWrap.style.display = 'none'; }
+
   animScore('sc1','sn1', a.scores.conversion);
   animScore('sc2','sn2', a.scores.confianza);
   animScore('sc3','sn3', a.scores.seo);
   setText('se1', a.scores.conversion_explicacion);
   setText('se2', a.scores.confianza_explicacion);
   setText('se3', a.scores.seo_explicacion);
+
+  // Benchmarks
+  function renderBenchmark(elId, score, bench) {
+    const el = document.getElementById(elId);
+    if (!el || !bench) return;
+    const diff = score - bench;
+    const arrow = diff >= 0 ? '▲' : '▼';
+    const col = diff >= 0 ? 'var(--green)' : 'var(--red)';
+    el.innerHTML = `Promedio industria: ${bench} <span style="color:${col};font-weight:600">${arrow} ${Math.abs(diff)} pts</span>`;
+  }
+  renderBenchmark('sb1', a.scores.conversion, a.scores.benchmark_conversion);
+  renderBenchmark('sb2', a.scores.confianza, a.scores.benchmark_confianza);
+  renderBenchmark('sb3', a.scores.seo, a.scores.benchmark_seo);
   const cc = document.getElementById('comp-card');
   if (hasComp && a.analisis_competidor) {
     cc.style.display='block';
@@ -873,6 +909,24 @@ function renderAudit(a, productName, hasComp) {
     ac.oportunidades.forEach(o=>co.insertAdjacentHTML('beforeend',`<li><span class="ci ci-g">→</span>${o}</li>`));
     setText('comp-conclusion', ac.conclusion);
   } else { cc.style.display='none'; }
+
+  // Ganancias rápidas
+  const grWrap = document.getElementById('ganancias-rapidas-wrap');
+  const grList = document.getElementById('r-ganancias');
+  grList.innerHTML = '';
+  if (a.ganancias_rapidas && a.ganancias_rapidas.length) {
+    a.ganancias_rapidas.forEach((g, i) => {
+      grList.insertAdjacentHTML('beforeend', `<div style="background:var(--bg2);border:1px solid rgba(245,200,66,0.15);border-radius:12px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px">
+        <div style="background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.2);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--gold);white-space:nowrap;flex-shrink:0">${g.tiempo || '30 min'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;color:var(--text);line-height:1.5">${g.accion}</div>
+          ${g.impacto_estimado ? `<div style="font-size:11px;color:var(--green);font-weight:600;margin-top:4px">${g.impacto_estimado}</div>` : ''}
+        </div>
+      </div>`);
+    });
+    grWrap.style.display = 'block';
+  } else { grWrap.style.display = 'none'; }
+
   const fl = document.getElementById('r-fort'); fl.innerHTML='';
   a.fortalezas.forEach(f=>fl.insertAdjacentHTML('beforeend',`<li><span class="ci ci-g">✓</span>${f}</li>`));
   document.getElementById('fort-ct').textContent = a.fortalezas.length;
@@ -882,7 +936,8 @@ function renderAudit(a, productName, hasComp) {
   const ml = document.getElementById('r-mej'); ml.innerHTML='';
   a.mejoras_recomendadas.forEach(m=>{
     const cls = m.impacto==='ALTO'?'imp-a':m.impacto==='MEDIO'?'imp-m':'imp-b';
-    ml.insertAdjacentHTML('beforeend',`<div class="mej"><span class="mej-imp ${cls}">${m.impacto}</span><div><div class="mej-tit">${m.titulo}</div><div class="mej-desc">${m.descripcion}</div></div></div>`);
+    const impEst = m.impacto_estimado ? `<span style="font-size:11px;color:var(--green);font-weight:600;margin-left:8px">${m.impacto_estimado}</span>` : '';
+    ml.insertAdjacentHTML('beforeend',`<div class="mej"><span class="mej-imp ${cls}">${m.impacto}</span><div><div class="mej-tit">${m.titulo}${impEst}</div><div class="mej-desc">${m.descripcion}</div></div></div>`);
   });
   const d = a.descripcion_optimizada;
   setText('d-tit', d.titulo_seo); setText('d-cor', d.descripcion_corta); setText('d-lar', d.descripcion_larga);
@@ -1106,6 +1161,13 @@ function logout() {
 }
 
 // ── SHARE & PDF ───────────────────────────────────────────────
+function shareWhatsApp() {
+  const url = document.getElementById('share-url').textContent;
+  const product = document.getElementById('rp-name').textContent;
+  const text = `Mirá el análisis de "${product}" que hice con Vendly — scores de conversión, anuncios para Meta Ads y plan de acción: ${url}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
+
 async function shareReport() {
   if (!currentAudit) return;
   try {
@@ -1116,6 +1178,7 @@ async function shareReport() {
       navigator.clipboard.writeText(fullUrl);
       document.getElementById('share-url').textContent=fullUrl;
       document.getElementById('share-link').classList.add('show');
+      document.getElementById('wa-share-btn').style.display='';
       showToast('✓ Link copiado');
     }
   } catch(e) { showToast('Error generando link.'); }
@@ -1193,6 +1256,9 @@ function resetApp(){
   document.getElementById('results').classList.remove('show');
   ['product-url','manual-name','manual-desc','manual-price','manual-url','comp-url'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value=''; });
   ['url-result','comp-result','share-link'].forEach(id=>document.getElementById(id).classList.remove('show'));
+  document.getElementById('wa-share-btn').style.display='none';
+  document.getElementById('diagnostico-critico-wrap').style.display='none';
+  document.getElementById('ganancias-rapidas-wrap').style.display='none';
   hideErr('audit-error');
   window.scrollTo({top:0,behavior:'smooth'});
 }

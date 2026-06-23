@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const OpenAI = require('openai');
+const Anthropic = require('@anthropic-ai/sdk');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const path = require('path');
@@ -17,6 +18,7 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.static('public', { index: false }));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const resend = new Resend(process.env.RESEND_API_KEY);
 const JWT_SECRET = process.env.JWT_SECRET || 'vendly_secret_change_me';
 const LS_API_KEY = process.env.LEMONSQUEEZY_API_KEY || '';
@@ -119,6 +121,31 @@ function saveDb() {
 
 // Auto-save every 30 seconds
 setInterval(saveDb, 30000);
+
+// Auto follow-up emails cada 6 horas
+setInterval(async () => {
+  try {
+    const day3Users = dbAll(`
+      SELECT u.id, u.email, u.ref_code FROM users u
+      WHERE u.followup_day3 = 0 AND u.welcomed = 1
+      AND julianday('now') - julianday(u.created_at) >= 3
+      AND EXISTS (SELECT 1 FROM audits a WHERE a.user_id = u.id)
+    `);
+    for (const u of day3Users) {
+      try { await sendDay3Email(u.email, u.ref_code || ''); dbRun('UPDATE users SET followup_day3 = 1 WHERE id = ?', [u.id]); }
+      catch(e) { console.error('Day3 email error:', u.email, e.message); }
+    }
+    const day7Users = dbAll(`
+      SELECT u.id, u.email FROM users u
+      WHERE u.followup_day7 = 0 AND u.welcomed = 1 AND u.plan = 'free'
+      AND julianday('now') - julianday(u.created_at) >= 7
+    `);
+    for (const u of day7Users) {
+      try { await sendDay7Email(u.email); dbRun('UPDATE users SET followup_day7 = 1 WHERE id = ?', [u.id]); }
+      catch(e) { console.error('Day7 email error:', u.email, e.message); }
+    }
+  } catch(e) { console.error('Follow-up cron error:', e.message); }
+}, 6 * 60 * 60 * 1000);
 
 // DB helpers
 function dbGet(sql, params = []) {
@@ -303,15 +330,14 @@ CRITERIOS DE SCORING (sé específico y realista, no inflés los números):
 - SEO 0-49: sin optimización real
 
 Respondé SOLO con JSON puro sin markdown ni texto adicional. IMPORTANTE: todos los textos deben estar completamente redactados, nunca uses placeholders ni instrucciones dentro del valor:
-{"resumen_ejecutivo":"3-4 oraciones específicas sobre ESTE producto: su mayor fortaleza, su mayor problema de conversión y la oportunidad más importante para vender más en ${ctx.name}.","scores":{"conversion":<número real 0-100>,"confianza":<número real 0-100>,"seo":<número real 0-100>,"conversion_explicacion":"2 oraciones concretas sobre qué sube y qué baja el score de conversión de ESTE producto específico","confianza_explicacion":"2 oraciones específicas sobre qué elementos de confianza tiene y cuáles le faltan","seo_explicacion":"2 oraciones sobre el estado real del SEO con keywords detectadas o ausentes"},${compJson}"fortalezas":["fortaleza concreta y específica de ESTE producto 1","fortaleza 2","fortaleza 3","fortaleza 4"],"debilidades":["debilidad específica con impacto directo en ventas 1","debilidad 2","debilidad 3","debilidad 4"],"mejoras_recomendadas":[{"titulo":"acción concreta y accionable","descripcion":"cómo implementarlo exactamente, paso a paso, en el contexto de ${ctx.name}","impacto":"ALTO"},{"titulo":"segunda mejora ALTO impacto","descripcion":"instrucciones específicas de implementación","impacto":"ALTO"},{"titulo":"mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO"},{"titulo":"segunda mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO"},{"titulo":"mejora BAJO impacto pero rápida","descripcion":"instrucciones específicas","impacto":"BAJO"}],"descripcion_optimizada":{"titulo_seo":"título entre 60-80 caracteres con keyword principal pensada para compradores de ${ctx.name}","descripcion_corta":"máximo 160 caracteres con keyword principal y beneficio clave más importante","descripcion_larga":"ESCRIBÍ 300-400 palabras COMPLETAS en tono ${toneDesc}. Estructura: gancho que enganche en la primera línea + problema que resuelve + características principales + beneficios concretos para el comprador + prueba social implícita + llamado a la acción. NO uses placeholders, redactá el texto real y completo.","bullet_points":["beneficio concreto 1 con resultado específico y medible","beneficio 2 que responde a una objeción común","beneficio 3 diferenciador vs competencia","beneficio 4 de conveniencia o facilidad","beneficio 5 de garantía o confianza"]},"meta_ads":[{"nombre":"Ad 1 — Beneficio Principal","headline":"máx 40 chars, gancho directo al beneficio más fuerte","texto_principal":"ESCRIBÍ 150-200 palabras COMPLETAS. Hook impactante en las primeras 2 líneas que detenga el scroll + problema que resuelve + solución (el producto) + 3 beneficios concretos + CTA claro. Texto real, no placeholder.","descripcion":"máx 90 chars complementando el headline con una razón más para hacer clic","objetivo":"Conversión"},{"nombre":"Ad 2 — Problema/Dolor","headline":"headline que toca el dolor o frustración del cliente potencial","texto_principal":"150-200 palabras reales. Empieza por el dolor, agítalo, presenta el producto como solución, cierra con CTA.","descripcion":"descripción que refuerza la solución al problema","objetivo":"Conversión"},{"nombre":"Ad 3 — Prueba Social","headline":"headline con número, resultado o validación social","texto_principal":"150-200 palabras reales con testimonios hipotéticos realistas o resultados esperados. Específico y creíble.","descripcion":"descripción que refuerza la prueba social","objetivo":"Reconocimiento"},{"nombre":"Ad 4 — Urgencia/Escasez","headline":"headline con urgencia genuina y creíble","texto_principal":"150-200 palabras reales. Urgencia real (stock, tiempo, precio). Beneficio claro. CTA con deadline.","descripcion":"descripción con la limitación o deadline","objetivo":"Conversión"},{"nombre":"Ad 5 — Retargeting","headline":"headline para quien ya vio el producto pero no compró","texto_principal":"150-200 palabras reales. Superar las 2-3 objeciones más comunes. Ofrecer garantía o facilidad. CTA directo.","descripcion":"descripción con garantía o facilidad de compra","objetivo":"Retargeting"}],"instagram_posts":[{"tipo":"Post educativo","hook":"primera línea que detiene el scroll y genera curiosidad — sin emojis vacíos","caption":"ESCRIBÍ 150-200 palabras completas en ${toneDesc}. Empieza con el hook. Da valor educativo relacionado al producto/problema que resuelve. Cierra con CTA a la bio o link. Incluí 8-12 hashtags relevantes para ${ctx.name} al final."},{"tipo":"Post de producto","hook":"hook enfocado en el resultado o transformación que da el producto","caption":"150-200 palabras completas. Muestra el producto en una situación de uso real. Historia corta o escenario. CTA. Hashtags para ${ctx.name}."},{"tipo":"Historia de éxito","hook":"hook con resultado concreto, número o transformación visible","caption":"150-200 palabras completas. Historia antes/después o resultado esperado con el producto. Específico y creíble. CTA. Hashtags."}],"preguntas_frecuentes":[{"pregunta":"la pregunta más común antes de comprar ESTE producto específico","respuesta":"respuesta completa que elimina la duda y empuja sutilmente a la compra"},{"pregunta":"pregunta sobre envío, devolución o garantía — la más relevante para ${ctx.name}","respuesta":"respuesta clara, tranquilizadora y específica"},{"pregunta":"pregunta técnica sobre características, compatibilidad o uso correcto","respuesta":"respuesta técnica útil que demuestra expertise"},{"pregunta":"pregunta sobre precio, cuotas o forma de pago relevante para ${ctx.name}","respuesta":"respuesta que justifica el precio y facilita la decisión de compra"}],"estrategia_precio":"2-3 oraciones muy concretas: si el precio está bien posicionado para ${ctx.name}, cómo comunicarlo mejor (cuotas, precio de referencia, anclaje), y qué cambio de precio o comunicación del precio tendría mayor impacto en conversión.","keywords_seo":["keyword principal con mayor volumen de búsqueda","keyword secundaria 1","keyword secundaria 2","keyword long-tail con intención de compra","keyword long-tail 2 específica del producto","keyword regional o local para ${ctx.name}","keyword de categoría amplia","keyword de problema que resuelve el producto"],${planAccionSchema}}`;
+{"diagnostico_critico":"UNA sola oración brutal y específica que nombre el problema más grave de este producto que está costando ventas HOY — sé directo, no genérico. Ejemplo real: 'La descripción no menciona ni un solo beneficio concreto y el precio aparece sin contexto, esto solo está ahuyentando al 60% de los visitantes antes de que lleguen al botón de compra.'","ganancias_rapidas":[{"accion":"primera acción que puede hacer HOY en menos de 30 minutos sin diseñador ni desarrollador — sé 100% específico, decí exactamente qué escribir o cambiar","impacto_estimado":"+X% conversión estimada","tiempo":"15 min"},{"accion":"segunda acción rápida igual de específica","impacto_estimado":"+X% estimado","tiempo":"20 min"},{"accion":"tercera acción rápida con instrucción exacta","impacto_estimado":"+X% estimado","tiempo":"30 min"}],"resumen_ejecutivo":"3-4 oraciones específicas sobre ESTE producto: su mayor fortaleza, su mayor problema de conversión y la oportunidad más importante para vender más en ${ctx.name}.","scores":{"conversion":<número real 0-100>,"confianza":<número real 0-100>,"seo":<número real 0-100>,"benchmark_conversion":74,"benchmark_confianza":68,"benchmark_seo":61,"conversion_explicacion":"2 oraciones concretas sobre qué sube y qué baja el score de conversión de ESTE producto específico","confianza_explicacion":"2 oraciones específicas sobre qué elementos de confianza tiene y cuáles le faltan","seo_explicacion":"2 oraciones sobre el estado real del SEO con keywords detectadas o ausentes"},${compJson}"fortalezas":["fortaleza concreta y específica de ESTE producto 1","fortaleza 2","fortaleza 3","fortaleza 4"],"debilidades":["debilidad específica con impacto directo en ventas 1","debilidad 2","debilidad 3","debilidad 4"],"mejoras_recomendadas":[{"titulo":"acción concreta y accionable","descripcion":"cómo implementarlo exactamente, paso a paso, en el contexto de ${ctx.name}","impacto":"ALTO","impacto_estimado":"+15-25% conversión"},{"titulo":"segunda mejora ALTO impacto","descripcion":"instrucciones específicas de implementación","impacto":"ALTO","impacto_estimado":"+10-20% confianza"},{"titulo":"mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO","impacto_estimado":"+8-12% tráfico orgánico"},{"titulo":"segunda mejora MEDIO impacto","descripcion":"instrucciones específicas","impacto":"MEDIO","impacto_estimado":"+5-10% conversión"},{"titulo":"mejora BAJO impacto pero rápida","descripcion":"instrucciones específicas","impacto":"BAJO","impacto_estimado":"+3-5% engagement"}],"descripcion_optimizada":{"titulo_seo":"título entre 60-80 caracteres con keyword principal pensada para compradores de ${ctx.name}","descripcion_corta":"máximo 160 caracteres con keyword principal y beneficio clave más importante","descripcion_larga":"ESCRIBÍ 300-400 palabras COMPLETAS en tono ${toneDesc}. Estructura: gancho que enganche en la primera línea + problema que resuelve + características principales + beneficios concretos para el comprador + prueba social implícita + llamado a la acción. NO uses placeholders, redactá el texto real y completo.","bullet_points":["beneficio concreto 1 con resultado específico y medible","beneficio 2 que responde a una objeción común","beneficio 3 diferenciador vs competencia","beneficio 4 de conveniencia o facilidad","beneficio 5 de garantía o confianza"]},"meta_ads":[{"nombre":"Ad 1 — Beneficio Principal","headline":"máx 40 chars, gancho directo al beneficio más fuerte del producto","texto_principal":"ESCRIBÍ 180-220 palabras COMPLETAS sobre ESTE producto específico. Hook que detenga el scroll en las primeras 2 líneas mencionando el producto por nombre + el problema que resuelve + 3 beneficios concretos con detalles reales + CTA claro con urgencia. CERO texto genérico.","descripcion":"máx 90 chars complementando el headline con razón adicional para hacer clic","objetivo":"Conversión"},{"nombre":"Ad 2 — Problema/Dolor","headline":"headline que toca el dolor o frustración exacta del cliente potencial de este producto","texto_principal":"180-220 palabras reales sobre ESTE producto. Empieza nombrando el dolor específico del cliente. Agítalo con una pregunta. Presenta el producto como la solución concreta. 3 beneficios. CTA.","descripcion":"descripción que refuerza la solución al problema específico","objetivo":"Conversión"},{"nombre":"Ad 3 — Prueba Social","headline":"headline con número concreto, resultado real o validación específica de este tipo de producto","texto_principal":"180-220 palabras reales. Abre con un resultado o testimonio hipotético realista y específico para este producto. Desarrolla la historia. Beneficios. CTA.","descripcion":"descripción que refuerza la prueba social con detalle específico","objetivo":"Reconocimiento"},{"nombre":"Ad 4 — Urgencia/Escasez","headline":"headline con urgencia genuina y creíble para este producto","texto_principal":"180-220 palabras reales. Urgencia real (stock, precio, temporada). Beneficio principal del producto. Qué pierde si no compra ahora. CTA con deadline.","descripcion":"descripción con la limitación o deadline específico","objetivo":"Conversión"},{"nombre":"Ad 5 — Retargeting","headline":"headline para quien ya vio este producto pero no compró — supera la objeción principal","texto_principal":"180-220 palabras reales. Identifica y supera las 2-3 objeciones más comunes para ESTE tipo de producto. Ofrece garantía o facilidad. Reduce el riesgo percibido. CTA directo.","descripcion":"descripción con garantía o facilidad de compra específica","objetivo":"Retargeting"}],"instagram_posts":[{"tipo":"Post educativo","hook":"primera línea que detiene el scroll y genera curiosidad real sobre el problema que resuelve este producto","caption":"ESCRIBÍ 160-200 palabras completas en tono ${toneDesc}. Empieza con el hook. Da 3-4 consejos de valor concretos relacionados al producto. Cierra con CTA. 10-12 hashtags reales y relevantes para ${ctx.name}."},{"tipo":"Post de producto","hook":"hook enfocado en el resultado o transformación concreta que da este producto","caption":"160-200 palabras completas. Situación de uso real del producto. Antes/después implícito. Beneficio principal. CTA. Hashtags."},{"tipo":"Historia de éxito","hook":"hook con resultado concreto y número real para este tipo de producto","caption":"160-200 palabras completas. Historia antes/después creíble para este producto. Específico. CTA. Hashtags."}],"preguntas_frecuentes":[{"pregunta":"la pregunta más importante que hace un comprador antes de comprar ESTE producto específico","respuesta":"respuesta completa, específica y que elimina la duda principal de este producto"},{"pregunta":"pregunta sobre envío, devolución o garantía más relevante para ${ctx.name}","respuesta":"respuesta clara, tranquilizadora y específica para este mercado"},{"pregunta":"pregunta técnica específica de ESTE producto sobre características, compatibilidad o uso","respuesta":"respuesta técnica útil que demuestra expertise en este producto"},{"pregunta":"pregunta sobre precio, cuotas o forma de pago relevante para ${ctx.name}","respuesta":"respuesta que justifica el precio de este producto y facilita la decisión"}],"estrategia_precio":"2-3 oraciones muy concretas sobre ESTE precio específico: si está bien posicionado para ${ctx.name}, cómo comunicarlo mejor (cuotas, precio de referencia tachado, anclaje de valor), y el cambio concreto de mayor impacto en conversión.","keywords_seo":["keyword principal con mayor volumen para este producto","keyword secundaria 1 específica","keyword secundaria 2","keyword long-tail con intención de compra para este producto","keyword long-tail 2 específica","keyword regional o local para ${ctx.name}","keyword de categoría del producto","keyword del problema que resuelve"],${planAccionSchema}}"`;
 
-  const r = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.7,
-    max_tokens: 6000
+  const r = await anthropic.messages.create({
+    model: 'claude-opus-4-5',
+    max_tokens: 8000,
+    messages: [{ role: 'user', content: prompt }]
   });
-  const content = r.choices[0].message.content.trim().replace(/```json[\s\S]*?```|```/g, '').trim();
+  const content = r.content[0].text.trim().replace(/```json[\s\S]*?```|```/g, '').trim();
   return JSON.parse(content);
 }
 
@@ -325,9 +351,9 @@ async function sendMagicLink(email, token) {
     html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#07070E;color:#F0EEF8;border-radius:16px;">
       <div style="font-size:22px;font-weight:800;margin-bottom:8px;">Vend<span style="color:#A688FA">ly</span></div>
       <h2 style="font-size:20px;margin-bottom:12px;color:#F0EEF8;">Tu link de acceso</h2>
-      <p style="color:#8B89A0;margin-bottom:24px;line-height:1.6;">Hacé click para ingresar. Expira en 10 minutos.</p>
-      <a href="${link}" style="display:inline-block;background:#7C5CFC;color:#fff;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:500;">Ingresar a Vendly →</a>
-      <p style="color:#555;font-size:11px;margin-top:20px;">O copiá: ${link}</p>
+      <p style="color:#8B89A0;margin-bottom:24px;line-height:1.6;">Hacé click para ingresar. Expira en 30 minutos.</p>
+      <a href="${link}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:#7C5CFC;color:#fff;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:500;">Ingresar a Vendly →</a>
+      <p style="color:#8B89A0;font-size:12px;margin-top:20px;line-height:1.6;">Si el botón no funciona, copiá y pegá este link en Chrome o Safari:<br><a href="${link}" target="_blank" style="color:#A688FA;word-break:break-all;">${link}</a></p>
     </div>`
   });
 }
@@ -454,9 +480,7 @@ app.post('/api/auth/login', async (req, res) => {
         dbRun('INSERT INTO referrals (referrer_id, referred_id) VALUES (?, ?)', [referredBy, newUser.id]);
       }
     }
-    const token = crypto.randomBytes(32).toString('hex');
-    const exp = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    dbRun('INSERT INTO magic_tokens (email, token, expires_at) VALUES (?, ?, ?)', [email.toLowerCase(), token, exp]);
+    const token = jwt.sign({ email: email.toLowerCase(), purpose: 'magic_link' }, JWT_SECRET, { expiresIn: '30m' });
     await sendMagicLink(email.toLowerCase(), token);
     res.json({ success: true, message: 'Link enviado. Revisá tu email.' });
   } catch (e) {
@@ -468,11 +492,18 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/auth/verify', (req, res) => {
   const { token } = req.query;
   if (!token) return res.redirect('/app?error=invalid');
-  const rec = dbGet('SELECT * FROM magic_tokens WHERE token = ? AND used = 0 AND expires_at > datetime("now")', [token]);
-  if (!rec) return res.redirect('/app?error=expired');
-  dbRun('UPDATE magic_tokens SET used = 1 WHERE token = ?', [token]);
-  const user = dbGet('SELECT * FROM users WHERE email = ?', [rec.email]);
-  if (!user) return res.redirect('/app?error=notfound');
+  let payload;
+  try { payload = jwt.verify(token, JWT_SECRET); } catch { return res.redirect('/app?error=expired'); }
+  if (payload.purpose !== 'magic_link') return res.redirect('/app?error=invalid');
+  const email = payload.email;
+  let user = dbGet('SELECT * FROM users WHERE email = ?', [email]);
+  if (!user) {
+    dbRun('INSERT INTO users (email) VALUES (?)', [email]);
+    const newUser = dbGet('SELECT id FROM users WHERE email = ?', [email]);
+    const newCode = crypto.createHash('sha256').update(`${newUser.id}-${JWT_SECRET}`).digest('hex').slice(0, 8);
+    dbRun('UPDATE users SET ref_code = ? WHERE id = ?', [newCode, newUser.id]);
+    user = dbGet('SELECT * FROM users WHERE email = ?', [email]);
+  }
   if (!user.welcomed) {
     sendWelcomeEmail(user.email).catch(e => console.error('Welcome email error:', e.message));
     dbRun('UPDATE users SET welcomed = 1 WHERE id = ?', [user.id]);
@@ -509,7 +540,7 @@ app.post('/api/audit', optAuth, async (req, res) => {
         u = dbGet('SELECT * FROM users WHERE id = ?', [u.id]);
       }
     }
-    if (u.status !== 'active') return res.status(403).json({ error: 'Suscripción inactiva', upgrade: true });
+    if (u.plan !== 'free' && u.status !== 'active') return res.status(403).json({ error: 'Suscripción inactiva', upgrade: true });
     if (u.plan !== 'pro' && u.plan !== 'agency' && u.audits_used >= u.audits_limit)
       return res.status(403).json({ error: 'Límite alcanzado', upgrade: true });
     try {
@@ -519,7 +550,7 @@ app.post('/api/audit', optAuth, async (req, res) => {
         [u.id, product.name || product.url, product.url || '', a.scores.conversion, a.scores.confianza, a.scores.seo, JSON.stringify(a)]);
       const updated = dbGet('SELECT * FROM users WHERE id = ?', [u.id]);
       res.json({ success: true, audit: a, plan: u.plan, auditsUsed: updated.audits_used, auditsLimit: updated.audits_limit });
-    } catch (e) { console.error(e); res.status(500).json({ error: 'Error generando auditoría.' }); }
+    } catch (e) { console.error('Audit error:', e?.message || e); res.status(500).json({ error: e?.message || 'Error generando auditoría.' }); }
   } else {
     // Sin cuenta — pedir que se registren
     return res.status(403).json({
@@ -629,7 +660,7 @@ app.post('/api/webhook', async (req, res) => {
         console.log(`Activated ${plan} for ${email}`);
       } else if (['cancelled', 'expired', 'past_due', 'unpaid', 'paused'].includes(status)) {
         dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
-          ['cancelled', 'free', subscriptionId]);
+          ['active', 'free', subscriptionId]);
         console.log(`Deactivated subscription ${subscriptionId} (${status})`);
       }
     }
@@ -638,7 +669,7 @@ app.post('/api/webhook', async (req, res) => {
     if (eventName === 'subscription_cancelled') {
       const subscriptionId = String(event.data?.id || '');
       dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
-        ['cancelled', 'free', subscriptionId]);
+        ['active', 'free', subscriptionId]);
     }
 
     // subscription_expired
