@@ -215,6 +215,34 @@ textarea{min-height:68px;line-height:1.5}
 .reset-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;margin-top:12px}
 .reset-btn:hover{color:var(--text);border-color:var(--accent)}
 
+/* PREMIUM LOCK */
+.premium-section{position:relative;overflow:hidden;border-radius:18px;margin-bottom:11px}
+.premium-section .rc{margin-bottom:0;border-radius:18px}
+.premium-content-blur{filter:blur(5px);pointer-events:none;user-select:none;opacity:0.55;transition:filter .3s}
+.premium-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:linear-gradient(to bottom,rgba(7,7,14,0.2) 0%,rgba(7,7,14,0.88) 40%,rgba(7,7,14,0.96) 100%);z-index:10;text-align:center;padding:24px;border-radius:18px}
+.premium-lock-badge{background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;font-size:11px;font-weight:700;padding:3px 14px;border-radius:100px;letter-spacing:.06em}
+.premium-lock-title{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin:2px 0}
+.premium-lock-sub{font-size:13px;color:var(--muted);line-height:1.5;max-width:260px;margin-bottom:6px}
+.premium-lock-btn{background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;border:none;padding:11px 28px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.premium-lock-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,92,252,0.4)}
+.desc-lock-wrap{position:relative;border-radius:10px;overflow:hidden;margin-bottom:11px}
+.desc-lock-blur{filter:blur(5px);pointer-events:none;user-select:none;opacity:0.5}
+.desc-lock-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(7,7,14,0.8);border-radius:10px;z-index:5}
+.objeciones-list{display:flex;flex-direction:column;gap:10px}
+.obj-item{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.obj-q{padding:11px 14px;font-size:13px;font-weight:600;color:var(--red);display:flex;align-items:flex-start;gap:8px;border-bottom:1px solid var(--border)}
+.obj-q::before{content:'?';flex-shrink:0;width:18px;height:18px;background:rgba(248,113,113,0.12);color:var(--red);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;margin-top:1px}
+.obj-a{padding:11px 14px;font-size:13px;color:var(--text);line-height:1.6;position:relative}
+.obj-copy{position:absolute;top:8px;right:9px;background:rgba(124,92,252,0.1);border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:11px;color:var(--accent3);cursor:pointer;font-family:'DM Sans',sans-serif}
+.obj-copy:hover{background:rgba(124,92,252,0.2)}.obj-copy.copied{background:rgba(52,211,153,0.1);color:var(--green);border-color:rgba(52,211,153,0.2)}
+.audiencia-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+@media(max-width:520px){.audiencia-grid{grid-template-columns:1fr}}
+.aud-block{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:13px}
+.aud-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent3);margin-bottom:7px}
+.aud-text{font-size:13px;line-height:1.6;color:var(--text)}
+.aud-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.aud-tag{background:rgba(124,92,252,0.08);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--accent3)}
+
 /* MODALS */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.show{display:flex}
@@ -361,19 +389,32 @@ footer span{color:var(--accent2)}
 
 <!-- UPGRADE MODAL -->
 <div class="modal-overlay" id="upgrade-modal">
-  <div class="modal">
+  <div class="modal" style="max-width:480px">
     <button class="modal-close" onclick="closeUpgradeModal()">✕</button>
-    <div class="modal-title">Elegí tu plan</div>
-    <div class="modal-sub">Suscribite para continuar usando Vendly. <span style="color:var(--green)">🛡️ 30 días garantía.</span></div>
+    <div class="modal-title">Desbloqueá el informe completo</div>
+    <div class="modal-sub">Tu auditoría ya está lista. Suscribite para acceder a todo.</div>
+    <!-- Lo que se desbloquea -->
+    <div style="background:rgba(124,92,252,0.06);border:1px solid rgba(124,92,252,0.2);border-radius:14px;padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent3);margin-bottom:10px">Lo que desbloqueás ahora</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="color:var(--green);font-weight:700">✓</span>5 anuncios Meta Ads listos</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="color:var(--green);font-weight:700">✓</span>3 posts para Instagram</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="color:var(--green);font-weight:700">✓</span>Descripción larga optimizada</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="color:var(--green);font-weight:700">✓</span>Keywords SEO para posicionar</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="color:var(--green);font-weight:700">✓</span>FAQ que convierte objeciones</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="color:var(--green);font-weight:700">✓</span>Estrategia de precio</div>
+      </div>
+    </div>
     <div class="plans-grid">
       <div class="plan-card selected" id="pc-starter" onclick="selectPlan('basic')">
         <div class="plan-name">Starter</div>
         <div class="plan-price">USD 9 <span>/mes</span></div>
         <ul class="plan-features">
           <li>30 auditorías/mes</li>
+          <li>Todo desbloqueado</li>
           <li>Historial completo</li>
-          <li>PDF sin marca de agua</li>
           <li>Comparador competidor</li>
+          <li>PDF exportable</li>
         </ul>
       </div>
       <div class="plan-card popular" id="pc-pro" onclick="selectPlan('pro')">
@@ -381,14 +422,15 @@ footer span{color:var(--accent2)}
         <div class="plan-name">Pro</div>
         <div class="plan-price">USD 19 <span>/mes</span></div>
         <ul class="plan-features">
-          <li>Ilimitadas</li>
+          <li>Auditorías ilimitadas</li>
           <li>Todo lo de Starter</li>
-          <li>Benchmarks</li>
+          <li>Benchmarks de industria</li>
           <li>Score histórico</li>
+          <li>Prioridad en soporte</li>
         </ul>
       </div>
     </div>
-    <button class="btn btn-primary" id="checkout-btn" onclick="goToCheckout()" style="margin-top:0">Suscribirme al Plan Starter →</button>
+    <button class="btn btn-primary" id="checkout-btn" onclick="goToCheckout()" style="margin-top:0;font-size:15px;padding:14px">Suscribirme al Plan Starter →</button>
     <div style="text-align:center;font-size:12px;color:var(--muted);margin:8px 0 4px;display:flex;align-items:center;justify-content:center;gap:5px;">
       <span style="color:var(--green)">🛡️</span> 30 días garantía de devolución · Cancelá cuando quieras
     </div>
@@ -642,22 +684,50 @@ footer span{color:var(--accent2)}
     <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">✓</div><div class="rc-tit">Fortalezas</div><div class="rc-ct" id="fort-ct"></div></div><ul class="check-list" id="r-fort"></ul></div>
     <div class="rc"><div class="rc-head"><div class="rc-ico ico-r">⚠</div><div class="rc-tit">Debilidades</div><div class="rc-ct" id="deb-ct"></div></div><ul class="check-list" id="r-deb"></ul></div>
     <div class="rc"><div class="rc-head"><div class="rc-ico ico-b">↑</div><div class="rc-tit">Mejoras recomendadas</div></div><div class="mejoras" id="r-mej"></div></div>
-    <div class="rc">
+    <!-- Audiencia ideal — FREE -->
+    <div class="rc" id="section-audiencia">
+      <div class="rc-head"><div class="rc-ico" style="background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2)">👤</div><div class="rc-tit">Audiencia ideal</div></div>
+      <div class="audiencia-grid">
+        <div class="aud-block"><div class="aud-label">Perfil del comprador</div><div class="aud-text" id="aud-descripcion"></div></div>
+        <div class="aud-block"><div class="aud-label">Dolor principal</div><div class="aud-text" id="aud-pain"></div></div>
+      </div>
+      <div class="aud-block" style="margin-top:10px"><div class="aud-label">Intereses para targeting en Meta Ads</div><div class="aud-tags" id="aud-intereses"></div></div>
+    </div>
+    <!-- Objeciones — FREE -->
+    <div class="rc" id="section-objeciones">
+      <div class="rc-head"><div class="rc-ico ico-r">💬</div><div class="rc-tit">¿Por qué no compran? Objeciones + respuestas listas</div></div>
+      <div class="objeciones-list" id="r-objeciones"></div>
+    </div>
+    <!-- Descripción optimizada — TÍTULO+CORTA free, LARGA+BULLETS premium -->
+    <div class="rc" id="section-desc">
       <div class="rc-head"><div class="rc-ico ico-p">✦</div><div class="rc-tit">Descripción optimizada</div></div>
       <div class="desc-sec"><div class="desc-sec-tit">Título SEO</div><div class="desc-box"><div class="desc-txt" id="d-tit"></div><button class="copy-btn" onclick="copyEl(this,'d-tit')">Copiar</button></div></div>
       <div class="desc-sec"><div class="desc-sec-tit">Descripción corta</div><div class="desc-box"><div class="desc-txt" id="d-cor"></div><button class="copy-btn" onclick="copyEl(this,'d-cor')">Copiar</button></div></div>
-      <div class="desc-sec"><div class="desc-sec-tit">Descripción larga</div><div class="desc-box"><div class="desc-txt" id="d-lar"></div><button class="copy-btn" onclick="copyEl(this,'d-lar')">Copiar</button></div></div>
-      <div class="desc-sec"><div class="desc-sec-tit">Bullet points</div><div class="desc-box"><ul class="bul-list" id="d-bul"></ul></div></div>
+      <div id="desc-premium-wrap">
+        <div class="desc-sec"><div class="desc-sec-tit">Descripción larga <span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 7px;border-radius:100px;margin-left:5px">PRO</span></div><div class="desc-box"><div class="desc-txt" id="d-lar"></div><button class="copy-btn" onclick="copyEl(this,'d-lar')">Copiar</button></div></div>
+        <div class="desc-sec"><div class="desc-sec-tit">Bullet points <span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 7px;border-radius:100px;margin-left:5px">PRO</span></div><div class="desc-box"><ul class="bul-list" id="d-bul"></ul></div></div>
+      </div>
     </div>
-    <div class="rc">
-      <div class="rc-head"><div class="rc-ico ico-p">📢</div><div class="rc-tit">5 anuncios para Meta Ads</div></div>
-      <div class="ads-tabs" id="ads-tabs"></div>
-      <div id="ads-panels"></div>
+    <!-- SECCIONES PREMIUM -->
+    <div class="premium-section" id="section-ads">
+      <div class="rc">
+        <div class="rc-head"><div class="rc-ico ico-p">📢</div><div class="rc-tit">5 anuncios para Meta Ads</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div>
+        <div class="ads-tabs" id="ads-tabs"></div>
+        <div id="ads-panels"></div>
+      </div>
     </div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-o">📱</div><div class="rc-tit">3 posts para Instagram</div></div><div class="ig-grid" id="r-ig"></div></div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-b">❓</div><div class="rc-tit">Preguntas frecuentes optimizadas</div></div><div class="faq-list" id="r-faq"></div></div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🔍</div><div class="rc-tit">Keywords SEO</div></div><div class="kw-grid" id="r-kw"></div><div class="kw-hint">Click para copiar</div></div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-o">💰</div><div class="rc-tit">Estrategia de precio</div></div><div class="precio-box" id="r-precio"></div></div>
+    <div class="premium-section" id="section-ig">
+      <div class="rc"><div class="rc-head"><div class="rc-ico ico-o">📱</div><div class="rc-tit">3 posts para Instagram</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div><div class="ig-grid" id="r-ig"></div></div>
+    </div>
+    <div class="premium-section" id="section-faq">
+      <div class="rc"><div class="rc-head"><div class="rc-ico ico-b">❓</div><div class="rc-tit">Preguntas frecuentes optimizadas</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div><div class="faq-list" id="r-faq"></div></div>
+    </div>
+    <div class="premium-section" id="section-kw">
+      <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🔍</div><div class="rc-tit">Keywords SEO</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div><div class="kw-grid" id="r-kw"></div><div class="kw-hint">Click para copiar</div></div>
+    </div>
+    <div class="premium-section" id="section-precio">
+      <div class="rc"><div class="rc-head"><div class="rc-ico ico-o">💰</div><div class="rc-tit">Estrategia de precio</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div><div class="precio-box" id="r-precio"></div></div>
+    </div>
     <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div></div><div class="plan-list-items" id="r-plan"></div></div>
     <button class="reset-btn" onclick="resetApp()">← Analizar otro producto</button>
   </div>
@@ -958,7 +1028,7 @@ function renderAudit(a, productName, hasComp) {
     fq.insertAdjacentHTML('beforeend',`<div class="faq-item"><div class="faq-q-text">${f.pregunta}</div><div class="faq-a-text">${f.respuesta}</div></div>`);
   });
   const kw = document.getElementById('r-kw'); kw.innerHTML='';
-  (a.keywords_seo||[]).forEach(k=>kw.insertAdjacentHTML('beforeend',`<span class="kw" onclick="copyKw(this,'${k}')">${k}</span>`));
+  (a.keywords_seo||[]).forEach(k=>kw.insertAdjacentHTML('beforeend',`<span class="kw" onclick="copyKw(this,'${k.replace(/'/g,"\\'")}'">${k}</span>`));
   setText('r-precio', a.estrategia_precio);
   const pl = document.getElementById('r-plan'); pl.innerHTML='';
   const planItems = a.plan_accion || a.mejoras_recomendadas?.map((m,i) => ({
@@ -967,8 +1037,76 @@ function renderAudit(a, productName, hasComp) {
   planItems.forEach(p=>{
     pl.insertAdjacentHTML('beforeend',`<div class="plan-item"><div class="plan-n">${p.prioridad}</div><div><div class="plan-t">${p.accion}</div><div class="plan-d">${p.impacto_esperado}</div><span class="plan-pl">${p.plazo}</span></div></div>`);
   });
+
+  // Audiencia ideal
+  const audSec = document.getElementById('section-audiencia');
+  if (a.audiencia_ideal) {
+    setText('aud-descripcion', a.audiencia_ideal.descripcion || '');
+    setText('aud-pain', a.audiencia_ideal.pain_point_principal || '');
+    const audTags = document.getElementById('aud-intereses'); audTags.innerHTML='';
+    (a.audiencia_ideal.intereses||[]).forEach(i=>audTags.insertAdjacentHTML('beforeend',`<span class="aud-tag">${i}</span>`));
+    audSec.style.display='';
+  } else { audSec.style.display='none'; }
+
+  // Objeciones principales
+  const objSec = document.getElementById('section-objeciones');
+  const objList = document.getElementById('r-objeciones'); objList.innerHTML='';
+  if (a.objeciones_principales && a.objeciones_principales.length) {
+    a.objeciones_principales.forEach((o,i)=>{
+      const id=`obj-resp-${i}`;
+      objList.insertAdjacentHTML('beforeend',`<div class="obj-item"><div class="obj-q">${o.objecion}</div><div class="obj-a" id="${id}">${o.respuesta}<button class="obj-copy" onclick="copyObjResp(this,'${id}')">Copiar</button></div></div>`);
+    });
+    objSec.style.display='';
+  } else { objSec.style.display='none'; }
+
+  // Aplicar paywall para usuarios free
+  applyPaywall();
+
   document.getElementById('results').classList.add('show');
   setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
+function applyPaywall() {
+  const isPaid = userPlan === 'pro' || userPlan === 'basic' || userPlan === 'agency';
+  const premiumSections = ['section-ads','section-ig','section-faq','section-kw','section-precio'];
+  premiumSections.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // Limpiar overlays previos
+    el.querySelectorAll('.premium-overlay').forEach(o=>o.remove());
+    el.querySelectorAll('.rc').forEach(rc=>rc.classList.remove('premium-content-blur'));
+    if (!isPaid) {
+      el.querySelector('.rc')?.classList.add('premium-content-blur');
+      const overlay = document.createElement('div');
+      overlay.className='premium-overlay';
+      overlay.innerHTML=`<div class="premium-lock-badge">✦ STARTER / PRO</div><div class="premium-lock-title">Sección bloqueada</div><div class="premium-lock-sub">Desbloqueá los copies listos para usar: anuncios, posts, FAQs, keywords y más.</div><button class="premium-lock-btn" onclick="showUpgradeModal()">Ver planes desde $9/mes →</button>`;
+      el.appendChild(overlay);
+    }
+  });
+  // Bloquear desc larga + bullets
+  const descPremium = document.getElementById('desc-premium-wrap');
+  if (descPremium) {
+    descPremium.querySelectorAll('.premium-overlay').forEach(o=>o.remove());
+    descPremium.classList.remove('premium-content-blur');
+    if (!isPaid) {
+      descPremium.classList.add('premium-content-blur');
+      descPremium.style.position='relative';
+      const ov=document.createElement('div');
+      ov.className='premium-overlay';
+      ov.style.borderRadius='10px';
+      ov.innerHTML=`<button class="premium-lock-btn" style="font-size:13px;padding:9px 20px" onclick="showUpgradeModal()">Desbloquear con plan Starter →</button>`;
+      descPremium.appendChild(ov);
+    }
+  }
+}
+
+function copyObjResp(btn, id) {
+  const el = document.getElementById(id);
+  const text = el ? el.innerText.replace('Copiar','').trim() : '';
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='✓'; btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent='Copiar'; btn.classList.remove('copied'); }, 2000);
+  });
 }
 
 // ── LOGIN ─────────────────────────────────────────────────────
