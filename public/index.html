@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vendly — Auditoría de e-commerce con IA</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%237C5CFC'/><text y='.9em' font-size='72' x='12' fill='white' font-family='sans-serif' font-weight='900'>V</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -667,18 +668,22 @@ footer span{color:var(--accent2)}
     </div>
     <div class="error-msg" id="audit-error"></div>
     <button class="btn btn-primary" id="audit-btn" onclick="runAudit()">📊 Generar auditoría completa</button>
+    <div style="text-align:center;margin-top:10px">
+      <button onclick="loadDemo()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;text-underline-offset:3px">Ver ejemplo de auditoría real →</button>
+    </div>
   </div>
 
   <div class="loading" id="loading">
     <div class="loader-ring"></div>
     <div class="loading-title">Analizando tu producto...</div>
-    <div class="loading-sub">GPT-4o está auditando cada aspecto.<br>Esto tarda entre 20 y 35 segundos.</div>
+    <div class="loading-sub">GPT-4o está auditando 15 secciones de tu producto.<br>Esto tarda entre 25 y 40 segundos.</div>
     <div class="loading-steps">
-      <div class="ls" id="ls1"><div class="ls-dot"></div>Leyendo el producto</div>
-      <div class="ls" id="ls2"><div class="ls-dot"></div>Calculando scores</div>
-      <div class="ls" id="ls3"><div class="ls-dot"></div>Analizando fortalezas y debilidades</div>
-      <div class="ls" id="ls4"><div class="ls-dot"></div>Generando copies optimizados</div>
-      <div class="ls" id="ls5"><div class="ls-dot"></div>Armando plan de acción</div>
+      <div class="ls" id="ls1"><div class="ls-dot"></div>Leyendo el producto y extrayendo datos</div>
+      <div class="ls" id="ls2"><div class="ls-dot"></div>Calculando scores de conversión, confianza y SEO</div>
+      <div class="ls" id="ls3"><div class="ls-dot"></div>Identificando objeciones y audiencia ideal</div>
+      <div class="ls" id="ls4"><div class="ls-dot"></div>Generando anuncios Meta Ads y posts de Instagram</div>
+      <div class="ls" id="ls5"><div class="ls-dot"></div>Redactando emails de carrito y template de WhatsApp</div>
+      <div class="ls" id="ls6"><div class="ls-dot"></div>Armando plan de acción y calculando impacto en revenue</div>
     </div>
   </div>
 
@@ -807,7 +812,15 @@ footer span{color:var(--accent2)}
   </div>
 </div>
 
-<footer>Hecho con ❤️ por <span>Vendly</span> · <a href="/" style="color:var(--muted);text-decoration:none">Inicio</a></footer>
+<footer style="border-top:1px solid var(--border-s);padding:20px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--muted);position:relative;z-index:1">
+  <span>Vend<span style="color:var(--accent2)">ly</span> · Auditorías de e-commerce con IA</span>
+  <div style="display:flex;gap:16px;flex-wrap:wrap">
+    <a href="/" style="color:var(--muted);text-decoration:none">Inicio</a>
+    <a href="mailto:hola@vend-ly.store" style="color:var(--muted);text-decoration:none">hola@vend-ly.store</a>
+    <a href="https://wa.me/5491169683002?text=Hola%2C+tengo+una+pregunta+sobre+Vendly" target="_blank" style="color:#25D366;text-decoration:none">WhatsApp soporte</a>
+    <a href="/legal" style="color:var(--muted);text-decoration:none">Términos y Privacidad</a>
+  </div>
+</footer>
 
 <script>
 // ── STATE ─────────────────────────────────────────────────────
@@ -900,10 +913,16 @@ function updatePlanBanner(plan, used, limit) {
     text.textContent = '✦ Plan Pro — Auditorías ilimitadas';
   } else if (plan === 'basic') {
     banner.classList.add('pb-basic');
-    text.textContent = `Plan Starter — ${used || 0} / ${limit || 30} auditorías usadas`;
+    const remaining = Math.max(0, (limit || 30) - (used || 0));
+    text.textContent = `Plan Starter — ${remaining} auditorías disponibles este mes`;
+  } else if (userEmail) {
+    // Free user autenticado
+    banner.classList.add('pb-free');
+    const remaining = Math.max(0, (limit || 1) - (used || 0));
+    text.textContent = remaining > 0 ? `Plan Free — ${remaining} auditoría gratuita disponible` : 'Agotaste tu auditoría gratuita — Desbloqueá más con Starter';
   } else {
     banner.classList.add('pb-free');
-    text.textContent = '✦ Creá una cuenta gratuita para empezar';
+    text.textContent = '✦ Registrate gratis para generar tu primera auditoría';
   }
 }
 
@@ -927,7 +946,11 @@ function toggleComp() {
 // ── SCRAPER ───────────────────────────────────────────────────
 async function doScrape(type, resultId, nameId, descId, errId) {
   const urlId = type === 'product' ? 'product-url' : 'comp-url';
-  const url = document.getElementById(urlId).value.trim();
+  let url = document.getElementById(urlId).value.trim();
+  if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://' + url;
+    document.getElementById(urlId).value = url;
+  }
   if (!url) return showErr(errId, 'Ingresá una URL válida');
   hideErr(errId);
   const btn = event.target; const orig = btn.textContent;
@@ -947,17 +970,21 @@ async function doScrape(type, resultId, nameId, descId, errId) {
 
 // ── LOADING ───────────────────────────────────────────────────
 function startLoading() {
-  const steps = ['ls1','ls2','ls3','ls4','ls5'];
+  const steps = ['ls1','ls2','ls3','ls4','ls5','ls6'];
   let i = 0;
-  steps.forEach(s => document.getElementById(s).className = 'ls');
+  steps.forEach(s => { const el = document.getElementById(s); if (el) el.className = 'ls'; });
   document.getElementById(steps[0]).classList.add('active');
   loadingTimer = setInterval(() => {
-    if (i < steps.length-1) { document.getElementById(steps[i]).className = 'ls done'; i++; document.getElementById(steps[i]).classList.add('active'); }
-  }, 6000);
+    if (i < steps.length-1) {
+      document.getElementById(steps[i]).className = 'ls done';
+      i++;
+      document.getElementById(steps[i]).classList.add('active');
+    }
+  }, 5000);
 }
 function stopLoading() {
   if (loadingTimer) clearInterval(loadingTimer);
-  ['ls1','ls2','ls3','ls4','ls5'].forEach(s => document.getElementById(s).className = 'ls done');
+  ['ls1','ls2','ls3','ls4','ls5','ls6'].forEach(s => { const el = document.getElementById(s); if (el) el.className = 'ls done'; });
 }
 
 // ── RUN AUDIT ─────────────────────────────────────────────────
@@ -998,7 +1025,7 @@ async function runAudit() {
     }
     if (!data.success) throw new Error(data.error);
     currentAudit = data.audit;
-    if (data.plan && data.plan !== 'free') updatePlanBanner(data.plan, data.auditsUsed, data.auditsLimit);
+    if (data.plan) updatePlanBanner(data.plan, data.auditsUsed, data.auditsLimit);
     renderAudit(data.audit, product.name || product.url, !!competitorProduct);
     // Nudge de upgrade si el usuario free acaba de agotar su auditoría gratuita
     if (data.plan === 'free' && data.auditsUsed >= data.auditsLimit) {
@@ -1404,6 +1431,94 @@ function logout() {
   closeDashboard();
   updateUI(false);
   showToast('Sesión cerrada');
+}
+
+// ── DEMO ─────────────────────────────────────────────────────
+function loadDemo() {
+  const demo = {
+    diagnostico_critico: "La descripción actual no menciona ni un solo beneficio concreto — solo lista características técnicas sin explicar qué gana el comprador, lo que hace que el 65% de los visitantes abandonen antes de llegar al botón de compra.",
+    ganancias_rapidas: [
+      { accion: "Reemplazá el primer párrafo de la descripción por una frase de gancho que mencione el beneficio principal: en vez de 'Mochila de 40 litros con 12 bolsillos', poné 'Llevá todo lo que necesitás en un viaje de 3 días sin facturar valija — cabe en el avión y organizás todo sin rebuscar'.", impacto_estimado: "+18% conversión estimada", tiempo: "15 min" },
+      { accion: "Agregá 3 bullet points de beneficios arriba del precio. Ejemplo: ✓ Cabe en el avión como equipaje de mano | ✓ Impermeable — tus cosas secas siempre | ✓ Cargador USB integrado para el teléfono.", impacto_estimado: "+12% tiempo en página", tiempo: "20 min" },
+      { accion: "Agregá una línea de garantía debajo del botón de compra: '30 días de garantía de devolución — si no te convence, te devolvemos el dinero sin preguntas.' Esto reduce el riesgo percibido y aumenta conversión.", impacto_estimado: "+9% conversión estimada", tiempo: "5 min" }
+    ],
+    resumen_ejecutivo: "La mochila tiene buena construcción y materiales de calidad, pero la página no lo comunica. El producto tiene potencial alto en el mercado argentino —donde la demanda por mochilas de viaje creció 34% este año— pero la descripción actual parece la ficha técnica del fabricante, no una propuesta de valor para el comprador. Con 3 cambios simples en el copy podés duplicar la tasa de conversión sin tocar el precio ni las fotos.",
+    scores: {
+      conversion: 38, confianza: 52, seo: 44,
+      benchmark_conversion: 74, benchmark_confianza: 68, benchmark_seo: 61,
+      conversion_explicacion: "Score bajo por falta de beneficios en la descripción, sin urgencia visible y sin prueba social. El precio aparece solo sin contexto de valor, lo que genera fricción antes de la decisión de compra.",
+      confianza_explicacion: "Tiene logo de MercadoPago visible (positivo), pero no hay reseñas de compradores, no se menciona política de devolución y el contacto de WhatsApp no es visible en la página del producto.",
+      seo_explicacion: "El título no contiene keywords de búsqueda relevantes ('mochila de viaje cabina', 'mochila 40 litros'). La meta descripción está vacía. Sin estos elementos, el producto no aparece en búsquedas orgánicas de Google."
+    },
+    analisis_competidor: null,
+    fortalezas: ["Material impermeable de alta durabilidad mencionado en ficha técnica", "Puerto USB integrado — diferenciador real vs competencia", "Precio competitivo para el segmento mid-range en Argentina", "Colores variados disponibles — amplía el mercado objetivo"],
+    debilidades: ["Descripción sin ningún beneficio para el comprador — solo características", "Sin reseñas ni ratings visibles en la página", "No hay política de devolución ni garantía mencionada", "Fotos solo del producto vacío — sin foto de uso real o tamaño de referencia"],
+    mejoras_recomendadas: [
+      { titulo: "Reescribir la descripción enfocada en beneficios", descripcion: "Usar la fórmula: gancho (qué ganás) + problema que resuelve + 3 beneficios clave + prueba social + CTA con urgencia. La descripción larga generada por Vendly ya está lista para copiar.", impacto: "ALTO", impacto_estimado: "+25-35% conversión" },
+      { titulo: "Agregar sección de reseñas de compradores", descripcion: "En Tiendanube podés activar las reseñas en Configuración > Producto > Reseñas. Con 3-5 reseñas reales la conversión sube significativamente. Pedíselas a compradores anteriores por WhatsApp con un mensaje simple.", impacto: "ALTO", impacto_estimado: "+15-20% confianza" },
+      { titulo: "Foto de uso real con referencia de tamaño", descripcion: "Agregá una foto de una persona usando la mochila (que se vea el tamaño real) y una foto comparando con una notebook adentro. Esto responde la duda más frecuente sin que el comprador tenga que preguntar.", impacto: "MEDIO", impacto_estimado: "+12% conversión" },
+      { titulo: "Keywords SEO en el título del producto", descripcion: "Cambiá el título a: 'Mochila de Viaje 40L Impermeable con Puerto USB — Cabe en Cabina'. Esto solo puede traer 200-400 visitas orgánicas adicionales por mes en 60-90 días.", impacto: "MEDIO", impacto_estimado: "+30% tráfico orgánico" },
+      { titulo: "Agregar urgencia temporal en la descripción", descripcion: "Incluí una línea como 'Envío gratis hoy si comprás antes de las 18hs' o indicador de stock bajo. La urgencia real (no inventada) aumenta la tasa de conversión.", impacto: "BAJO", impacto_estimado: "+5-8% conversión" }
+    ],
+    descripcion_optimizada: {
+      titulo_seo: "Mochila de Viaje 40L Impermeable con Puerto USB — Cabina y Trekking",
+      descripcion_corta: "Mochila 40L impermeable con puerto USB. Cabe en cabina de avión. Perfecta para viajes de 3-5 días. Envío en 24-48h.",
+      descripcion_larga: "¿Cansado de pagar equipaje de bodega o llegar a destino con la ropa mojada?\n\nEsta mochila de 40 litros fue diseñada para el viajero que quiere llevar todo sin complicaciones. Cabe perfectamente en el compartimento superior del avión — sin cobros extra, sin esperas en la cinta.\n\nEl material impermeable resistente al agua no es un detalle menor: tus documentos, ropa y electrónicos llegan secos aunque te agarre una tormenta en el camino. Y el puerto USB integrado te da carga para el teléfono en cualquier momento, sin buscar enchufes en aeropuertos o terminales.\n\nCon 12 bolsillos organizados por tamaño, encontrás todo en segundos: el pasaporte a mano, los cargadores separados, el snack sin rebuscar. El sistema de espalda ventilada hace que incluso cargada se sienta ligera en viajes largos.\n\nMás de 500 viajeros ya la eligieron para sus aventuras. La garantía de 30 días sin preguntas la hace una decisión sin riesgo.\n\nDisponible en 4 colores. Stock limitado — comprá hoy y recibila en 24-48 horas.",
+      bullet_points: ["✓ Cabe en cabina de avión — sin pagar equipaje extra", "✓ 100% impermeable — tus cosas secas siempre", "✓ Puerto USB integrado para cargar el teléfono en movimiento", "✓ 12 bolsillos organizados — encontrás todo en segundos", "✓ 30 días de garantía — si no te gusta, te devolvemos el dinero"]
+    },
+    meta_ads: [
+      { nombre: "Ad 1 — Beneficio Principal", headline: "Viajá sin pagar equipaje extra", texto_principal: "¿Sabías que podés llevar todo lo necesario para un viaje de 3 días sin pagar un peso de equipaje?\n\nLa Mochila 40L cabe perfectamente en el compartimento superior del avión — verificada en las principales aerolíneas de la región.\n\nNo es solo una mochila. Es la diferencia entre llegar al aeropuerto tranquilo o corriendo a la balanza con miedo al sobrepeso.\n\n✓ 40 litros reales de capacidad\n✓ Impermeable — lluvia, no problem\n✓ Puerto USB integrado\n✓ 12 bolsillos organizados\n✓ Garantía de 30 días\n\nMás de 500 viajeros ya la eligieron. Stock limitado esta semana.\n\n👉 Comprá ahora con envío en 24-48h →", descripcion: "Cabe en cabina. Impermeable. Puerto USB. Garantía 30 días.", objetivo: "Conversión" },
+      { nombre: "Ad 2 — Problema/Dolor", headline: "El equipaje extra cuesta más que la mochila", texto_principal: "¿Cuántas veces pagaste equipaje de bodega por llevar 'por las dudas'?\n\nEso se termina.\n\nLa Mochila de Viaje 40L fue diseñada para que quepa todo lo que necesitás para 3-5 días — sin que sobrepase los límites de equipaje de mano.\n\nEl material impermeable protege tu ropa y electrónicos. El puerto USB te mantiene conectado. Los 12 bolsillos te mantienen organizado.\n\n✓ Verificada en aerolíneas LATAM, Aerolíneas Argentinas y JetSmart\n✓ Garantía de 30 días sin preguntas\n✓ Envío en 24-48hs a todo el país\n\nEl equipaje de bodega cuesta entre $15.000 y $40.000 por viaje. Esta mochila se paga sola en el primer viaje.\n\n👉 Hacé click y la tenés en casa esta semana →", descripcion: "Una inversión que se paga sola en el primer viaje.", objetivo: "Conversión" },
+      { nombre: "Ad 3 — Prueba Social", headline: "500+ viajeros ya no pagan equipaje extra", texto_principal: "Gastón compró esta mochila hace 6 meses antes de un viaje a Colombia. Hoy la lleva a todos lados.\n\n'Pensé que no iba a entrar todo, pero metí ropa para 4 días, cargadores, neceser y la notebook. En el avión cupo perfecto. No pagué un peso de equipaje.'\n\nEso es lo que escuchamos constantemente de quienes ya tienen la Mochila de Viaje 40L.\n\n✓ Impermeable — ropa seca siempre\n✓ Puerto USB para cargar en movimiento\n✓ Cabe en cabina de todas las aerolíneas locales\n✓ Más de 500 compradores satisfechos\n✓ Garantía de 30 días sin preguntas\n\nEl stock se agota rápido antes de vacaciones de invierno.\n\n👉 Asegurá la tuya ahora →", descripcion: "Más de 500 viajeros ya viajan sin pagar equipaje extra.", objetivo: "Reconocimiento" },
+      { nombre: "Ad 4 — Urgencia/Escasez", headline: "Quedan 12 unidades — vacaciones de invierno", texto_principal: "Con las vacaciones de invierno a la vuelta de la esquina, el stock de la Mochila 40L está bajando rápido.\n\nSi estás planeando un viaje en julio, este es el momento.\n\nLa mochila que cabe en cabina, aguanta la lluvia y te mantiene organizado con 12 bolsillos y puerto USB integrado.\n\n✓ Quedan 12 unidades en stock\n✓ Envío en 24-48h — llegá a tiempo\n✓ Garantía de 30 días\n✓ Precio especial hasta agotar stock\n\nCada día que esperás es un día menos para recibirla antes de tu viaje.\n\n👉 Comprá ahora y viajá con todo →", descripcion: "Stock limitado. Envío en 24-48h antes de tus vacaciones.", objetivo: "Conversión" },
+      { nombre: "Ad 5 — Retargeting", headline: "¿La viste y no la compraste? Entendemos.", texto_principal: "Quizás dudaste por el precio. O pensaste 'capaz no entra todo'.\n\nTe contamos algo: el 90% de nuestros compradores dijeron que la primera duda fue exactamente esa.\n\nPor eso ofrecemos 30 días de garantía sin preguntas. Si la mochila no entra en la cabina, si no cabe todo lo que necesitás, o si por cualquier motivo no te convence — te devolvemos el dinero. Punto.\n\nLa Mochila 40L tiene:\n✓ Capacidad verificada para cabina de mano\n✓ Material 100% impermeable\n✓ Puerto USB integrado\n✓ 12 bolsillos organizados\n\nEl riesgo es cero. La comodidad de viajar sin pagar equipaje es tuya.\n\n👉 Probala con garantía de 30 días →", descripcion: "Garantía 30 días sin preguntas. El riesgo es cero.", objetivo: "Retargeting" }
+    ],
+    instagram_posts: [
+      { tipo: "Post educativo", hook: "5 cosas que nadie te dice antes de viajar con equipaje de mano ✈️", caption: "Después de hablar con cientos de viajeros frecuentes, encontramos los errores más comunes al elegir una mochila de cabina.\n\n1️⃣ No medir antes de comprar — Las aerolíneas son estrictas con las medidas (40x25x20cm en la mayoría). Medí siempre.\n\n2️⃣ Ignorar el peso vacía — Una mochila que pesa 1.5kg vacía te come el límite de 10kg permitido.\n\n3️⃣ Elegir por estética sobre funcionalidad — Los bolsillos importan más que el color cuando buscás el pasaporte en el aeropuerto.\n\n4️⃣ Subestimar la impermeabilidad — Un día de lluvia en destino puede arruinar ropa y electrónicos.\n\n5️⃣ No probar si entra todo ANTES del viaje — Probá el packing 3 días antes, no la noche anterior.\n\n¿Cuál de estos errores cometiste? Contanos en los comentarios 👇\n\n#viajesargentina #equipajemano #mochilaviajera #viajarbarato #consejosdeviaje #backpacker #argentina #viajes2024 #aerolíneas #trucosdeviaje" },
+      { tipo: "Post de producto", hook: "Todo lo que necesitás para 4 días cabe acá (y en la cabina del avión) 🎒", caption: "Sí, ese montón de cosas entra en nuestra Mochila 40L.\n\n📦 Lo que metimos:\n✓ Ropa para 4 días\n✓ Neceser completo\n✓ Notebook 15'\n✓ Cargadores y auriculares\n✓ Zapatillas extra\n✓ Snacks para el viaje\n\nY todavía sobró espacio.\n\nEl puerto USB te mantiene con el teléfono cargado. El material impermeable protege todo aunque llueva. Y los 12 bolsillos hacen que encuentres cualquier cosa en segundos.\n\n¿La mejor parte? Cabe en el compartimento superior del avión — sin pagar equipaje de bodega.\n\nLink en la bio para verla 🔗\n\n#mochila40l #viajesinequipaje #cabinabag #mochilaviaje #equipajemano #viajarargentina #travel #mochilera" },
+      { tipo: "Historia de éxito", hook: "Ahorré $80.000 en un año sin comprar nada nuevo 💰", caption: "Hace un año Valentina nos escribió antes de comprar:\n\n'Viajo 1-2 veces por mes por trabajo. En equipaje gasto entre $15.000 y $40.000 por viaje. ¿Realmente esta mochila cabe en cabina?'\n\nLe dijimos que sí. Ella confió.\n\nHoy nos mandó un mensaje:\n\n'Usé la mochila en 23 viajes. Cero equipaje de bodega. Calculé que ahorré más de $80.000. Literalmente la mejor compra que hice este año.'\n\nEso es lo que buscamos cuando diseñamos la Mochila 40L — que se pague sola en el primer viaje.\n\nGarantía de 30 días. Envío en 24-48hs. Link en la bio 🔗\n\n#ahorroviajando #mochilaviaje #viajesfrecuentes #equipajemano #testimonios #argentina #travel #viajerosfrecuentes" }
+    ],
+    preguntas_frecuentes: [
+      { pregunta: "¿Realmente cabe en el compartimento superior del avión?", respuesta: "Sí. Las medidas de la mochila son 38x24x19cm, dentro de los límites de equipaje de mano de Aerolíneas Argentinas, LATAM, JetSmart y Flybondi (40x25x20cm como máximo). La hemos probado en más de 20 aerolíneas diferentes sin ningún inconveniente." },
+      { pregunta: "¿Cuánto demora el envío y qué pasa si me arrepiento?", respuesta: "El envío es en 24-48 horas hábiles a todo el país vía correo estándar. Si por cualquier motivo no quedás satisfecho, tenés 30 días para devolverla sin ninguna pregunta ni costo adicional. El proceso es simple: nos escribís por WhatsApp y coordinamos la devolución." },
+      { pregunta: "¿El puerto USB funciona con cualquier cargador o necesito uno especial?", respuesta: "El puerto USB es universal — funciona con cualquier powerbank o batería externa estándar (que vendés por separado). El cable pasa por dentro de la mochila y el puerto sale en la correa. Compatible con todos los teléfonos que cargan por USB-A o con adaptador USB-C." },
+      { pregunta: "¿Cuántos días de ropa entra realmente? ¿Es para viajes largos?", respuesta: "Está optimizada para viajes de 3 a 5 días. Caben cómodamente: 4-5 remeras, 2 pantalones/shorts, ropa interior para 5 días, neceser completo, notebook de hasta 15 pulgadas y cargadores. Para viajes más largos recomendamos combinarla con técnicas de packing minimalista que enseñamos en nuestro Instagram." }
+    ],
+    estrategia_precio: "El precio actual está bien posicionado para el segmento mid-range en Argentina. El cambio de mayor impacto es comunicarlo mejor: en vez de mostrar solo '$XX.XXX', agregá una línea de ahorro ('Ahorrás $30.000+ por viaje en equipaje') y ofrecé 3 cuotas sin interés con MercadoPago si el precio lo permite. El anclaje de valor ('vale mucho más de lo que cuesta') es el argumento más poderoso para productos de este tipo.",
+    keywords_seo: ["mochila de viaje 40 litros", "mochila cabina avion argentina", "mochila impermeable viaje", "mochila con puerto usb", "mochila equipaje de mano", "mochila backpacker argentina", "mochila 40l precio argentina", "mochila viaje sin equipaje"],
+    audiencia_ideal: {
+      descripcion: "Personas de 25-38 años que viajan 2-6 veces al año por trabajo o vacaciones, viven en ciudades grandes (Buenos Aires, Córdoba, Rosario), son conscientes del costo de los vuelos y buscan viajar de forma más inteligente y económica. Están en una etapa de vida donde viajan frecuentemente pero no quieren gastar de más.",
+      intereses: ["Viajes y turismo", "Aerolíneas low cost", "Minimalismo y organización", "Trabajo remoto y nómadas digitales"],
+      pain_point_principal: "Pagar $20.000-$40.000 extra por viaje en equipaje de bodega cuando viaja por trabajo o vacaciones cortas, o la angustia de intentar meter todo en una valija pequeña la noche antes del viaje."
+    },
+    objeciones_principales: [
+      { objecion: "¿Seguro que cabe en el avión? No quiero que me hagan pagar equipaje en el aeropuerto.", respuesta: "Garantizamos que la mochila cumple con los límites de equipaje de mano de todas las aerolíneas que operan en Argentina. Las medidas son 38x24x19cm — por debajo del máximo de 40x25x20cm. Si en algún vuelo excepcional te piden que la despachen como equipaje, te devolvemos el costo de ese cargo. Así de seguros estamos." },
+      { objecion: "¿Realmente entra todo lo que necesito para un viaje de varios días?", respuesta: "El 94% de nuestros clientes confirmó que metieron ropa para 4+ días, neceser y electrónicos sin problema. La clave es el sistema de organización con 12 bolsillos — cada cosa tiene su lugar. Si querés, antes de comprar podés escribirnos por WhatsApp y te ayudamos a calcular si tu lista de equipaje específica entra." },
+      { objecion: "El precio me parece caro para una mochila.", respuesta: "Entendemos la duda. Miralo así: si viajás 2 veces al año y pagás $20.000 de equipaje por viaje, en un año gastás $40.000 en equipaje. Esta mochila se paga sola en el primer viaje. Además, viene con 30 días de garantía de devolución — si no te convence, te devolvemos el dinero sin ninguna pregunta." }
+    ],
+    impacto_revenue: {
+      estimacion: "Con un score de conversión de 38 vs el benchmark de 74, estimamos que estás convirtiendo al 0.6% cuando el promedio del rubro es 2.1%. Con 500 visitas/mes y un precio de $85.000, estás perdiendo aproximadamente 7-8 ventas/mes, lo que representa ~$600.000 pesos mensuales en ingresos que no estás capturando.",
+      oportunidad: "Implementando las 3 ganancias rápidas (nuevo copy en descripción, bullets de beneficios, y garantía visible) en los próximos 7 días, estimamos que la conversión podría subir a 1.2-1.5%, lo que significaría 3-4 ventas adicionales por mes — unos $280.000 pesos extra — sin invertir un peso más en publicidad."
+    },
+    emails_carrito_abandonado: [
+      { momento: "1 hora después del abandono", asunto: "Tu mochila te está esperando 🎒", cuerpo: "Hola,\n\nNos dimos cuenta de que dejaste la Mochila de Viaje 40L en tu carrito.\n\nSabemos que a veces querés pensarlo un poco más — y está perfecto. Pero antes de que lo hagas, te contamos algo:\n\nEsta mochila tiene garantía de 30 días sin preguntas. Si la comprás hoy y no te convence por cualquier motivo, te devolvemos el dinero. Sin trámites, sin vueltas.\n\nEl stock es limitado y se agota rápido, especialmente cerca de vacaciones.\n\n👉 Completar mi compra →\n[LINK AL PRODUCTO]\n\nCualquier duda, respondé este mail o escribinos por WhatsApp. Respondemos en minutos.\n\nHasta pronto," },
+      { momento: "24 horas después", asunto: "¿La pregunta que te frenó? Te la respondemos.", cuerpo: "Hola de nuevo,\n\nYa pasó un día desde que miaste la Mochila 40L y queremos ayudarte a decidir.\n\nLa duda más común que recibimos es: '¿Realmente cabe en el avión?'\n\nRespuesta corta: sí. Medidas: 38x24x19cm, por debajo del máximo de 40x25x20cm de Aerolíneas Argentinas, LATAM, JetSmart y Flybondi.\n\nRespuesta larga: si en algún vuelo excepcional te piden que la despaches (algo rarísimo), te cubrimos el costo del cargo. Así de seguros estamos del producto.\n\nMás de 500 compradores ya la usan en sus viajes. La garantía es de 30 días.\n\n👉 Ver la mochila →\n[LINK AL PRODUCTO]\n\nSi tenés otra pregunta específica, respondé este mail." },
+      { momento: "72 horas — último intento", asunto: "Último aviso: el stock está bajando", cuerpo: "Hola,\n\nEste es nuestro último mensaje sobre la Mochila 40L.\n\nEl stock está bajando con las vacaciones de invierno acercándose. No podemos garantizar que siga disponible en los próximos días.\n\nSi viajás pronto y querés una mochila que:\n✓ Cabe en la cabina del avión\n✓ Aguanta la lluvia\n✓ Tiene puerto USB integrado\n✓ Tiene garantía de 30 días\n\n...este es el momento.\n\n👉 Asegurar mi mochila →\n[LINK AL PRODUCTO]\n\nSi el precio es el tema, escribinos por WhatsApp y vemos qué podemos hacer.\n\nSaludos," }
+    ],
+    template_whatsapp: "¡Hola! Gracias por escribirnos 😊\n\nLa Mochila de Viaje 40L es perfecta para lo que buscás. Tiene capacidad para 4-5 días de ropa, cabe en el compartimento superior del avión (medidas 38x24x19cm, dentro de los límites de todas las aerolíneas), es 100% impermeable y tiene puerto USB integrado para cargar el teléfono mientras viajás.\n\nLa pregunta que más nos hacen es si realmente cabe en cabina — sí, la hemos probado en más de 20 aerolíneas sin ningún problema.\n\nEl precio es [PRECIO] con envío en 24-48 horas a todo el país. Tiene garantía de 30 días sin preguntas.\n\n¿Querés que te mande el link directo para verla? 👇",
+    plan_accion: [
+      { prioridad: 1, accion: "Reescribir la descripción completa usando el copy generado por Vendly — copiar y pegar directamente en Tiendanube/Shopify.", impacto_esperado: "+25-35% conversión estimada en los primeros 14 días", plazo: "Inmediato (hoy)" },
+      { prioridad: 2, accion: "Agregar garantía de 30 días visible debajo del botón de compra y policy de devolución en el footer de la tienda.", impacto_esperado: "+15-20% tasa de conversión por reducción de riesgo percibido", plazo: "Esta semana" },
+      { prioridad: 3, accion: "Pedirle reseñas a los últimos 10 compradores por WhatsApp con el template: 'Hola [nombre], compraste la mochila hace [X] días. ¿Podés dejarnos una reseña de 2 líneas en la tienda? Te lo agradeceríamos mucho.'", impacto_esperado: "+20% confianza y conversión con 3+ reseñas publicadas", plazo: "Próximas 2 semanas" },
+      { prioridad: 4, accion: "Actualizar el título del producto a 'Mochila de Viaje 40L Impermeable con Puerto USB — Cabina y Trekking' para mejorar el posicionamiento SEO.", impacto_esperado: "+30% tráfico orgánico en 60-90 días", plazo: "Este mes" },
+      { prioridad: 5, accion: "Crear una foto de contenido mostrando qué cabe adentro (ropa + electrónicos + neceser) y publicarla como post en Instagram con el copy generado.", impacto_esperado: "+15% engagement y tráfico orgánico desde redes sociales", plazo: "Próximo mes" }
+    ]
+  };
+  currentAudit = demo;
+  document.getElementById('loading').classList.remove('show');
+  document.getElementById('results').classList.remove('show');
+  renderAudit(demo, 'Mochila de Viaje 40L Impermeable [EJEMPLO]', false);
+  showToast('✓ Ejemplo cargado — así se ve una auditoría real de Vendly');
 }
 
 // ── SHARE & PDF ───────────────────────────────────────────────

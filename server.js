@@ -193,8 +193,23 @@ function optAuth(req, res, next) {
 }
 
 // ── SCRAPER ───────────────────────────────────────────────────
-async function scrape(url) {
-  const { data } = await axios.get(url, { timeout: 12000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' } });
+async function scrape(rawUrl) {
+  // Auto-add https:// if missing
+  let url = rawUrl.trim();
+  if (url && !url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+
+  let data;
+  try {
+    const resp = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,*/*', 'Accept-Language': 'es-AR,es;q=0.9' } });
+    data = resp.data;
+  } catch (e) {
+    if (e.code === 'ECONNABORTED' || e.code === 'ETIMEDOUT') throw new Error('La tienda tardó demasiado en responder. Intentá de nuevo o usá el modo manual.');
+    if (e.response?.status === 403) throw new Error('La tienda bloqueó el acceso automático. Usá el modo manual (✏️) para ingresar los datos del producto.');
+    if (e.response?.status === 404) throw new Error('No encontramos esa URL. Verificá que sea el link directo al producto (no a la tienda en general).');
+    if (e.response?.status === 401 || e.response?.status === 403) throw new Error('La tienda requiere contraseña o está en modo privado. Usá el modo manual.');
+    if (e.code === 'ENOTFOUND') throw new Error('No pudimos encontrar esa URL. Verificá que esté bien escrita y que la tienda esté activa.');
+    throw new Error('Error al leer la URL. Si el problema persiste, usá el modo manual (✏️).');
+  }
   const $ = cheerio.load(data);
 
   // Extraer precio de múltiples patrones comunes (Tiendanube, Shopify, MercadoShops)
@@ -334,7 +349,7 @@ Respondé SOLO con JSON puro sin markdown ni texto adicional. IMPORTANTE: todos 
     model: 'gpt-4o',
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
-    max_tokens: 8000
+    max_tokens: 12000
   });
   const content = r.choices[0].message.content.trim().replace(/```json[\s\S]*?```|```/g, '').trim();
   return JSON.parse(content);
@@ -446,6 +461,9 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/app/*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/informe/:token', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/legal', (req, res) => res.sendFile(path.join(__dirname, 'public', 'legal.html')));
+app.get('/terminos', (req, res) => res.redirect('/legal'));
+app.get('/privacidad', (req, res) => res.redirect('/legal'));
 
 // Auth
 app.post('/api/auth/login', async (req, res) => {
