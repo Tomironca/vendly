@@ -243,6 +243,53 @@ textarea{min-height:68px;line-height:1.5}
 .aud-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .aud-tag{background:rgba(124,92,252,0.08);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--accent3)}
 
+/* IMPACTO REVENUE */
+.impacto-box{background:linear-gradient(135deg,rgba(248,113,113,0.06),rgba(245,200,66,0.04));border:1px solid rgba(248,113,113,0.2);border-radius:14px;padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.impacto-box{grid-template-columns:1fr}}
+.impacto-block{display:flex;flex-direction:column;gap:5px}
+.impacto-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.impacto-label.warn{color:var(--red)}.impacto-label.opp{color:var(--green)}
+.impacto-text{font-size:13px;line-height:1.6;color:var(--text)}
+
+/* EMAILS CARRITO ABANDONADO */
+.carrito-tabs{display:flex;gap:4px;margin-bottom:14px;background:var(--bg2);padding:4px;border-radius:10px;border:1px solid var(--border)}
+.carrito-tab{flex:1;padding:7px 8px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center}
+.carrito-tab.active{background:var(--bg3);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.4)}
+.carrito-panel{display:none}.carrito-panel.active{display:block}
+.carrito-email{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px}
+.carrito-email-asunto{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.carrito-asunto-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);flex-shrink:0}
+.carrito-asunto-text{font-size:13px;color:var(--text);font-weight:500;flex:1}
+.carrito-email-cuerpo{padding:12px 14px;font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word}
+.carrito-copy-row{padding:0 14px 12px;display:flex;justify-content:flex-end;gap:6px}
+
+/* WHATSAPP TEMPLATE */
+.wa-box{background:linear-gradient(135deg,rgba(52,211,153,0.05),rgba(52,211,153,0.02));border:1px solid rgba(52,211,153,0.2);border-radius:14px;padding:16px 18px}
+.wa-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.wa-icon{width:32px;height:32px;background:#25D366;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.wa-title{font-size:13px;font-weight:600;color:var(--green)}
+.wa-subtitle{font-size:11px;color:var(--muted)}
+.wa-msg{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word;margin-bottom:10px}
+.wa-copy-row{display:flex;justify-content:flex-end}
+
+/* MOBILE */
+@media(max-width:640px){
+  nav{padding:12px 16px}
+  .hero{padding:40px 16px 28px}
+  .wrap{padding:0 12px 60px}
+  .input-card{padding:18px 16px;border-radius:16px}
+  .modal{padding:22px 18px;border-radius:18px;margin:12px}
+  .rc{padding:16px}
+  .score-circle{width:70px;height:70px}
+  .score-val{font-size:22px}
+  .copy-btn{font-size:11px;padding:5px 10px}
+  .plan-banner{padding:10px 14px}
+  .pb-text{font-size:12px}
+  .btn{font-size:13px;padding:10px 14px}
+  .ads-tab{font-size:11px;padding:6px 8px}
+  .ig-grid{grid-template-columns:1fr}
+}
+
 /* MODALS */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.show{display:flex}
@@ -698,6 +745,14 @@ footer span{color:var(--accent2)}
       <div class="rc-head"><div class="rc-ico ico-r">💬</div><div class="rc-tit">¿Por qué no compran? Objeciones + respuestas listas</div></div>
       <div class="objeciones-list" id="r-objeciones"></div>
     </div>
+    <!-- Impacto en revenue — FREE -->
+    <div class="rc" id="section-impacto" style="display:none">
+      <div class="rc-head"><div class="rc-ico" style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2)">📉</div><div class="rc-tit">¿Cuánto te está costando esto?</div></div>
+      <div class="impacto-box">
+        <div class="impacto-block"><div class="impacto-label warn">Ingresos que estás perdiendo</div><div class="impacto-text" id="impacto-estimacion"></div></div>
+        <div class="impacto-block"><div class="impacto-label opp">Oportunidad en 30 días</div><div class="impacto-text" id="impacto-oportunidad"></div></div>
+      </div>
+    </div>
     <!-- Descripción optimizada — TÍTULO+CORTA free, LARGA+BULLETS premium -->
     <div class="rc" id="section-desc">
       <div class="rc-head"><div class="rc-ico ico-p">✦</div><div class="rc-tit">Descripción optimizada</div></div>
@@ -727,6 +782,25 @@ footer span{color:var(--accent2)}
     </div>
     <div class="premium-section" id="section-precio">
       <div class="rc"><div class="rc-head"><div class="rc-ico ico-o">💰</div><div class="rc-tit">Estrategia de precio</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div><div class="precio-box" id="r-precio"></div></div>
+    </div>
+    <!-- Emails carrito abandonado — PREMIUM -->
+    <div class="premium-section" id="section-carrito">
+      <div class="rc">
+        <div class="rc-head"><div class="rc-ico" style="background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2)">📧</div><div class="rc-tit">3 emails de carrito abandonado</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div>
+        <div class="carrito-tabs" id="carrito-tabs"></div>
+        <div id="carrito-panels"></div>
+      </div>
+    </div>
+    <!-- WhatsApp template — PREMIUM -->
+    <div class="premium-section" id="section-whatsapp">
+      <div class="rc">
+        <div class="rc-head"><div class="rc-ico" style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2)">💬</div><div class="rc-tit">Template de WhatsApp listo para usar</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div>
+        <div class="wa-box">
+          <div class="wa-header"><div class="wa-icon">📲</div><div><div class="wa-title">Respuesta de venta para WhatsApp</div><div class="wa-subtitle">Copiá y mandalo cuando alguien pregunte por el producto</div></div></div>
+          <div class="wa-msg" id="r-whatsapp"></div>
+          <div class="wa-copy-row"><button class="copy-btn" onclick="copyEl(this,'r-whatsapp')">Copiar mensaje</button></div>
+        </div>
+      </div>
     </div>
     <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div></div><div class="plan-list-items" id="r-plan"></div></div>
     <button class="reset-btn" onclick="resetApp()">← Analizar otro producto</button>
@@ -1059,6 +1133,40 @@ function renderAudit(a, productName, hasComp) {
     objSec.style.display='';
   } else { objSec.style.display='none'; }
 
+  // Impacto revenue
+  const impSec = document.getElementById('section-impacto');
+  if (a.impacto_revenue) {
+    setText('impacto-estimacion', a.impacto_revenue.estimacion || '');
+    setText('impacto-oportunidad', a.impacto_revenue.oportunidad || '');
+    impSec.style.display='';
+  } else { impSec.style.display='none'; }
+
+  // Emails carrito abandonado
+  const carritoTabs = document.getElementById('carrito-tabs');
+  const carritoPanels = document.getElementById('carrito-panels');
+  carritoTabs.innerHTML=''; carritoPanels.innerHTML='';
+  if (a.emails_carrito_abandonado && a.emails_carrito_abandonado.length) {
+    a.emails_carrito_abandonado.forEach((em,i)=>{
+      const tab=document.createElement('button');
+      tab.className='carrito-tab'+(i===0?' active':'');
+      tab.textContent=i===0?'1h':i===1?'24h':'72h';
+      tab.title=em.momento;
+      tab.onclick=()=>{
+        carritoTabs.querySelectorAll('.carrito-tab').forEach(t=>t.classList.remove('active'));
+        carritoPanels.querySelectorAll('.carrito-panel').forEach(p=>p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('carrito-panel-'+i).classList.add('active');
+      };
+      carritoTabs.appendChild(tab);
+      const panelId='carrito-panel-'+i;
+      carritoPanels.insertAdjacentHTML('beforeend',`<div class="carrito-panel${i===0?' active':''}" id="${panelId}"><div class="carrito-email"><div class="carrito-email-asunto"><span class="carrito-asunto-label">Asunto</span><span class="carrito-asunto-text" id="c-asunto-${i}">${em.asunto}</span><button class="copy-btn" style="flex-shrink:0" onclick="copyEl(this,'c-asunto-${i}')">Copiar</button></div><div class="carrito-email-cuerpo" id="c-cuerpo-${i}">${em.cuerpo}</div><div class="carrito-copy-row"><button class="copy-btn" onclick="copyEl(this,'c-cuerpo-${i}')">Copiar email completo</button></div></div></div>`);
+    });
+  }
+
+  // WhatsApp template
+  const waText = document.getElementById('r-whatsapp');
+  if (waText) waText.textContent = a.template_whatsapp || '';
+
   // Aplicar paywall para usuarios free
   applyPaywall();
 
@@ -1068,7 +1176,7 @@ function renderAudit(a, productName, hasComp) {
 
 function applyPaywall() {
   const isPaid = userPlan === 'pro' || userPlan === 'basic' || userPlan === 'agency';
-  const premiumSections = ['section-ads','section-ig','section-faq','section-kw','section-precio'];
+  const premiumSections = ['section-ads','section-ig','section-faq','section-kw','section-precio','section-carrito','section-whatsapp'];
   premiumSections.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -1079,7 +1187,7 @@ function applyPaywall() {
       el.querySelector('.rc')?.classList.add('premium-content-blur');
       const overlay = document.createElement('div');
       overlay.className='premium-overlay';
-      overlay.innerHTML=`<div class="premium-lock-badge">✦ STARTER / PRO</div><div class="premium-lock-title">Sección bloqueada</div><div class="premium-lock-sub">Desbloqueá los copies listos para usar: anuncios, posts, FAQs, keywords y más.</div><button class="premium-lock-btn" onclick="showUpgradeModal()">Ver planes desde $9/mes →</button>`;
+      overlay.innerHTML=`<div class="premium-lock-badge">✦ STARTER / PRO</div><div class="premium-lock-title">Sección bloqueada</div><div class="premium-lock-sub">Desbloqueá anuncios, emails de carrito, template de WhatsApp, posts, FAQs, keywords y más.</div><button class="premium-lock-btn" onclick="showUpgradeModal()">Ver planes desde $9/mes →</button>`;
       el.appendChild(overlay);
     }
   });
