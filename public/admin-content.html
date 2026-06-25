@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Contenido — Vendly Admin</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%237C5CFC'/><text y='.9em' font-size='72' x='12' fill='white' font-family='sans-serif' font-weight='900'>V</text></svg>">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#07070E;--bg2:#0F0F1A;--bg3:#16161F;--text:#F0EEF8;--muted:#8B89A0;--accent:#7C5CFC;--accent2:#A688FA;--green:#34D399;--border:rgba(124,92,252,0.15);--border-s:rgba(255,255,255,0.06)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:32px 24px}
+.wrap{max-width:800px;margin:0 auto}
+.logo{font-size:22px;font-weight:800;margin-bottom:32px;display:block}
+.logo span{color:var(--accent2)}
+h1{font-size:24px;font-weight:700;margin-bottom:6px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:32px}
+.card{background:var(--bg2);border:1px solid var(--border-s);border-radius:16px;padding:24px;margin-bottom:20px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:16px;color:var(--accent2)}
+.form-row{margin-bottom:14px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+select,input,textarea{width:100%;background:var(--bg3);border:1px solid var(--border-s);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border .15s}
+select:focus,input:focus,textarea:focus{border-color:rgba(124,92,252,0.4)}
+textarea{resize:vertical;min-height:80px}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;width:100%;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.output{background:var(--bg3);border:1px solid var(--border-s);border-radius:12px;padding:20px;margin-top:20px;white-space:pre-wrap;font-size:13px;color:var(--text);line-height:1.7;display:none;position:relative}
+.copy-btn{position:absolute;top:12px;right:12px;background:var(--bg2);border:1px solid var(--border-s);border-radius:8px;padding:5px 12px;color:var(--muted);font-size:11px;cursor:pointer;transition:all .15s}
+.copy-btn:hover{color:var(--text);border-color:var(--accent)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:24px}
+.stat{background:var(--bg2);border:1px solid var(--border-s);border-radius:12px;padding:16px;text-align:center}
+.stat-val{font-size:28px;font-weight:800;color:var(--accent2)}
+.stat-label{font-size:11px;color:var(--muted);margin-top:4px}
+.user-table{width:100%;border-collapse:collapse;font-size:12px}
+.user-table th{text-align:left;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border-s);font-weight:500;text-transform:uppercase;letter-spacing:.05em;font-size:11px}
+.user-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--text)}
+.plan-badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700}
+.plan-free{background:rgba(139,137,160,0.15);color:var(--muted)}
+.plan-basic{background:rgba(124,92,252,0.15);color:var(--accent2)}
+.plan-pro{background:rgba(52,211,153,0.15);color:var(--green)}
+.loading{display:none;text-align:center;color:var(--muted);padding:20px;font-size:13px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border-s);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lock{text-align:center;padding:80px 24px}
+.lock input{max-width:280px;margin:16px auto;display:block}
+.lock .btn{max-width:280px;margin:0 auto}
+.tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.tab{background:var(--bg3);border:1px solid var(--border-s);border-radius:8px;padding:7px 14px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s}
+.tab.active,.tab:hover{background:rgba(124,92,252,0.1);border-color:rgba(124,92,252,0.3);color:var(--text)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="logo" href="/">Vend<span>ly</span> <span style="font-size:13px;color:var(--muted);font-weight:400">Admin</span></a>
+
+  <div id="lock-screen" class="lock">
+    <h2 style="font-size:20px;margin-bottom:6px">Panel de administración</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:0">Ingresá el password de admin</p>
+    <input type="password" id="admin-pass" placeholder="Password admin" onkeydown="if(event.key==='Enter')unlock()">
+    <div style="height:10px"></div>
+    <button class="btn" onclick="unlock()">Entrar →</button>
+    <div id="lock-error" style="color:#f87171;font-size:12px;margin-top:10px"></div>
+  </div>
+
+  <div id="main" style="display:none">
+    <h1>Panel Admin</h1>
+    <p class="sub">Estadísticas, notificaciones y generador de contenido para Vendly.</p>
+
+    <!-- Stats -->
+    <div id="stats-grid" class="stats-grid">
+      <div class="stat"><div class="stat-val" id="s-users">—</div><div class="stat-label">Usuarios totales</div></div>
+      <div class="stat"><div class="stat-val" id="s-paid">—</div><div class="stat-label">Usuarios pagos</div></div>
+      <div class="stat"><div class="stat-val" id="s-mrr">—</div><div class="stat-label">MRR estimado</div></div>
+      <div class="stat"><div class="stat-val" id="s-audits">—</div><div class="stat-label">Auditorías totales</div></div>
+      <div class="stat"><div class="stat-val" id="s-today">—</div><div class="stat-label">Hoy (auditorías)</div></div>
+      <div class="stat"><div class="stat-val" id="s-signups">—</div><div class="stat-label">Hoy (registros)</div></div>
+    </div>
+
+    <!-- Recent users -->
+    <div class="card" style="margin-bottom:24px">
+      <h2>Últimos 10 usuarios</h2>
+      <div style="overflow-x:auto">
+        <table class="user-table">
+          <thead><tr><th>Email</th><th>Plan</th><th>Auditorías</th><th>Registro</th></tr></thead>
+          <tbody id="users-tbody"><tr><td colspan="4" style="color:var(--muted);text-align:center;padding:20px">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Content generator -->
+    <div class="card">
+      <h2>Generador de contenido con IA</h2>
+      <div class="tabs">
+        <div class="tab active" onclick="setType('tiktok',this)">TikTok / Reels</div>
+        <div class="tab" onclick="setType('facebook',this)">Facebook grupos</div>
+        <div class="tab" onclick="setType('instagram',this)">Instagram</div>
+        <div class="tab" onclick="setType('whatsapp',this)">WhatsApp</div>
+        <div class="tab" onclick="setType('email_cold',this)">Cold email</div>
+      </div>
+      <div class="form-row">
+        <label>Contexto adicional (opcional)</label>
+        <textarea id="ctx" placeholder="Ej: quiero mostrar el score de un producto de ropa para mujer, ángulo de urgencia..."></textarea>
+      </div>
+      <button class="btn" onclick="generate()">Generar contenido →</button>
+      <div class="loading" id="gen-loading"><span class="spinner"></span>Generando con GPT-4o...</div>
+      <div class="output" id="gen-output"><button class="copy-btn" onclick="copyOutput()">Copiar</button><span id="gen-text"></span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let secret = '';
+let currentType = 'tiktok';
+
+function unlock() {
+  secret = document.getElementById('admin-pass').value.trim();
+  if (!secret) return;
+  loadStats();
+}
+
+async function loadStats() {
+  try {
+    const r = await fetch(`/api/admin/stats?secret=${encodeURIComponent(secret)}`);
+    if (r.status === 403) { document.getElementById('lock-error').textContent = 'Password incorrecto'; return; }
+    const d = await r.json();
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('main').style.display = 'block';
+    document.getElementById('s-users').textContent = d.totalUsers;
+    document.getElementById('s-paid').textContent = d.paidUsers;
+    document.getElementById('s-mrr').textContent = `$${d.mrr}`;
+    document.getElementById('s-audits').textContent = d.totalAudits;
+    document.getElementById('s-today').textContent = d.todayAudits;
+    document.getElementById('s-signups').textContent = d.todaySignups;
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = (d.recentUsers || []).map(u => `
+      <tr>
+        <td>${u.email}</td>
+        <td><span class="plan-badge plan-${u.plan}">${u.plan.toUpperCase()}</span></td>
+        <td>${u.audits_used}</td>
+        <td>${new Date(u.created_at).toLocaleDateString('es-AR')}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:16px">Sin usuarios aún</td></tr>';
+  } catch(e) { document.getElementById('lock-error').textContent = 'Error de conexión'; }
+}
+
+function setType(type, el) {
+  currentType = type;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('gen-output').style.display = 'none';
+}
+
+async function generate() {
+  const btn = document.querySelector('.card .btn');
+  const loading = document.getElementById('gen-loading');
+  const output = document.getElementById('gen-output');
+  btn.disabled = true;
+  loading.style.display = 'block';
+  output.style.display = 'none';
+  try {
+    const r = await fetch('/api/admin/generate-content', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ secret, type: currentType, context: document.getElementById('ctx').value })
+    });
+    const d = await r.json();
+    document.getElementById('gen-text').textContent = d.content || d.error;
+    output.style.display = 'block';
+  } catch(e) { alert('Error: ' + e.message); }
+  finally { btn.disabled = false; loading.style.display = 'none'; }
+}
+
+function copyOutput() {
+  const text = document.getElementById('gen-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => btn.textContent = 'Copiar', 2000);
+  });
+}
+</script>
+</body>
+</html>

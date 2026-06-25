@@ -25,6 +25,7 @@ const LS_STARTER_VARIANT = process.env.LEMONSQUEEZY_BASIC_VARIANT_ID || '';
 const LS_PRO_VARIANT = process.env.LEMONSQUEEZY_PRO_VARIANT_ID || '';
 const LS_STORE_URL = (process.env.LEMONSQUEEZY_STORE_URL || '').replace(/\/$/, '');
 const APP_URL = process.env.APP_URL || 'https://vendly-production-e0f2.up.railway.app';
+const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || 'hola@vend-ly.store';
 const DB_PATH = './vendly.db';
 
 // ── DATABASE ──────────────────────────────────────────────────
@@ -102,6 +103,7 @@ async function initDb() {
   try { db.run('ALTER TABLE users ADD COLUMN referred_by INTEGER'); } catch(e) {}
   try { db.run('ALTER TABLE users ADD COLUMN followup_day3 INTEGER DEFAULT 0'); } catch(e) {}
   try { db.run('ALTER TABLE users ADD COLUMN followup_day7 INTEGER DEFAULT 0'); } catch(e) {}
+  try { db.run('ALTER TABLE users ADD COLUMN audit_limit_email_sent INTEGER DEFAULT 0'); } catch(e) {}
 
   // Generar ref_code para usuarios que no tienen uno
   const usersWithoutCode = dbAll('SELECT id FROM users WHERE ref_code IS NULL');
@@ -456,6 +458,87 @@ async function sendDay7Email(email) {
   });
 }
 
+async function sendFounderNotification(event, data) {
+  const subjects = {
+    signup: `🆕 Nuevo usuario: ${data.email}`,
+    subscription: `💰 Nueva suscripción ${data.plan?.toUpperCase()}: ${data.email}`,
+    audit_done: `📊 Auditoría completada: ${data.email}`
+  };
+  const bodies = {
+    signup: `<p>Nuevo registro en Vendly:</p><ul><li><b>Email:</b> ${data.email}</li><li><b>Hora:</b> ${new Date().toLocaleString('es-AR', {timeZone:'America/Argentina/Buenos_Aires'})}</li></ul><p><a href="${APP_URL}/api/admin/stats?secret=${process.env.ADMIN_SECRET||'vendly_admin_2024'}">Ver estadísticas →</a></p>`,
+    subscription: `<p>¡Nueva suscripción!</p><ul><li><b>Email:</b> ${data.email}</li><li><b>Plan:</b> ${data.plan}</li><li><b>Hora:</b> ${new Date().toLocaleString('es-AR', {timeZone:'America/Argentina/Buenos_Aires'})}</li></ul>`,
+    audit_done: `<p>${data.email} completó una auditoría de: <b>${data.product||'producto desconocido'}</b></p>`
+  };
+  try {
+    await resend.emails.send({
+      from: 'Vendly Notifs <hola@vend-ly.store>',
+      to: NOTIFY_EMAIL,
+      subject: subjects[event] || `Vendly: ${event}`,
+      html: `<div style="font-family:sans-serif;padding:20px">${bodies[event]||JSON.stringify(data)}</div>`
+    });
+  } catch(e) { console.error('Founder notification error:', e.message); }
+}
+
+async function sendAuditLimitEmail(email) {
+  await resend.emails.send({
+    from: 'Tomás de Vendly <hola@vend-ly.store>',
+    to: email,
+    subject: 'Usaste tu auditoría gratuita — mirá lo que se desbloquea',
+    html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#07070E;color:#F0EEF8;border-radius:16px;">
+      <div style="font-size:22px;font-weight:800;margin-bottom:20px;">Vend<span style="color:#A688FA">ly</span></div>
+      <h2 style="font-size:20px;margin-bottom:8px;color:#F0EEF8;">Terminaste tu auditoría gratuita 🎉</h2>
+      <p style="color:#8B89A0;line-height:1.7;margin-bottom:20px;">Ahora que ya viste el potencial de Vendly, acá está lo que todavía no pudiste ver en tu informe:</p>
+      <div style="background:#0F0F1A;border-radius:14px;padding:18px;margin-bottom:20px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#A688FA;font-weight:700;margin-bottom:12px">Secciones bloqueadas en tu auditoría</div>
+        <div style="display:grid;gap:8px;">
+          <div style="color:#F0EEF8;font-size:13px">✦ 5 anuncios de Meta Ads listos para lanzar</div>
+          <div style="color:#F0EEF8;font-size:13px">✦ 3 posts para Instagram ya escritos</div>
+          <div style="color:#F0EEF8;font-size:13px">✦ 3 emails de carrito abandonado (copiar y pegar en Klaviyo)</div>
+          <div style="color:#F0EEF8;font-size:13px">✦ Template de WhatsApp listo para enviar</div>
+          <div style="color:#F0EEF8;font-size:13px">✦ Keywords SEO para posicionar en Google</div>
+          <div style="color:#F0EEF8;font-size:13px">✦ Estrategia de precio + FAQ que convierte</div>
+        </div>
+      </div>
+      <p style="color:#8B89A0;line-height:1.7;margin-bottom:20px;">El plan Starter es <strong style="color:#F0EEF8;">USD 9/mes</strong> — menos que un café por semana — y te da 30 auditorías completas.</p>
+      <a href="${APP_URL}/app" style="display:inline-block;background:#7C5CFC;color:#fff;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:600;font-size:15px;">Desbloquear informe completo →</a>
+      <p style="color:#555;font-size:12px;margin-top:20px;">30 días de garantía de devolución. Sin preguntas.</p>
+    </div>`
+  });
+}
+
+async function sendSubscriberWelcomeEmail(email, plan) {
+  const planName = plan === 'pro' ? 'Pro' : 'Starter';
+  const planLimit = plan === 'pro' ? 'ilimitadas' : '30 por mes';
+  await resend.emails.send({
+    from: 'Tomás de Vendly <hola@vend-ly.store>',
+    to: email,
+    subject: `¡Bienvenido al plan ${planName}! Esto es lo que desbloqueaste`,
+    html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#07070E;color:#F0EEF8;border-radius:16px;">
+      <div style="font-size:22px;font-weight:800;margin-bottom:20px;">Vend<span style="color:#A688FA">ly</span></div>
+      <div style="background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.3);border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#C4B5FD;">
+        ✦ Plan ${planName} activado — ${planLimit} auditorías
+      </div>
+      <h2 style="font-size:20px;margin-bottom:8px;color:#F0EEF8;">Todo desbloqueado. Así empezás fuerte:</h2>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+        <div style="background:#0F0F1A;border-radius:10px;padding:14px;border-left:3px solid #7C5CFC">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px;">1. Auditá tu catálogo completo</div>
+          <div style="font-size:12px;color:#8B89A0;">Con ${planLimit} auditorías podés analizar todos tus productos y priorizar cuáles optimizar primero por score de conversión.</div>
+        </div>
+        <div style="background:#0F0F1A;border-radius:10px;padding:14px;border-left:3px solid #34D399">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px;">2. Copiá los emails de carrito abandonado</div>
+          <div style="font-size:12px;color:#8B89A0;">Cada auditoría genera 3 emails listos para pegar en Klaviyo, Doppler o Mailchimp. Configurá la secuencia de 1h, 24h y 72h.</div>
+        </div>
+        <div style="background:#0F0F1A;border-radius:10px;padding:14px;border-left:3px solid #F5C842">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px;">3. Lanzá Meta Ads esta semana</div>
+          <div style="font-size:12px;color:#8B89A0;">Los 5 copies de anuncios están listos. Probá el Ad 1 (Beneficio principal) con USD 5/día — es el punto de partida ideal.</div>
+        </div>
+      </div>
+      <a href="${APP_URL}/app" style="display:inline-block;background:#7C5CFC;color:#fff;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:600;font-size:15px;">Ir a Vendly →</a>
+      <p style="color:#555;font-size:12px;margin-top:20px;">Respondé este email si necesitás ayuda. Leo todo personalmente. — Tomás</p>
+    </div>`
+  });
+}
+
 // ── ROUTES ────────────────────────────────────────────────────
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
@@ -523,6 +606,7 @@ app.get('/api/auth/verify', (req, res) => {
   }
   if (!user.welcomed) {
     sendWelcomeEmail(user.email).catch(e => console.error('Welcome email error:', e.message));
+    sendFounderNotification('signup', { email: user.email }).catch(() => {});
     dbRun('UPDATE users SET welcomed = 1 WHERE id = ?', [user.id]);
   }
   const session = makeJWT(user.id, user.email, user.plan);
@@ -558,8 +642,13 @@ app.post('/api/audit', optAuth, async (req, res) => {
       }
     }
     if (u.plan !== 'free' && u.status !== 'active') return res.status(403).json({ error: 'Suscripción inactiva', upgrade: true });
-    if (u.plan !== 'pro' && u.plan !== 'agency' && u.audits_used >= u.audits_limit)
+    if (u.plan !== 'pro' && u.plan !== 'agency' && u.audits_used >= u.audits_limit) {
+      if (!u.audit_limit_email_sent) {
+        sendAuditLimitEmail(u.email).catch(e => console.error('Audit limit email error:', e.message));
+        dbRun('UPDATE users SET audit_limit_email_sent = 1 WHERE id = ?', [u.id]);
+      }
       return res.status(403).json({ error: 'Límite alcanzado', upgrade: true });
+    }
     try {
       const a = await generateAudit(product, country || 'general', tone || 'profesional', competitorProduct || null);
       dbRun('UPDATE users SET audits_used = audits_used + 1, updated_at = datetime("now") WHERE id = ?', [u.id]);
@@ -672,9 +761,14 @@ app.post('/api/webhook', async (req, res) => {
         const limit = plan === 'pro' ? 999999 : 30;
         const existing = dbGet('SELECT id FROM users WHERE email = ?', [email]);
         if (!existing) dbRun('INSERT INTO users (email) VALUES (?)', [email]);
+        const wasAlreadyPaid = dbGet('SELECT plan FROM users WHERE email = ?', [email])?.plan;
         dbRun('UPDATE users SET plan=?, status=?, audits_limit=?, subscription_id=?, stripe_customer_id=?, audits_reset_at=datetime("now"), updated_at=datetime("now") WHERE email=?',
           [plan, 'active', limit, subscriptionId, customerId, email]);
         console.log(`Activated ${plan} for ${email}`);
+        if (!wasAlreadyPaid || wasAlreadyPaid === 'free') {
+          sendSubscriberWelcomeEmail(email, plan).catch(e => console.error('Subscriber welcome error:', e.message));
+          sendFounderNotification('subscription', { email, plan }).catch(() => {});
+        }
       } else if (['cancelled', 'expired', 'past_due', 'unpaid', 'paused'].includes(status)) {
         dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
           ['active', 'free', subscriptionId]);
@@ -775,6 +869,40 @@ app.post('/api/admin/followups', async (req, res) => {
     } catch(e) { console.error('Day7 email error:', u.email, e.message); }
   }
   res.json({ success: true, sent3, sent7 });
+});
+
+// Content generator (admin)
+app.get('/admin/content', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-content.html')));
+
+app.post('/api/admin/generate-content', async (req, res) => {
+  const { secret, type, context } = req.body;
+  if (secret !== (process.env.ADMIN_SECRET || 'vendly_admin_2024')) return res.status(403).json({ error: 'Forbidden' });
+  const prompts = {
+    tiktok: `Generá un script de TikTok de 45-60 segundos para promocionar Vendly, una herramienta de auditoría de e-commerce con IA para vendedores de LATAM (Argentina principalmente). Contexto adicional: ${context||'mostrar el score de conversión de un producto y el diagnóstico crítico'}. El script debe: empezar con un hook que detenga el scroll en los primeros 3 segundos, mostrar el "problema" del vendedor, la "revelación" del score de Vendly, 2-3 hallazgos impactantes, y CTA a vend-ly.store. Tono: directo, no vendedor, como si fuera un vendedor mostrando su experiencia. Formato: HOOK: / PROBLEMA: / REVELACIÓN: / HALLAZGOS: / CTA:`,
+    facebook: `Escribí 3 variantes de post para grupos de Facebook de dropshipping y e-commerce argentinos que promuevan Vendly (vend-ly.store). Cada variante debe tener un ángulo diferente: 1) mostrar un score real de auditoría, 2) contar un antes/después de mejoras implementadas, 3) hacer una pregunta que genere debate. Tono auténtico, no publicitario. Context: ${context||''}. Formato: POST 1: / POST 2: / POST 3:`,
+    instagram: `Creá 3 captions de Instagram para promover Vendly (vend-ly.store) a vendedores de e-commerce LATAM. Cada uno debe tener: hook en la primera línea, valor concreto, CTA, y 10 hashtags relevantes. Ángulos: 1) educativo sobre errores de conversión, 2) antes/después de una auditoría, 3) urgencia/beneficio directo. Context: ${context||''}`,
+    whatsapp: `Escribí 5 mensajes de WhatsApp personalizados para enviar a vendedores online de Argentina que podrían beneficiarse de Vendly (vend-ly.store). Cada mensaje debe ser breve (max 3 líneas), no sonar como spam, y mencionar algo específico del contexto: ${context||'que venden en Tiendanube o Shopify'}. CTA: probar gratis. Formato: MENSAJE 1: / MENSAJE 2: / etc.`,
+    email_cold: `Escribí 3 subject lines + email de frío (max 150 palabras) para contactar a vendedores de e-commerce argentinos y ofrecerles Vendly (vend-ly.store). Enfocate en el dolor de no saber qué está fallando en la tienda. Tono: de igual a igual, no vendedor. Context: ${context||''}`
+  };
+  const prompt = prompts[type] || prompts.tiktok;
+  try {
+    const r = await openai.chat.completions.create({
+      model: 'gpt-4o', messages: [{ role: 'user', content: prompt }], temperature: 0.8, max_tokens: 2000
+    });
+    res.json({ success: true, content: r.choices[0].message.content });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/stats', (req, res) => {
+  const { secret } = req.query;
+  if (secret !== (process.env.ADMIN_SECRET || 'vendly_admin_2024')) return res.status(403).json({ error: 'Forbidden' });
+  const totalUsers = dbGet('SELECT COUNT(*) as n FROM users')?.n || 0;
+  const paidUsers = dbGet('SELECT COUNT(*) as n FROM users WHERE plan != "free"')?.n || 0;
+  const totalAudits = dbGet('SELECT COUNT(*) as n FROM audits')?.n || 0;
+  const todayAudits = dbGet('SELECT COUNT(*) as n FROM audits WHERE date(created_at) = date("now")')?.n || 0;
+  const todaySignups = dbGet('SELECT COUNT(*) as n FROM users WHERE date(created_at) = date("now")')?.n || 0;
+  const recentUsers = dbAll('SELECT email, plan, audits_used, created_at FROM users ORDER BY created_at DESC LIMIT 10');
+  res.json({ totalUsers, paidUsers, totalAudits, todayAudits, todaySignups, recentUsers, mrr: paidUsers * 9 });
 });
 
 app.get('/api/stats', (req, res) => {
