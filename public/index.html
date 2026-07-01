@@ -415,24 +415,39 @@ footer span{color:var(--accent2)}
     <button class="modal-close" onclick="closeLoginModal()">✕</button>
     <div id="login-form">
       <div class="modal-title">Accedé a Vendly</div>
-      <div class="modal-sub">Ingresá tu email y te mandamos un link de acceso. Sin contraseña.</div>
-      <div class="auth-row">
-        <input type="email" id="login-email" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')sendMagicLink()">
-        <button class="btn-sm" style="background:var(--accent);color:#fff;border:none" onclick="sendMagicLink()" id="login-send-btn">Enviar →</button>
+      <!-- Tabs -->
+      <div style="display:flex;gap:0;background:var(--bg3);border-radius:10px;padding:3px;margin-bottom:18px">
+        <button id="tab-login" onclick="switchAuthTab('login')" style="flex:1;border:none;border-radius:8px;padding:7px 0;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;background:var(--accent);color:#fff">Iniciar sesión</button>
+        <button id="tab-register" onclick="switchAuthTab('register')" style="flex:1;border:none;border-radius:8px;padding:7px 0;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;background:transparent;color:var(--muted)">Crear cuenta</button>
       </div>
-      <div class="error-msg" id="login-error"></div>
-      <div class="divider">ya tengo suscripción activa</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:9px">Ingresá el email con el que pagaste para activar:</div>
-      <div class="auth-row">
-        <input type="email" id="verify-email" placeholder="email con el que pagaste">
-        <button class="btn-sm" onclick="verifyFromLogin()">Activar →</button>
+      <!-- Login panel -->
+      <div id="panel-login">
+        <input type="email" id="login-email" placeholder="tu@email.com" style="width:100%;background:var(--bg3);border:1px solid var(--border-s);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+        <input type="password" id="login-pass" placeholder="Contraseña" style="width:100%;background:var(--bg3);border:1px solid var(--border-s);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')loginWithPassword()">
+        <div class="error-msg" id="login-error"></div>
+        <button class="btn-sm" style="width:100%;background:var(--accent);color:#fff;border:none;padding:11px;font-size:14px;font-weight:600;border-radius:10px;cursor:pointer;margin-top:2px" onclick="loginWithPassword()" id="login-btn">Entrar →</button>
+        <div style="text-align:center;margin-top:12px"><button onclick="showForgotPassword()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline">Olvidé mi contraseña</button></div>
       </div>
-      <div class="error-msg" id="verify-error"></div>
+      <!-- Register panel -->
+      <div id="panel-register" style="display:none">
+        <input type="email" id="reg-email" placeholder="tu@email.com" style="width:100%;background:var(--bg3);border:1px solid var(--border-s);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')document.getElementById('reg-pass').focus()">
+        <input type="password" id="reg-pass" placeholder="Contraseña (mínimo 6 caracteres)" style="width:100%;background:var(--bg3);border:1px solid var(--border-s);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')registerWithPassword()">
+        <div class="error-msg" id="reg-error"></div>
+        <button class="btn-sm" style="width:100%;background:var(--accent);color:#fff;border:none;padding:11px;font-size:14px;font-weight:600;border-radius:10px;cursor:pointer;margin-top:2px" onclick="registerWithPassword()" id="reg-btn">Crear cuenta →</button>
+      </div>
+      <!-- Forgot password panel -->
+      <div id="panel-forgot" style="display:none">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Ingresá tu email y te enviamos un link para acceder.</div>
+        <input type="email" id="forgot-email" placeholder="tu@email.com" style="width:100%;background:var(--bg3);border:1px solid var(--border-s);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')sendForgotPassword()">
+        <div class="error-msg" id="forgot-error"></div>
+        <button class="btn-sm" style="width:100%;background:var(--accent);color:#fff;border:none;padding:11px;font-size:14px;font-weight:600;border-radius:10px;cursor:pointer;margin-top:2px" onclick="sendForgotPassword()" id="forgot-btn">Enviar link →</button>
+        <div style="text-align:center;margin-top:12px"><button onclick="switchAuthTab('login')" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline">← Volver</button></div>
+      </div>
     </div>
     <div class="auth-sent" id="login-sent">
       <div class="auth-sent-icon">📬</div>
       <div class="auth-sent-title">¡Link enviado!</div>
-      <div class="auth-sent-sub">Revisá tu email y hacé click en el link. Expira en 10 minutos.</div>
+      <div class="auth-sent-sub">Revisá tu email y hacé click en el link para acceder. Expira en 30 minutos.</div>
     </div>
   </div>
 </div>
@@ -1265,37 +1280,102 @@ function copyObjResp(btn, id) {
 }
 
 // ── LOGIN ─────────────────────────────────────────────────────
-function showLoginModal() {
+function switchAuthTab(tab) {
+  const isLogin = tab === 'login';
+  const isForgot = tab === 'forgot';
+  document.getElementById('panel-login').style.display = isLogin ? '' : 'none';
+  document.getElementById('panel-register').style.display = tab === 'register' ? '' : 'none';
+  document.getElementById('panel-forgot').style.display = isForgot ? '' : 'none';
+  const tl = document.getElementById('tab-login');
+  const tr = document.getElementById('tab-register');
+  if (tl && tr) {
+    tl.style.background = isLogin ? 'var(--accent)' : 'transparent';
+    tl.style.color = isLogin ? '#fff' : 'var(--muted)';
+    tr.style.background = tab === 'register' ? 'var(--accent)' : 'transparent';
+    tr.style.color = tab === 'register' ? '#fff' : 'var(--muted)';
+  }
+  hideErr('login-error'); hideErr('reg-error'); hideErr('forgot-error');
+  setTimeout(() => {
+    const focus = isLogin ? 'login-email' : tab === 'register' ? 'reg-email' : 'forgot-email';
+    document.getElementById(focus)?.focus();
+  }, 50);
+}
+function showLoginModal(tab) {
   document.getElementById('login-modal').classList.add('show');
-  setTimeout(()=>document.getElementById('login-email').focus(), 100);
+  document.getElementById('login-sent').classList.remove('show');
+  document.getElementById('login-form').style.display = '';
+  switchAuthTab(tab || 'login');
 }
 function closeLoginModal() {
   document.getElementById('login-modal').classList.remove('show');
   document.getElementById('login-sent').classList.remove('show');
   document.getElementById('login-form').style.display='';
-  hideErr('login-error'); hideErr('verify-error');
+  hideErr('login-error'); hideErr('reg-error'); hideErr('forgot-error');
 }
-async function sendMagicLink() {
+function showForgotPassword() { switchAuthTab('forgot'); }
+
+async function loginWithPassword() {
   const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-pass').value;
   if (!email) return showErr('login-error','Ingresá tu email');
+  if (!password) return showErr('login-error','Ingresá tu contraseña');
   hideErr('login-error');
-  const btn = document.getElementById('login-send-btn');
-  btn.textContent='Enviando...'; btn.disabled=true;
+  const btn = document.getElementById('login-btn');
+  btn.textContent='Entrando...'; btn.disabled=true;
+  try {
+    const res = await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    const data = await res.json();
+    if (!data.success) {
+      if (data.needsMagicLink) showForgotPassword();
+      throw new Error(data.error);
+    }
+    sessionToken = data.session;
+    localStorage.setItem('v_session', sessionToken);
+    closeLoginModal();
+    loadSession();
+    showToast('✓ Sesión iniciada');
+  } catch(e) { showErr('login-error', e.message||'Error al iniciar sesión.'); }
+  finally { btn.textContent='Entrar →'; btn.disabled=false; }
+}
+async function registerWithPassword() {
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-pass').value;
+  if (!email) return showErr('reg-error','Ingresá tu email');
+  if (!password || password.length < 6) return showErr('reg-error','La contraseña debe tener al menos 6 caracteres');
+  hideErr('reg-error');
+  const btn = document.getElementById('reg-btn');
+  btn.textContent='Creando cuenta...'; btn.disabled=true;
   try {
     const ref = getRefFromUrl();
-    const res = await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email, ref: ref || undefined})});
+    const res = await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,ref:ref||undefined})});
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    sessionToken = data.session;
+    localStorage.setItem('v_session', sessionToken);
+    closeLoginModal();
+    loadSession();
+    showToast('✓ ¡Cuenta creada! Auditá tu primer producto');
+    setTimeout(()=>{
+      const inp = document.getElementById('product-url');
+      if(inp){ inp.focus(); inp.style.borderColor='rgba(124,92,252,0.6)'; inp.style.boxShadow='0 0 0 3px rgba(124,92,252,0.15)'; setTimeout(()=>{inp.style.borderColor='';inp.style.boxShadow='';},3000); }
+    },500);
+  } catch(e) { showErr('reg-error', e.message||'Error al crear la cuenta.'); }
+  finally { btn.textContent='Crear cuenta →'; btn.disabled=false; }
+}
+async function sendForgotPassword() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email) return showErr('forgot-error','Ingresá tu email');
+  hideErr('forgot-error');
+  const btn = document.getElementById('forgot-btn');
+  btn.textContent='Enviando...'; btn.disabled=true;
+  try {
+    const res = await fetch('/api/auth/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
     document.getElementById('login-form').style.display='none';
     document.getElementById('login-sent').classList.add('show');
-  } catch(e) { showErr('login-error', e.message||'Error enviando el email.'); }
-  finally { btn.textContent='Enviar →'; btn.disabled=false; }
-}
-async function verifyFromLogin() {
-  const email = document.getElementById('verify-email').value.trim();
-  if (!email) return showErr('verify-error','Ingresá tu email');
-  hideErr('verify-error');
-  await doVerify(email,'verify-error');
+  } catch(e) { showErr('forgot-error', e.message||'Error enviando el email.'); }
+  finally { btn.textContent='Enviar link →'; btn.disabled=false; }
 }
 
 // ── UPGRADE ───────────────────────────────────────────────────

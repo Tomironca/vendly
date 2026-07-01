@@ -17,6 +17,7 @@ app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static('public', { index: false }));
 
+const bcrypt = require('bcryptjs');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -107,6 +108,7 @@ async function initDb() {
   try { db.run('ALTER TABLE users ADD COLUMN followup_day7 INTEGER DEFAULT 0'); } catch(e) {}
   try { db.run('ALTER TABLE users ADD COLUMN audit_limit_email_sent INTEGER DEFAULT 0'); } catch(e) {}
   try { db.run('ALTER TABLE users ADD COLUMN followup_day14 INTEGER DEFAULT 0'); } catch(e) {}
+  try { db.run('ALTER TABLE users ADD COLUMN password_hash TEXT'); } catch(e) {}
 
   // Generar ref_code para usuarios que no tienen uno
   const usersWithoutCode = dbAll('SELECT id FROM users WHERE ref_code IS NULL');
@@ -580,44 +582,82 @@ app.get('/terminos', (req, res) => res.redirect('/legal'));
 app.get('/privacidad', (req, res) => res.redirect('/legal'));
 
 // Auth
-app.post('/api/auth/login', async (req, res) => {
-  const { email, ref } = req.body;
-  if (!email || !email.includes('@')) return res.status(400).json({ error: 'Email inválido' });
-  try {
-    dbRun('DELETE FROM magic_tokens WHERE expires_at < datetime("now")');
-    const existing = dbGet('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
-    if (!existing) {
-      // Rate limit: max 3 cuentas nuevas por IP
-      const regIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-      const ipCount = dbGet('SELECT count FROM ip_usage WHERE ip = ?', [regIp]);
-      if (ipCount && ipCount.count >= 3) {
-        return res.status(429).json({ error: 'Límite de registros por dispositivo alcanzado.' });
-      }
-      // Crear usuario — si viene con ref_code, buscar al referidor
-      let referredBy = null;
-      let bonusAudits = 1; // auditoría gratuita base
-      if (ref) {
-        const referrer = dbGet('SELECT id FROM users WHERE ref_code = ?', [ref]);
-        if (referrer) { referredBy = referrer.id; bonusAudits = 3; } // referido empieza con 3 auditorías
-      }
-      dbRun('INSERT INTO users (email, referred_by, audits_limit) VALUES (?, ?, ?)', [email.toLowerCase(), referredBy, bonusAudits]);
-      const newUser = dbGet('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
-      const newCode = crypto.createHash('sha256').update(`${newUser.id}-${JWT_SECRET}`).digest('hex').slice(0, 8);
-      dbRun('UPDATE users SET ref_code = ? WHERE id = ?', [newCode, newUser.id]);
-      dbRun('INSERT INTO ip_usage (ip, count) VALUES (?, 1) ON CONFLICT(ip) DO UPDATE SET count = count + 1', [regIp]);
-      // Dar bonus al referidor (+5 auditorías)
-      if (referredBy) {
-        dbRun('UPDATE users SET audits_limit = audits_limit + 5 WHERE id = ? AND plan = "free"', [referredBy]);
-        dbRun('INSERT INTO referrals (referrer_id, referred_id) VALUES (?, ?)', [referredBy, newUser.id]);
-      }
-    }
-    const token = jwt.sign({ email: email.toLowerCase(), purpose: 'magic_link' }, JWT_SECRET, { expiresIn: '30m' });
-    await sendMagicLink(email.toLowerCase(), token);
-    res.json({ success: true, message: 'Link enviado. Revisá tu email.' });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Error enviando el email. Intentá de nuevo.' });
+function createUserIfNeeded(emailLower, passwordHash, ref, ip) {
+  let referredBy = null, bonusAudits = 1;
+  if (ref) {
+    const referrer = dbGet('SELECT id FROM users WHERE ref_code = ?', [ref]);
+    if (referrer) { referredBy = referrer.id; bonusAudits = 3; }
   }
+  dbRun('INSERT INTO users (email, password_hash, referred_by, audits_limit) VALUES (?, ?, ?, ?)',
+    [emailLower, passwordHash, referredBy, bonusAudits]);
+  const newUser = dbGet('SELECT * FROM users WHERE email = ?', [emailLower]);
+  const code = crypto.createHash('sha256').update(`${newUser.id}-${JWT_SECRET}`).digest('hex').slice(0, 8);
+  dbRun('UPDATE users SET ref_code = ? WHERE id = ?', [code, newUser.id]);
+  if (ip) dbRun('INSERT INTO ip_usage (ip, count) VALUES (?, 1) ON CONFLICT(ip) DO UPDATE SET count = count + 1', [ip]);
+  if (referredBy) {
+    dbRun('UPDATE users SET audits_limit = audits_limit + 5 WHERE id = ? AND plan = "free"', [referredBy]);
+    dbRun('INSERT INTO referrals (referrer_id, referred_id) VALUES (?, ?)', [referredBy, newUser.id]);
+  }
+  return dbGet('SELECT * FROM users WHERE email = ?', [emailLower]);
+}
+
+// Registro con email + contraseña
+app.post('/api/auth/register', async (req, res) => {
+  const { email, password, ref } = req.body;
+  if (!email || !email.includes('@')) return res.status(400).json({ error: 'Email inválido' });
+  if (!password || password.length < 6) return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+  const emailLower = email.toLowerCase();
+  try {
+    const existing = dbGet('SELECT id, password_hash FROM users WHERE email = ?', [emailLower]);
+    if (existing?.password_hash) return res.status(409).json({ error: 'Ya existe una cuenta con ese email. Iniciá sesión.' });
+    const regIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const ipCount = dbGet('SELECT count FROM ip_usage WHERE ip = ?', [regIp]);
+    if (ipCount && ipCount.count >= 5) return res.status(429).json({ error: 'Límite de registros por dispositivo alcanzado.' });
+    const hash = await bcrypt.hash(password, 10);
+    let user;
+    if (existing) {
+      // Usuario ya existía via magic link — le agrega contraseña
+      dbRun('UPDATE users SET password_hash = ? WHERE id = ?', [hash, existing.id]);
+      user = dbGet('SELECT * FROM users WHERE id = ?', [existing.id]);
+    } else {
+      user = createUserIfNeeded(emailLower, hash, ref, regIp);
+      sendWelcomeEmail(emailLower).catch(e => console.error('Welcome email error:', e.message));
+      sendFounderNotification('signup', { email: emailLower }).catch(() => {});
+      dbRun('UPDATE users SET welcomed = 1 WHERE id = ?', [user.id]);
+    }
+    res.json({ success: true, session: makeJWT(user.id, user.email, user.plan) });
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Error al crear la cuenta.' }); }
+});
+
+// Login con email + contraseña
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !email.includes('@')) return res.status(400).json({ error: 'Email inválido' });
+  if (!password) return res.status(400).json({ error: 'Contraseña requerida' });
+  const emailLower = email.toLowerCase();
+  try {
+    const user = dbGet('SELECT * FROM users WHERE email = ?', [emailLower]);
+    if (!user) return res.status(401).json({ error: 'Email o contraseña incorrectos' });
+    if (!user.password_hash) return res.status(401).json({ error: 'Esta cuenta usa acceso por link. Usá "Olvidé mi contraseña" para configurar una.', needsMagicLink: true });
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) return res.status(401).json({ error: 'Email o contraseña incorrectos' });
+    res.json({ success: true, session: makeJWT(user.id, user.email, user.plan) });
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Error al iniciar sesión.' }); }
+});
+
+// Olvidé mi contraseña — envía magic link
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email || !email.includes('@')) return res.status(400).json({ error: 'Email inválido' });
+  const emailLower = email.toLowerCase();
+  try {
+    const user = dbGet('SELECT id FROM users WHERE email = ?', [emailLower]);
+    if (user) {
+      const token = jwt.sign({ email: emailLower, purpose: 'magic_link' }, JWT_SECRET, { expiresIn: '30m' });
+      await sendMagicLink(emailLower, token).catch(() => {});
+    }
+    res.json({ success: true, message: 'Si existe una cuenta con ese email, te enviamos un link de acceso.' });
+  } catch(e) { res.status(500).json({ error: 'Error enviando el email.' }); }
 });
 
 app.get('/api/auth/verify', (req, res) => {
