@@ -572,7 +572,7 @@ footer span{color:var(--accent2)}
   <a href="/" class="logo"><div class="logo-dot"></div>Vend<span>ly</span></a>
   <div class="nav-right">
     <a href="/" style="font-size:13px;color:var(--muted);text-decoration:none;transition:color .15s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">← Inicio</a>
-    <span class="nav-badge">✦ GPT-4o</span>
+    <span class="nav-badge">✦ Claude Sonnet</span>
     <button class="btn-login" id="btn-login" onclick="showLoginModal()">Iniciar sesión</button>
     <div class="user-chip" id="user-chip" onclick="openDashboard()">
       <div class="user-dot"></div>
@@ -678,7 +678,7 @@ footer span{color:var(--accent2)}
   <div class="loading" id="loading">
     <div class="loader-ring"></div>
     <div class="loading-title">Analizando tu producto...</div>
-    <div class="loading-sub">GPT-4o está auditando 15 secciones de tu producto.<br>Esto tarda entre 25 y 40 segundos.</div>
+    <div class="loading-sub">Claude Sonnet está auditando 15 secciones de tu producto.<br>Esto tarda entre 25 y 40 segundos.</div>
     <div class="loading-steps">
       <div class="ls" id="ls1"><div class="ls-dot"></div>Leyendo el producto y extrayendo datos</div>
       <div class="ls" id="ls2"><div class="ls-dot"></div>Calculando scores de conversión, confianza y SEO</div>
@@ -843,7 +843,16 @@ window.addEventListener('DOMContentLoaded', async () => {
     sessionToken = urlSession;
     localStorage.setItem('v_session', sessionToken);
     window.history.replaceState({}, '', '/app');
-    showToast('✓ Sesión iniciada correctamente');
+    showToast('✓ Sesión iniciada — ¡auditá tu primer producto!');
+    setTimeout(() => {
+      document.getElementById('product-url').focus();
+      document.getElementById('product-url').style.borderColor = 'rgba(124,92,252,0.6)';
+      document.getElementById('product-url').style.boxShadow = '0 0 0 3px rgba(124,92,252,0.15)';
+      setTimeout(() => {
+        document.getElementById('product-url').style.borderColor = '';
+        document.getElementById('product-url').style.boxShadow = '';
+      }, 3000);
+    }, 600);
   }
   if (urlError) {
     const msgs = { expired:'El link expiró. Pedí uno nuevo.', invalid:'Link inválido.', notfound:'Usuario no encontrado.' };
@@ -909,22 +918,31 @@ function updateUI(auth, data) {
 function updatePlanBanner(plan, used, limit) {
   const banner = document.getElementById('plan-banner');
   const text = document.getElementById('pb-text');
+  const actions = banner.querySelector('.pb-actions');
   banner.className = 'plan-banner';
   if (plan === 'pro') {
     banner.classList.add('pb-pro');
     text.textContent = '✦ Plan Pro — Auditorías ilimitadas';
+    actions.innerHTML = '';
   } else if (plan === 'basic') {
     banner.classList.add('pb-basic');
     const remaining = Math.max(0, (limit || 30) - (used || 0));
     text.textContent = `Plan Starter — ${remaining} auditorías disponibles este mes`;
+    actions.innerHTML = '';
   } else if (userEmail) {
-    // Free user autenticado
     banner.classList.add('pb-free');
     const remaining = Math.max(0, (limit || 1) - (used || 0));
-    text.textContent = remaining > 0 ? `Plan Free — ${remaining} auditoría gratuita disponible` : 'Agotaste tu auditoría gratuita — Desbloqueá más con Starter';
+    if (remaining > 0) {
+      text.textContent = `Plan Free — ${remaining} auditoría gratuita disponible`;
+      actions.innerHTML = '<button class="btn-sm" onclick="showUpgradeModal()">Upgrade →</button>';
+    } else {
+      text.textContent = 'Agotaste tu auditoría gratuita — Desbloqueá 30/mes con Starter';
+      actions.innerHTML = '<button class="btn-sm" style="background:var(--accent);color:#fff;border:none" onclick="showUpgradeModal()">Desbloquear →</button>';
+    }
   } else {
     banner.classList.add('pb-free');
     text.textContent = '✦ Registrate gratis para generar tu primera auditoría';
+    actions.innerHTML = '<button class="btn-sm" onclick="showLoginModal()">Crear cuenta</button>';
   }
 }
 

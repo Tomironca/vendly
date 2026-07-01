@@ -28,7 +28,7 @@ const LS_PRO_VARIANT = process.env.LEMONSQUEEZY_PRO_VARIANT_ID || '';
 const LS_STORE_URL = (process.env.LEMONSQUEEZY_STORE_URL || '').replace(/\/$/, '');
 const APP_URL = process.env.APP_URL || 'https://vendly-production-e0f2.up.railway.app';
 const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || 'hola@vend-ly.store';
-const DB_PATH = './vendly.db';
+const DB_PATH = process.env.DB_PATH || '/app/data/vendly.db';
 
 // ── DATABASE ──────────────────────────────────────────────────
 let db;
@@ -929,10 +929,11 @@ app.post('/api/admin/generate-content', async (req, res) => {
   };
   const prompt = prompts[type] || prompts.tiktok;
   try {
-    const r = await openai.chat.completions.create({
-      model: 'gpt-4o', messages: [{ role: 'user', content: prompt }], temperature: 0.8, max_tokens: 2000
+    const r = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6', max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }]
     });
-    res.json({ success: true, content: r.choices[0].message.content });
+    res.json({ success: true, content: r.content[0].text });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
