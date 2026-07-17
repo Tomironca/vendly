@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -9,7 +9,7 @@ const cheerio = require('cheerio');
 const path = require('path');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-const initSqlJs = require('sql.js');
+const { Pool } = require('pg');
 const fs = require('fs');
 const { Resend } = require('resend');
 const app = express();
@@ -80,23 +80,24 @@ const LS_PRO_VARIANT = process.env.LEMONSQUEEZY_PRO_VARIANT_ID || '';
 const LS_STORE_URL = (process.env.LEMONSQUEEZY_STORE_URL || '').replace(/\/$/, '');
 const APP_URL = process.env.APP_URL || 'https://vendly-production-e0f2.up.railway.app';
 const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || 'hola@vend-ly.store';
-const DB_PATH = process.env.DB_PATH || '/app/data/vendly.db';
-
 // ── DATABASE ──────────────────────────────────────────────────
-let db;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+  max: 10,
+  idleTimeoutMillis: 30000,
+});
+
+// Convert SQLite-style ? placeholders to PostgreSQL $1, $2, ...
+function toPostgres(sql) {
+  let n = 0;
+  return sql.replace(/\?/g, () => `$${++n}`);
+}
 
 async function initDb() {
-  const SQL = await initSqlJs();
-  if (fs.existsSync(DB_PATH)) {
-    const fileBuffer = fs.readFileSync(DB_PATH);
-    db = new SQL.Database(fileBuffer);
-  } else {
-    db = new SQL.Database();
-  }
-
-  db.run(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
       plan TEXT DEFAULT 'free',
       status TEXT DEFAULT 'active',
@@ -104,31 +105,34 @@ async function initDb() {
       audits_limit INTEGER DEFAULT 1,
       subscription_id TEXT,
       stripe_customer_id TEXT,
-      audits_reset_at TEXT,
+      audits_reset_at TIMESTAMPTZ,
       welcomed INTEGER DEFAULT 0,
       ref_code TEXT,
       referred_by INTEGER,
       followup_day3 INTEGER DEFAULT 0,
       followup_day7 INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      audit_limit_email_sent INTEGER DEFAULT 0,
+      followup_day14 INTEGER DEFAULT 0,
+      password_hash TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS referrals (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       referrer_id INTEGER NOT NULL,
       referred_id INTEGER NOT NULL,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS magic_tokens (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       email TEXT NOT NULL,
       token TEXT UNIQUE NOT NULL,
-      expires_at TEXT NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
       used INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS audits (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL,
       product_name TEXT,
       product_url TEXT,
@@ -136,7 +140,7 @@ async function initDb() {
       score_confianza INTEGER,
       score_seo INTEGER,
       audit_data TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS ip_usage (
       ip TEXT PRIMARY KEY,
@@ -146,116 +150,72 @@ async function initDb() {
       token TEXT PRIMARY KEY,
       audit_data TEXT NOT NULL,
       product_name TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS events (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       event TEXT NOT NULL,
       user_id INTEGER,
       props TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TIMESTAMPTZ DEFAULT NOW()
     );
   `);
-  // Migrations for existing DBs
-  try { db.run('ALTER TABLE users ADD COLUMN stripe_customer_id TEXT'); } catch(e) {}
-  try { db.run('ALTER TABLE users ADD COLUMN audits_reset_at TEXT'); } catch(e) {}
-  try { db.run('ALTER TABLE users ADD COLUMN welcomed INTEGER DEFAULT 0'); } catch(e) {}
-  try { db.run('ALTER TABLE users ADD COLUMN ref_code TEXT'); } catch(e) {}
-  try { db.run('ALTER TABLE users ADD COLUMN referred_by INTEGER'); } catch(e) {}
-  try { db.run('ALTER TABLE users ADD COLUMN followup_day3 INTEGER DEFAULT 0'); } catch(e) {}
-  try { db.run('ALTER TABLE users ADD COLUMN followup_day7 INTEGER DEFAULT 0'); } catch(e) {}
-  try { db.run('ALTER TABLE users ADD COLUMN audit_limit_email_sent INTEGER DEFAULT 0'); } catch(e) {}
-  try { db.run('ALTER TABLE users ADD COLUMN followup_day14 INTEGER DEFAULT 0'); } catch(e) {}
-  try { db.run('ALTER TABLE users ADD COLUMN password_hash TEXT'); } catch(e) {}
 
-  // Generar ref_code para usuarios que no tienen uno
-  const usersWithoutCode = dbAll('SELECT id FROM users WHERE ref_code IS NULL');
-  for (const u of usersWithoutCode) {
+  // Backfill ref_code for users without one
+  const missing = await dbAll('SELECT id FROM users WHERE ref_code IS NULL');
+  for (const u of missing) {
     const code = crypto.createHash('sha256').update(`${u.id}-${JWT_SECRET}`).digest('hex').slice(0, 8);
-    db.run('UPDATE users SET ref_code = ? WHERE id = ?', [code, u.id]);
+    await dbRun('UPDATE users SET ref_code = ? WHERE id = ?', [code, u.id]);
   }
-  saveDb();
 }
-
-function saveDb() {
-  const data = db.export();
-  fs.writeFileSync(DB_PATH, Buffer.from(data));
-}
-
-// Debounced save: batches rapid writes into one disk flush (max 500ms delay)
-let _saveTimer = null;
-function scheduleSave() {
-  if (_saveTimer) return;
-  _saveTimer = setTimeout(() => {
-    _saveTimer = null;
-    saveDb();
-  }, 500);
-}
-
-// Guaranteed flush every 30s and on graceful shutdown
-setInterval(saveDb, 30000);
-process.on('SIGTERM', () => { saveDb(); process.exit(0); });
-process.on('SIGINT',  () => { saveDb(); process.exit(0); });
 
 // Auto follow-up emails cada 6 horas
 setInterval(async () => {
   try {
-    const day3Users = dbAll(`
+    const day3Users = await dbAll(`
       SELECT u.id, u.email, u.ref_code FROM users u
       WHERE u.followup_day3 = 0 AND u.welcomed = 1
-      AND julianday('now') - julianday(u.created_at) >= 3
+      AND NOW() - u.created_at >= INTERVAL '3 days'
       AND EXISTS (SELECT 1 FROM audits a WHERE a.user_id = u.id)
     `);
     for (const u of day3Users) {
-      try { await sendDay3Email(u.email, u.ref_code || ''); dbRun('UPDATE users SET followup_day3 = 1 WHERE id = ?', [u.id]); }
+      try { await sendDay3Email(u.email, u.ref_code || ''); await dbRun('UPDATE users SET followup_day3 = 1 WHERE id = ?', [u.id]); }
       catch(e) { console.error('Day3 email error:', u.email, e.message); }
     }
-    const day7Users = dbAll(`
+    const day7Users = await dbAll(`
       SELECT u.id, u.email FROM users u
       WHERE u.followup_day7 = 0 AND u.welcomed = 1 AND u.plan = 'free'
-      AND julianday('now') - julianday(u.created_at) >= 7
+      AND NOW() - u.created_at >= INTERVAL '7 days'
     `);
     for (const u of day7Users) {
-      try { await sendDay7Email(u.email); dbRun('UPDATE users SET followup_day7 = 1 WHERE id = ?', [u.id]); }
+      try { await sendDay7Email(u.email); await dbRun('UPDATE users SET followup_day7 = 1 WHERE id = ?', [u.id]); }
       catch(e) { console.error('Day7 email error:', u.email, e.message); }
     }
-    const day14Users = dbAll(`
+    const day14Users = await dbAll(`
       SELECT u.id, u.email FROM users u
       WHERE u.followup_day14 = 0 AND u.welcomed = 1 AND u.plan = 'free'
-      AND julianday('now') - julianday(u.created_at) >= 14
+      AND NOW() - u.created_at >= INTERVAL '14 days'
     `);
     for (const u of day14Users) {
-      try { await sendDay14Email(u.email); dbRun('UPDATE users SET followup_day14 = 1 WHERE id = ?', [u.id]); }
+      try { await sendDay14Email(u.email); await dbRun('UPDATE users SET followup_day14 = 1 WHERE id = ?', [u.id]); }
       catch(e) { console.error('Day14 email error:', u.email, e.message); }
     }
   } catch(e) { console.error('Follow-up cron error:', e.message); }
 }, 6 * 60 * 60 * 1000);
 
-// DB helpers
-function dbGet(sql, params = []) {
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  if (stmt.step()) {
-    const row = stmt.getAsObject();
-    stmt.free();
-    return row;
-  }
-  stmt.free();
-  return null;
+// DB helpers — async pg wrappers with SQLite-style ? placeholders
+async function await dbGet(sql, params = []) {
+  const res = await pool.query(toPostgres(sql), params);
+  return res.rows[0] || null;
 }
 
-function dbAll(sql, params = []) {
-  const results = [];
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  while (stmt.step()) results.push(stmt.getAsObject());
-  stmt.free();
-  return results;
+async function await dbAll(sql, params = []) {
+  const res = await pool.query(toPostgres(sql), params);
+  return res.rows;
 }
 
-function dbRun(sql, params = []) {
-  db.run(sql, params);
-  scheduleSave();
+async function await dbRun(sql, params = []) {
+  await pool.query(toPostgres(sql), params);
 }
 
 // ── INPUT SANITIZATION ────────────────────────────────────────
@@ -285,13 +245,13 @@ function checkJWT(token) {
 function requireAuth(req, res, next) {
   const p = checkJWT(req.headers['x-session-token']);
   if (!p) return res.status(401).json({ error: 'No autenticado' });
-  req.user = dbGet('SELECT * FROM users WHERE email = ?', [p.email]);
+  req.user = await dbGet('SELECT * FROM users WHERE email = ?', [p.email]);
   if (!req.user) return res.status(401).json({ error: 'Usuario no encontrado' });
   next();
 }
 function optAuth(req, res, next) {
   const p = checkJWT(req.headers['x-session-token']);
-  if (p) req.user = dbGet('SELECT * FROM users WHERE email = ?', [p.email]);
+  if (p) req.user = await dbGet('SELECT * FROM users WHERE email = ?', [p.email]);
   next();
 }
 
@@ -687,7 +647,7 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/app/*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/informe/:token', (req, res) => {
-  const r = dbGet('SELECT product_name, audit_data FROM shared_reports WHERE token = ?', [req.params.token]);
+  const r = await dbGet('SELECT product_name, audit_data FROM shared_reports WHERE token = ?', [req.params.token]);
   if (!r) return res.sendFile(path.join(__dirname, 'public', 'index.html'));
   let scores = {};
   try { scores = JSON.parse(r.audit_data)?.scores || {}; } catch {}
@@ -715,20 +675,20 @@ app.get('/privacidad', (req, res) => res.redirect('/legal'));
 function createUserIfNeeded(emailLower, passwordHash, ref, ip) {
   let referredBy = null, bonusAudits = 1;
   if (ref) {
-    const referrer = dbGet('SELECT id FROM users WHERE ref_code = ?', [ref]);
+    const referrer = await dbGet('SELECT id FROM users WHERE ref_code = ?', [ref]);
     if (referrer) { referredBy = referrer.id; bonusAudits = 3; }
   }
-  dbRun('INSERT INTO users (email, password_hash, referred_by, audits_limit) VALUES (?, ?, ?, ?)',
+  await dbRun('INSERT INTO users (email, password_hash, referred_by, audits_limit) VALUES (?, ?, ?, ?)',
     [emailLower, passwordHash, referredBy, bonusAudits]);
-  const newUser = dbGet('SELECT * FROM users WHERE email = ?', [emailLower]);
+  const newUser = await dbGet('SELECT * FROM users WHERE email = ?', [emailLower]);
   const code = crypto.createHash('sha256').update(`${newUser.id}-${JWT_SECRET}`).digest('hex').slice(0, 8);
-  dbRun('UPDATE users SET ref_code = ? WHERE id = ?', [code, newUser.id]);
-  if (ip) dbRun('INSERT INTO ip_usage (ip, count) VALUES (?, 1) ON CONFLICT(ip) DO UPDATE SET count = count + 1', [ip]);
+  await dbRun('UPDATE users SET ref_code = ? WHERE id = ?', [code, newUser.id]);
+  if (ip) await dbRun('INSERT INTO ip_usage (ip, count) VALUES (?, 1) ON CONFLICT(ip) DO UPDATE SET count = count + 1', [ip]);
   if (referredBy) {
-    dbRun('UPDATE users SET audits_limit = audits_limit + 5 WHERE id = ? AND plan = "free"', [referredBy]);
-    dbRun('INSERT INTO referrals (referrer_id, referred_id) VALUES (?, ?)', [referredBy, newUser.id]);
+    await dbRun("UPDATE users SET audits_limit = audits_limit + 5 WHERE id = ? AND plan = 'free'", [referredBy]);
+    await dbRun('INSERT INTO referrals (referrer_id, referred_id) VALUES (?, ?)', [referredBy, newUser.id]);
   }
-  return dbGet('SELECT * FROM users WHERE email = ?', [emailLower]);
+  return await dbGet('SELECT * FROM users WHERE email = ?', [emailLower]);
 }
 
 // Registro con email + contraseña
@@ -738,22 +698,22 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
   if (!password || password.length < 6) return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
   const emailLower = email.toLowerCase();
   try {
-    const existing = dbGet('SELECT id, password_hash FROM users WHERE email = ?', [emailLower]);
+    const existing = await dbGet('SELECT id, password_hash FROM users WHERE email = ?', [emailLower]);
     if (existing?.password_hash) return res.status(409).json({ error: 'Ya existe una cuenta con ese email. Iniciá sesión.' });
     const regIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const ipCount = dbGet('SELECT count FROM ip_usage WHERE ip = ?', [regIp]);
+    const ipCount = await dbGet('SELECT count FROM ip_usage WHERE ip = ?', [regIp]);
     if (ipCount && ipCount.count >= 5) return res.status(429).json({ error: 'Límite de registros por dispositivo alcanzado.' });
     const hash = await bcrypt.hash(password, 10);
     let user;
     if (existing) {
       // Usuario ya existía via magic link — le agrega contraseña
-      dbRun('UPDATE users SET password_hash = ? WHERE id = ?', [hash, existing.id]);
-      user = dbGet('SELECT * FROM users WHERE id = ?', [existing.id]);
+      await dbRun('UPDATE users SET password_hash = ? WHERE id = ?', [hash, existing.id]);
+      user = await dbGet('SELECT * FROM users WHERE id = ?', [existing.id]);
     } else {
       user = createUserIfNeeded(emailLower, hash, ref, regIp);
       sendWelcomeEmail(emailLower).catch(e => console.error('Welcome email error:', e.message));
       sendFounderNotification('signup', { email: emailLower }).catch(() => {});
-      dbRun('UPDATE users SET welcomed = 1 WHERE id = ?', [user.id]);
+      await dbRun('UPDATE users SET welcomed = 1 WHERE id = ?', [user.id]);
     }
     res.json({ success: true, session: makeJWT(user.id, user.email, user.plan) });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Error al crear la cuenta.' }); }
@@ -766,7 +726,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
   if (!password) return res.status(400).json({ error: 'Contraseña requerida' });
   const emailLower = email.toLowerCase();
   try {
-    const user = dbGet('SELECT * FROM users WHERE email = ?', [emailLower]);
+    const user = await dbGet('SELECT * FROM users WHERE email = ?', [emailLower]);
     if (!user) return res.status(401).json({ error: 'Email o contraseña incorrectos' });
     if (!user.password_hash) return res.status(401).json({ error: 'Esta cuenta usa acceso por link. Usá "Olvidé mi contraseña" para configurar una.', needsMagicLink: true });
     const valid = await bcrypt.compare(password, user.password_hash);
@@ -781,7 +741,7 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
   if (!email || !email.includes('@')) return res.status(400).json({ error: 'Email inválido' });
   const emailLower = email.toLowerCase();
   try {
-    const user = dbGet('SELECT id FROM users WHERE email = ?', [emailLower]);
+    const user = await dbGet('SELECT id FROM users WHERE email = ?', [emailLower]);
     if (user) {
       const token = jwt.sign({ email: emailLower, purpose: 'magic_link' }, JWT_SECRET, { expiresIn: '30m' });
       await sendMagicLink(emailLower, token).catch(() => {});
@@ -797,18 +757,18 @@ app.get('/api/auth/verify', (req, res) => {
   try { payload = jwt.verify(token, JWT_SECRET); } catch { return res.redirect('/app?error=expired'); }
   if (payload.purpose !== 'magic_link') return res.redirect('/app?error=invalid');
   const email = payload.email;
-  let user = dbGet('SELECT * FROM users WHERE email = ?', [email]);
+  let user = await dbGet('SELECT * FROM users WHERE email = ?', [email]);
   if (!user) {
-    dbRun('INSERT INTO users (email) VALUES (?)', [email]);
-    const newUser = dbGet('SELECT id FROM users WHERE email = ?', [email]);
+    await dbRun('INSERT INTO users (email) VALUES (?)', [email]);
+    const newUser = await dbGet('SELECT id FROM users WHERE email = ?', [email]);
     const newCode = crypto.createHash('sha256').update(`${newUser.id}-${JWT_SECRET}`).digest('hex').slice(0, 8);
-    dbRun('UPDATE users SET ref_code = ? WHERE id = ?', [newCode, newUser.id]);
-    user = dbGet('SELECT * FROM users WHERE email = ?', [email]);
+    await dbRun('UPDATE users SET ref_code = ? WHERE id = ?', [newCode, newUser.id]);
+    user = await dbGet('SELECT * FROM users WHERE email = ?', [email]);
   }
   if (!user.welcomed) {
     sendWelcomeEmail(user.email).catch(e => console.error('Welcome email error:', e.message));
     sendFounderNotification('signup', { email: user.email }).catch(() => {});
-    dbRun('UPDATE users SET welcomed = 1 WHERE id = ?', [user.id]);
+    await dbRun('UPDATE users SET welcomed = 1 WHERE id = ?', [user.id]);
   }
   const session = makeJWT(user.id, user.email, user.plan);
   res.redirect(`/app?session=${session}`);
@@ -846,24 +806,24 @@ app.post('/api/audit', auditLimiter, optAuth, async (req, res) => {
     if (u.plan === 'basic' && u.audits_reset_at) {
       const msDiff = Date.now() - new Date(u.audits_reset_at).getTime();
       if (msDiff >= 30 * 24 * 60 * 60 * 1000) {
-        dbRun('UPDATE users SET audits_used = 0, audits_reset_at = datetime("now"), updated_at = datetime("now") WHERE id = ?', [u.id]);
-        u = dbGet('SELECT * FROM users WHERE id = ?', [u.id]);
+        await dbRun('UPDATE users SET audits_used = 0, audits_reset_at = NOW(), updated_at = NOW() WHERE id = ?', [u.id]);
+        u = await dbGet('SELECT * FROM users WHERE id = ?', [u.id]);
       }
     }
     if (u.plan !== 'free' && u.status !== 'active') return res.status(403).json({ error: 'Suscripción inactiva', upgrade: true });
     if (u.plan !== 'pro' && u.plan !== 'agency' && u.audits_used >= u.audits_limit) {
       if (!u.audit_limit_email_sent) {
         sendAuditLimitEmail(u.email).catch(e => console.error('Audit limit email error:', e.message));
-        dbRun('UPDATE users SET audit_limit_email_sent = 1 WHERE id = ?', [u.id]);
+        await dbRun('UPDATE users SET audit_limit_email_sent = 1 WHERE id = ?', [u.id]);
       }
       return res.status(403).json({ error: 'Límite alcanzado', upgrade: true });
     }
     try {
       const a = await generateAudit(product, country || 'general', tone || 'profesional', competitorProduct || null);
-      dbRun('UPDATE users SET audits_used = audits_used + 1, updated_at = datetime("now") WHERE id = ?', [u.id]);
-      dbRun('INSERT INTO audits (user_id, product_name, product_url, score_conversion, score_confianza, score_seo, audit_data) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      await dbRun('UPDATE users SET audits_used = audits_used + 1, updated_at = NOW() WHERE id = ?', [u.id]);
+      await dbRun('INSERT INTO audits (user_id, product_name, product_url, score_conversion, score_confianza, score_seo, audit_data) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [u.id, product.name || product.url, product.url || '', a.scores.conversion, a.scores.confianza, a.scores.seo, JSON.stringify(a)]);
-      const updated = dbGet('SELECT * FROM users WHERE id = ?', [u.id]);
+      const updated = await dbGet('SELECT * FROM users WHERE id = ?', [u.id]);
       res.json({ success: true, audit: a, plan: u.plan, auditsUsed: updated.audits_used, auditsLimit: updated.audits_limit });
     } catch (e) { console.error('Audit error:', e?.message || e); res.status(500).json({ error: e?.message || 'Error generando auditoría.' }); }
   } else {
@@ -877,7 +837,7 @@ app.post('/api/audit', auditLimiter, optAuth, async (req, res) => {
 
 // Audit history + aggregate stats
 app.get('/api/audits', requireAuth, (req, res) => {
-  const audits = dbAll('SELECT id, product_name, product_url, score_conversion, score_confianza, score_seo, created_at FROM audits WHERE user_id = ? ORDER BY created_at DESC LIMIT 50', [req.user.id]);
+  const audits = await dbAll('SELECT id, product_name, product_url, score_conversion, score_confianza, score_seo, created_at FROM audits WHERE user_id = ? ORDER BY created_at DESC LIMIT 50', [req.user.id]);
   const stats = audits.length > 0 ? {
     total: audits.length,
     avg_conversion: Math.round(audits.reduce((s, a) => s + (a.score_conversion || 0), 0) / audits.length),
@@ -888,7 +848,7 @@ app.get('/api/audits', requireAuth, (req, res) => {
 });
 
 app.get('/api/audits/:id', requireAuth, (req, res) => {
-  const a = dbGet('SELECT * FROM audits WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+  const a = await dbGet('SELECT * FROM audits WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
   if (!a) return res.status(404).json({ error: 'No encontrado' });
   res.json({ success: true, audit: { ...a, audit_data: JSON.parse(a.audit_data) } });
 });
@@ -933,7 +893,7 @@ app.get('/api/portal', requireAuth, async (req, res) => {
 app.post('/api/verify-subscription', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email requerido' });
-  const user = dbGet('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
+  const user = await dbGet('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
   if (!user || user.plan === 'free' || user.status !== 'active') {
     return res.status(404).json({ error: 'No encontramos suscripción activa. Si acabás de pagar, esperá un momento y volvé a intentar.' });
   }
@@ -974,10 +934,10 @@ app.post('/api/webhook', async (req, res) => {
       if (status === 'active') {
         const plan = variantId === String(LS_PRO_VARIANT) ? 'pro' : 'basic';
         const limit = plan === 'pro' ? 999999 : 30;
-        const existing = dbGet('SELECT id FROM users WHERE email = ?', [email]);
-        if (!existing) dbRun('INSERT INTO users (email) VALUES (?)', [email]);
-        const wasAlreadyPaid = dbGet('SELECT plan FROM users WHERE email = ?', [email])?.plan;
-        dbRun('UPDATE users SET plan=?, status=?, audits_limit=?, subscription_id=?, stripe_customer_id=?, audits_reset_at=datetime("now"), updated_at=datetime("now") WHERE email=?',
+        const existing = await dbGet('SELECT id FROM users WHERE email = ?', [email]);
+        if (!existing) await dbRun('INSERT INTO users (email) VALUES (?)', [email]);
+        const wasAlreadyPaid = await dbGet('SELECT plan FROM users WHERE email = ?', [email])?.plan;
+        await dbRun('UPDATE users SET plan=?, status=?, audits_limit=?, subscription_id=?, stripe_customer_id=?, audits_reset_at=NOW(), updated_at=NOW() WHERE email=?',
           [plan, 'active', limit, subscriptionId, customerId, email]);
         console.log(`Activated ${plan} for ${email}`);
         if (!wasAlreadyPaid || wasAlreadyPaid === 'free') {
@@ -985,7 +945,7 @@ app.post('/api/webhook', async (req, res) => {
           sendFounderNotification('subscription', { email, plan }).catch(() => {});
         }
       } else if (['cancelled', 'expired', 'past_due', 'unpaid', 'paused'].includes(status)) {
-        dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
+        await dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=NOW() WHERE subscription_id=?',
           ['active', 'free', subscriptionId]);
         console.log(`Deactivated subscription ${subscriptionId} (${status})`);
       }
@@ -994,14 +954,14 @@ app.post('/api/webhook', async (req, res) => {
     // subscription_cancelled (evento explícito de cancelación)
     if (eventName === 'subscription_cancelled') {
       const subscriptionId = String(event.data?.id || '');
-      dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
+      await dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=NOW() WHERE subscription_id=?',
         ['active', 'free', subscriptionId]);
     }
 
     // subscription_expired
     if (eventName === 'subscription_expired') {
       const subscriptionId = String(event.data?.id || '');
-      dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=datetime("now") WHERE subscription_id=?',
+      await dbRun('UPDATE users SET status=?, plan=?, audits_limit=1, updated_at=NOW() WHERE subscription_id=?',
         ['cancelled', 'free', subscriptionId]);
     }
   } catch (e) {
@@ -1017,7 +977,7 @@ app.post('/api/analytics/event', optAuth, (req, res) => {
   if (!event || typeof event !== 'string' || event.length > 64) return res.status(400).json({ error: 'Evento inválido' });
   const userId = req.user?.id || null;
   const safeProps = props && typeof props === 'object' ? JSON.stringify(props).slice(0, 500) : null;
-  dbRun('INSERT INTO events (event, user_id, props) VALUES (?, ?, ?)', [event, userId, safeProps]);
+  await dbRun('INSERT INTO events (event, user_id, props) VALUES (?, ?, ?)', [event, userId, safeProps]);
   console.log(`[event] ${event}${userId ? ` uid=${userId}` : ''} ${safeProps || ''}`);
   res.json({ ok: true });
 });
@@ -1027,14 +987,14 @@ app.post('/api/share', (req, res) => {
   const { audit, product } = req.body;
   if (!audit) return res.status(400).json({ error: 'Datos requeridos' });
   const token = crypto.randomBytes(16).toString('hex');
-  dbRun('INSERT INTO shared_reports (token, audit_data, product_name) VALUES (?, ?, ?)',
+  await dbRun('INSERT INTO shared_reports (token, audit_data, product_name) VALUES (?, ?, ?)',
     [token, JSON.stringify(audit), product?.name || '']);
-  dbRun('DELETE FROM shared_reports WHERE created_at < datetime("now", "-30 days")');
+  await dbRun('DELETE FROM shared_reports WHERE created_at < NOW() - INTERVAL '30 days'');
   res.json({ success: true, token, url: `/informe/${token}` });
 });
 
 app.get('/api/report/:token', (req, res) => {
-  const r = dbGet('SELECT * FROM shared_reports WHERE token = ?', [req.params.token]);
+  const r = await dbGet('SELECT * FROM shared_reports WHERE token = ?', [req.params.token]);
   if (!r) return res.status(404).json({ error: 'No encontrado o expirado' });
   res.json({ success: true, audit: JSON.parse(r.audit_data), product: { name: r.product_name } });
 });
@@ -1044,10 +1004,10 @@ app.get('/api/referral', requireAuth, (req, res) => {
   const user = req.user;
   if (!user.ref_code) {
     const code = crypto.createHash('sha256').update(`${user.id}-${JWT_SECRET}`).digest('hex').slice(0, 8);
-    dbRun('UPDATE users SET ref_code = ? WHERE id = ?', [code, user.id]);
+    await dbRun('UPDATE users SET ref_code = ? WHERE id = ?', [code, user.id]);
     user.ref_code = code;
   }
-  const referrals = dbAll('SELECT COUNT(*) as total FROM referrals WHERE referrer_id = ?', [user.id]);
+  const referrals = await dbAll('SELECT COUNT(*) as total FROM referrals WHERE referrer_id = ?', [user.id]);
   res.json({
     success: true,
     refCode: user.ref_code,
@@ -1064,45 +1024,45 @@ app.post('/api/admin/followups', async (req, res) => {
     return res.status(403).json({ error: 'Forbidden' });
   }
   // Día 3: usuarios con al menos 1 auditoría, sin follow-up día 3
-  const day3Users = dbAll(`
+  const day3Users = await dbAll(`
     SELECT u.id, u.email, u.ref_code FROM users u
     WHERE u.followup_day3 = 0
     AND u.welcomed = 1
-    AND julianday('now') - julianday(u.created_at) >= 3
+    AND NOW() - u.created_at >= INTERVAL '3 days'
     AND EXISTS (SELECT 1 FROM audits a WHERE a.user_id = u.id)
   `);
   // Día 7: usuarios sin follow-up día 7
-  const day7Users = dbAll(`
+  const day7Users = await dbAll(`
     SELECT u.id, u.email FROM users u
     WHERE u.followup_day7 = 0
     AND u.welcomed = 1
     AND u.plan = 'free'
-    AND julianday('now') - julianday(u.created_at) >= 7
+    AND NOW() - u.created_at >= INTERVAL '7 days'
   `);
-  const day14Users = dbAll(`
+  const day14Users = await dbAll(`
     SELECT u.id, u.email FROM users u
     WHERE u.followup_day14 = 0 AND u.welcomed = 1 AND u.plan = 'free'
-    AND julianday('now') - julianday(u.created_at) >= 14
+    AND NOW() - u.created_at >= INTERVAL '14 days'
   `);
   let sent3 = 0, sent7 = 0, sent14 = 0;
   for (const u of day3Users) {
     try {
       await sendDay3Email(u.email, u.ref_code || '');
-      dbRun('UPDATE users SET followup_day3 = 1 WHERE id = ?', [u.id]);
+      await dbRun('UPDATE users SET followup_day3 = 1 WHERE id = ?', [u.id]);
       sent3++;
     } catch(e) { console.error('Day3 email error:', u.email, e.message); }
   }
   for (const u of day7Users) {
     try {
       await sendDay7Email(u.email);
-      dbRun('UPDATE users SET followup_day7 = 1 WHERE id = ?', [u.id]);
+      await dbRun('UPDATE users SET followup_day7 = 1 WHERE id = ?', [u.id]);
       sent7++;
     } catch(e) { console.error('Day7 email error:', u.email, e.message); }
   }
   for (const u of day14Users) {
     try {
       await sendDay14Email(u.email);
-      dbRun('UPDATE users SET followup_day14 = 1 WHERE id = ?', [u.id]);
+      await dbRun('UPDATE users SET followup_day14 = 1 WHERE id = ?', [u.id]);
       sent14++;
     } catch(e) { console.error('Day14 email error:', u.email, e.message); }
   }
@@ -1135,22 +1095,23 @@ app.post('/api/admin/generate-content', async (req, res) => {
 app.get('/api/admin/stats', (req, res) => {
   const { secret } = req.query;
   if (secret !== (process.env.ADMIN_SECRET || 'vendly_admin_2024')) return res.status(403).json({ error: 'Forbidden' });
-  const totalUsers = dbGet('SELECT COUNT(*) as n FROM users')?.n || 0;
-  const paidUsers = dbGet('SELECT COUNT(*) as n FROM users WHERE plan != "free" AND status = "active"')?.n || 0;
-  const basicUsers = dbGet('SELECT COUNT(*) as n FROM users WHERE plan = "basic" AND status = "active"')?.n || 0;
-  const proUsers = dbGet('SELECT COUNT(*) as n FROM users WHERE plan = "pro" AND status = "active"')?.n || 0;
-  const agencyUsers = dbGet('SELECT COUNT(*) as n FROM users WHERE plan = "agency" AND status = "active"')?.n || 0;
+  const n = (r) => parseInt(r?.n || r?.count || 0, 10);
+  const totalUsers  = n(await dbGet('SELECT COUNT(*) as n FROM users'));
+  const paidUsers   = n(await dbGet("SELECT COUNT(*) as n FROM users WHERE plan != 'free' AND status = 'active'"));
+  const basicUsers  = n(await dbGet("SELECT COUNT(*) as n FROM users WHERE plan = 'basic' AND status = 'active'"));
+  const proUsers    = n(await dbGet("SELECT COUNT(*) as n FROM users WHERE plan = 'pro' AND status = 'active'"));
+  const agencyUsers = n(await dbGet("SELECT COUNT(*) as n FROM users WHERE plan = 'agency' AND status = 'active'"));
   const mrr = (basicUsers * 9) + (proUsers * 19) + (agencyUsers * 49);
-  const totalAudits = dbGet('SELECT COUNT(*) as n FROM audits')?.n || 0;
-  const todayAudits = dbGet('SELECT COUNT(*) as n FROM audits WHERE date(created_at) = date("now")')?.n || 0;
-  const todaySignups = dbGet('SELECT COUNT(*) as n FROM users WHERE date(created_at) = date("now")')?.n || 0;
-  const recentUsers = dbAll('SELECT email, plan, audits_used, created_at FROM users ORDER BY created_at DESC LIMIT 10');
+  const totalAudits  = n(await dbGet('SELECT COUNT(*) as n FROM audits'));
+  const todayAudits  = n(await dbGet('SELECT COUNT(*) as n FROM audits WHERE created_at::date = CURRENT_DATE'));
+  const todaySignups = n(await dbGet('SELECT COUNT(*) as n FROM users WHERE created_at::date = CURRENT_DATE'));
+  const recentUsers = await dbAll('SELECT email, plan, audits_used, created_at FROM users ORDER BY created_at DESC LIMIT 10');
   res.json({ totalUsers, paidUsers, totalAudits, todayAudits, todaySignups, recentUsers, mrr, breakdown: { basic: basicUsers, pro: proUsers, agency: agencyUsers } });
 });
 
 app.get('/api/stats', (req, res) => {
-  const total = dbGet('SELECT COUNT(*) as total FROM audits');
-  const users = dbGet('SELECT COUNT(*) as total FROM users');
+  const total = await dbGet('SELECT COUNT(*) as total FROM audits');
+  const users = await dbGet('SELECT COUNT(*) as total FROM users');
   res.json({ totalAudits: total ? total.total : 0, totalUsers: users ? users.total : 0 });
 });
 

@@ -13,7 +13,7 @@
     "dotenv": "^16.3.1",
     "axios": "^1.6.0",
     "cheerio": "^1.0.0-rc.12",
-    "sql.js": "^1.11.0",
+    "pg": "^8.12.0",
     "resend": "^3.2.0",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
