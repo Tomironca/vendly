@@ -855,10 +855,16 @@ app.post('/api/audit', auditLimiter, optAuth, async (req, res) => {
   }
 });
 
-// Audit history
+// Audit history + aggregate stats
 app.get('/api/audits', requireAuth, (req, res) => {
   const audits = dbAll('SELECT id, product_name, product_url, score_conversion, score_confianza, score_seo, created_at FROM audits WHERE user_id = ? ORDER BY created_at DESC LIMIT 50', [req.user.id]);
-  res.json({ success: true, audits });
+  const stats = audits.length > 0 ? {
+    total: audits.length,
+    avg_conversion: Math.round(audits.reduce((s, a) => s + (a.score_conversion || 0), 0) / audits.length),
+    avg_seo: Math.round(audits.reduce((s, a) => s + (a.score_seo || 0), 0) / audits.length),
+    best: audits.reduce((best, a) => (!best || (a.score_conversion || 0) > (best.score_conversion || 0)) ? a : best, null)
+  } : null;
+  res.json({ success: true, audits, stats });
 });
 
 app.get('/api/audits/:id', requireAuth, (req, res) => {
