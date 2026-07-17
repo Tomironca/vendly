@@ -175,8 +175,20 @@ function saveDb() {
   fs.writeFileSync(DB_PATH, Buffer.from(data));
 }
 
-// Auto-save every 30 seconds
+// Debounced save: batches rapid writes into one disk flush (max 500ms delay)
+let _saveTimer = null;
+function scheduleSave() {
+  if (_saveTimer) return;
+  _saveTimer = setTimeout(() => {
+    _saveTimer = null;
+    saveDb();
+  }, 500);
+}
+
+// Guaranteed flush every 30s and on graceful shutdown
 setInterval(saveDb, 30000);
+process.on('SIGTERM', () => { saveDb(); process.exit(0); });
+process.on('SIGINT',  () => { saveDb(); process.exit(0); });
 
 // Auto follow-up emails cada 6 horas
 setInterval(async () => {
@@ -236,7 +248,7 @@ function dbAll(sql, params = []) {
 
 function dbRun(sql, params = []) {
   db.run(sql, params);
-  saveDb();
+  scheduleSave();
 }
 
 // ── AUTH ──────────────────────────────────────────────────────
