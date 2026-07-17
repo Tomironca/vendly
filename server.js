@@ -251,6 +251,23 @@ function dbRun(sql, params = []) {
   scheduleSave();
 }
 
+// ── INPUT SANITIZATION ────────────────────────────────────────
+function sanitizeUrl(raw) {
+  if (!raw || typeof raw !== 'string') throw new Error('URL requerida');
+  const trimmed = raw.trim();
+  let parsed;
+  try { parsed = new URL(trimmed); } catch { throw new Error('URL inválida — asegurate de incluir https://'); }
+  if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Solo se aceptan URLs http/https');
+  if (parsed.hostname.length < 3) throw new Error('Dominio inválido');
+  return parsed.href; // normalized
+}
+
+function sanitizeText(raw, maxLen = 200) {
+  if (!raw || typeof raw !== 'string') return '';
+  // Strip control characters and collapse whitespace; trim to maxLen
+  return raw.replace(/[\x00-\x08\x0B-\x1F\x7F]/g, '').replace(/\s+/g, ' ').trim().slice(0, maxLen);
+}
+
 // ── AUTH ──────────────────────────────────────────────────────
 function makeJWT(userId, email, plan) {
   return jwt.sign({ userId, email, plan }, JWT_SECRET, { expiresIn: '30d' });
@@ -772,9 +789,9 @@ app.get('/api/session', optAuth, (req, res) => {
 
 // Scrape
 app.post('/api/scrape', scrapeLimiter, async (req, res) => {
-  const { url } = req.body;
-  if (!url) return res.status(400).json({ error: 'URL requerida' });
-  try { res.json({ success: true, product: await scrape(url) }); }
+  let cleanUrl;
+  try { cleanUrl = sanitizeUrl(req.body?.url); } catch (e) { return res.status(400).json({ error: e.message }); }
+  try { res.json({ success: true, product: await scrape(cleanUrl) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -782,6 +799,14 @@ app.post('/api/scrape', scrapeLimiter, async (req, res) => {
 app.post('/api/audit', auditLimiter, optAuth, async (req, res) => {
   const { product, country, tone, competitorProduct } = req.body;
   if (!product || !product.name) return res.status(400).json({ error: 'Datos requeridos' });
+
+  // Sanitize all user-controlled fields that reach the AI prompt
+  try { product.url = sanitizeUrl(product.url); } catch { product.url = ''; }
+  product.name        = sanitizeText(product.name, 200);
+  product.description = sanitizeText(product.description, 500);
+  product.productDescription = sanitizeText(product.productDescription, 1000);
+  product.price       = sanitizeText(product.price, 50);
+  product.bodyText    = sanitizeText(product.bodyText, 3000);
 
   if (req.user) {
     let u = req.user;
