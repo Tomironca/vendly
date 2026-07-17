@@ -915,15 +915,38 @@ window.addEventListener('DOMContentLoaded', async () => {
     window.history.replaceState({}, '', '/app');
     showLoginModal();
   }
-  const match = window.location.pathname.match(/^\/informe\/([a-f0-9]+)$/);
-  if (match) {
+  const token = window.__SHARED_TOKEN__ || (window.location.pathname.match(/^\/informe\/([a-f0-9]+)$/) || [])[1];
+  if (token) {
     try {
-      const res = await fetch('/api/report/' + match[1]);
+      const res = await fetch('/api/report/' + token);
       const data = await res.json();
-      if (data.success) { currentAudit = data.audit; renderAudit(data.audit, data.product?.name || 'Producto', !!data.audit?.analisis_competidor); }
+      if (data.success) {
+        currentAudit = data.audit;
+        renderAudit(data.audit, data.product?.name || 'Producto', !!data.audit?.analisis_competidor);
+        showViralBanner(data.product?.name);
+      }
     } catch(e) {}
   }
 });
+
+function showViralBanner(productName) {
+  if (document.getElementById('viral-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'viral-banner';
+  banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#1a1030,#0d0d1a);border-top:1px solid rgba(124,92,252,0.3);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;z-index:600;box-shadow:0 -4px 32px rgba(0,0,0,0.5)';
+  const productLine = productName ? `¿También vendés productos como <strong style="color:#F0EEF8">${productName}</strong>?` : '¿También vendés en e-commerce?';
+  banner.innerHTML = `
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:12px;color:rgba(166,136,250,0.9);font-weight:600;margin-bottom:2px">✦ Generado con Vendly IA</div>
+      <div style="font-size:13px;color:#c4c0d8;line-height:1.4">${productLine} <span style="color:#A688FA">Auditá tu producto gratis en 30 segundos.</span></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <a href="/app" style="background:linear-gradient(135deg,#7C5CFC,#5D3FD3);color:#fff;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap">Auditá gratis →</a>
+      <button onclick="document.getElementById('viral-banner').remove()" style="background:transparent;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:12px">✕</button>
+    </div>`;
+  document.body.appendChild(banner);
+  track('viral_banner_shown');
+}
 
 async function checkSession() {
   if (!sessionToken) { updateUI(false); return; }

@@ -686,7 +686,27 @@ async function sendSubscriberWelcomeEmail(email, plan) {
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/app/*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/informe/:token', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/informe/:token', (req, res) => {
+  const r = dbGet('SELECT product_name, audit_data FROM shared_reports WHERE token = ?', [req.params.token]);
+  if (!r) return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  let scores = {};
+  try { scores = JSON.parse(r.audit_data)?.scores || {}; } catch {}
+  const title = r.product_name ? `Auditoría de "${r.product_name}" — Vendly` : 'Informe de auditoría — Vendly';
+  const desc = scores.conversion
+    ? `Score de conversión ${scores.conversion}/100 · SEO ${scores.seo}/100 · Confianza ${scores.confianza}/100. Auditá tu producto con IA.`
+    : 'Informe de auditoría de e-commerce generado con Vendly IA.';
+  const spaHtml = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+  const patched = spaHtml.replace(
+    '<title>Vendly — Auditoría de e-commerce con IA para LATAM</title>',
+    `<title>${title}</title>
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${desc}">
+<meta name="twitter:title" content="${title}">
+<meta name="twitter:description" content="${desc}">
+<script>window.__SHARED_TOKEN__="${req.params.token}";</script>`
+  );
+  res.send(patched);
+});
 app.get('/legal', (req, res) => res.sendFile(path.join(__dirname, 'public', 'legal.html')));
 app.get('/terminos', (req, res) => res.redirect('/legal'));
 app.get('/privacidad', (req, res) => res.redirect('/legal'));
