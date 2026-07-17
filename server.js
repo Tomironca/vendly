@@ -148,6 +148,13 @@ async function initDb() {
       product_name TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event TEXT NOT NULL,
+      user_id INTEGER,
+      props TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
   // Migrations for existing DBs
   try { db.run('ALTER TABLE users ADD COLUMN stripe_customer_id TEXT'); } catch(e) {}
@@ -976,6 +983,17 @@ app.post('/api/webhook', async (req, res) => {
   }
 
   res.json({ received: true });
+});
+
+// Analytics
+app.post('/api/analytics/event', optAuth, (req, res) => {
+  const { event, props } = req.body;
+  if (!event || typeof event !== 'string' || event.length > 64) return res.status(400).json({ error: 'Evento inválido' });
+  const userId = req.user?.id || null;
+  const safeProps = props && typeof props === 'object' ? JSON.stringify(props).slice(0, 500) : null;
+  dbRun('INSERT INTO events (event, user_id, props) VALUES (?, ?, ?)', [event, userId, safeProps]);
+  console.log(`[event] ${event}${userId ? ` uid=${userId}` : ''} ${safeProps || ''}`);
+  res.json({ ok: true });
 });
 
 // Share

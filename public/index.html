@@ -1069,6 +1069,7 @@ async function runAudit() {
   document.getElementById('loading').classList.add('show');
   document.getElementById('results').classList.remove('show');
   startLoading();
+  track('audit_start', { country, tone, mode: activeTab });
   try {
     const headers = { 'Content-Type':'application/json' };
     if (sessionToken) headers['x-session-token'] = sessionToken;
@@ -1086,6 +1087,7 @@ async function runAudit() {
     if (!data.success) throw new Error(data.error);
     currentAudit = data.audit;
     if (data.plan) updatePlanBanner(data.plan, data.auditsUsed, data.auditsLimit);
+    track('audit_complete', { country, tone, score_conversion: data.audit?.scores?.conversion, score_seo: data.audit?.scores?.seo, plan: data.plan });
     renderAudit(data.audit, product.name || product.url, !!competitorProduct);
     // Nudge de upgrade si el usuario free acaba de agotar su auditoría gratuita
     if (data.plan === 'free' && data.auditsUsed >= data.auditsLimit) {
@@ -1358,6 +1360,7 @@ async function loginWithPassword() {
     localStorage.setItem('v_session', sessionToken);
     closeLoginModal();
     loadSession();
+    track('login', { method: 'password' });
     showToast('✓ Sesión iniciada');
   } catch(e) { showErr('login-error', e.message||'Error al iniciar sesión.'); }
   finally { btn.textContent='Entrar →'; btn.disabled=false; }
@@ -1379,6 +1382,7 @@ async function registerWithPassword() {
     localStorage.setItem('v_session', sessionToken);
     closeLoginModal();
     loadSession();
+    track('register', { method: 'password' });
     showToast('✓ ¡Cuenta creada! Auditá tu primer producto');
     setTimeout(()=>{
       const inp = document.getElementById('product-url');
@@ -1404,7 +1408,7 @@ async function sendForgotPassword() {
 }
 
 // ── UPGRADE ───────────────────────────────────────────────────
-function showUpgradeModal() { document.getElementById('upgrade-modal').classList.add('show'); selectPlan('basic'); }
+function showUpgradeModal() { document.getElementById('upgrade-modal').classList.add('show'); selectPlan('basic'); track('upgrade_modal_open'); }
 function closeUpgradeModal() { document.getElementById('upgrade-modal').classList.remove('show'); hideErr('upgrade-error'); }
 function selectPlan(plan) {
   selectedPlan = plan;
@@ -1665,6 +1669,7 @@ async function shareReport() {
       document.getElementById('share-url').textContent=fullUrl;
       document.getElementById('share-link').classList.add('show');
       document.getElementById('wa-share-btn').style.display='';
+      track('share_report');
       showToast('✓ Link copiado');
     }
   } catch(e) { showToast('Error generando link.'); }
@@ -1728,6 +1733,13 @@ function copyEl(btn,id){ const text=document.getElementById(id).textContent; nav
 function copyKw(el,text){ navigator.clipboard.writeText(text).then(()=>{ el.classList.add('copied'); setTimeout(()=>el.classList.remove('copied'),1500); }); }
 function showErr(id,msg){ const el=document.getElementById(id); if(el){ el.textContent=msg; el.classList.add('show'); } }
 function hideErr(id){ const el=document.getElementById(id); if(el)el.classList.remove('show'); }
+// ── ANALYTICS ─────────────────────────────────────────────────
+function track(event, props) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (sessionToken) headers['x-session-token'] = sessionToken;
+  fetch('/api/analytics/event', { method: 'POST', headers, body: JSON.stringify({ event, props }) }).catch(() => {});
+}
+
 let toastTimer;
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),3000); }
 function showUpgradeNudge() {
