@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 const axios = require('axios');
@@ -12,10 +13,60 @@ const initSqlJs = require('sql.js');
 const fs = require('fs');
 const { Resend } = require('resend');
 const app = express();
+
+// Trust Railway's reverse proxy so req.ip contains the real client IP
+app.set('trust proxy', 1);
+
 app.use('/api/webhook', express.raw({ type: 'application/json' }));
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static('public', { index: false }));
+
+// ── RATE LIMITING ─────────────────────────────────────────────
+// General: protects all API routes from flood attacks
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Esperá unos minutos e intentá de nuevo.' },
+  skip: (req) => req.path === '/api/webhook',
+});
+
+// Auth: prevents brute-force on login/register
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 12,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos. Esperá 15 minutos antes de volver a intentar.' },
+});
+
+// Audit: most important — each call costs real money (Claude API)
+// Key: hashed session token if authenticated, IP otherwise
+const auditLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Límite de auditorías por hora alcanzado. Volvé en un rato o considerá un plan superior.' },
+  keyGenerator: (req) => {
+    const token = req.headers['x-session-token'];
+    if (token) return crypto.createHash('sha256').update(token).digest('hex').slice(0, 20);
+    return req.ip;
+  },
+});
+
+// Scrape: protects against URL crawling abuse
+const scrapeLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados análisis de URL. Esperá unos minutos.' },
+});
+
+app.use('/api/', apiLimiter);
 
 const bcrypt = require('bcryptjs');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -620,7 +671,7 @@ function createUserIfNeeded(emailLower, passwordHash, ref, ip) {
 }
 
 // Registro con email + contraseña
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   const { email, password, ref } = req.body;
   if (!email || !email.includes('@')) return res.status(400).json({ error: 'Email inválido' });
   if (!password || password.length < 6) return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
@@ -648,7 +699,7 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // Login con email + contraseña
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !email.includes('@')) return res.status(400).json({ error: 'Email inválido' });
   if (!password) return res.status(400).json({ error: 'Contraseña requerida' });
@@ -664,7 +715,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // Olvidé mi contraseña — envía magic link
-app.post('/api/auth/forgot-password', async (req, res) => {
+app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email || !email.includes('@')) return res.status(400).json({ error: 'Email inválido' });
   const emailLower = email.toLowerCase();
@@ -708,7 +759,7 @@ app.get('/api/session', optAuth, (req, res) => {
 });
 
 // Scrape
-app.post('/api/scrape', async (req, res) => {
+app.post('/api/scrape', scrapeLimiter, async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: 'URL requerida' });
   try { res.json({ success: true, product: await scrape(url) }); }
@@ -716,7 +767,7 @@ app.post('/api/scrape', async (req, res) => {
 });
 
 // Audit
-app.post('/api/audit', optAuth, async (req, res) => {
+app.post('/api/audit', auditLimiter, optAuth, async (req, res) => {
   const { product, country, tone, competitorProduct } = req.body;
   if (!product || !product.name) return res.status(400).json({ error: 'Datos requeridos' });
 
