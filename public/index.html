@@ -908,7 +908,27 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
   if (p.get('subscribed') === 'true') {
     window.history.replaceState({}, '', '/app');
+    const paymentEmail = p.get('pe');
     await checkSession();
+    if (!sessionToken && paymentEmail) {
+      // No hay sesión activa — intentar activar automáticamente con el email del pago
+      try {
+        const vr = await fetch('/api/verify-subscription', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ email: paymentEmail })
+        });
+        const vd = await vr.json();
+        if (vd.success && vd.sessionToken) {
+          sessionToken = vd.sessionToken;
+          localStorage.setItem('vendly_token', sessionToken);
+          userEmail = paymentEmail;
+          updatePlanBanner(vd.plan, 0, vd.auditsLimit);
+          document.getElementById('user-email-display').textContent = paymentEmail;
+          document.getElementById('user-chip').style.display = '';
+          document.getElementById('btn-login').style.display = 'none';
+        }
+      } catch(e) {}
+    }
     showToast('🎉 ¡Suscripción activada! Ya podés usar Vendly.');
     return;
   }

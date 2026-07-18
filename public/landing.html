@@ -692,11 +692,13 @@ async function loadStats() {
     const res = await fetch('/api/stats');
     const data = await res.json();
     const total = data.totalAudits || 0;
-    const display = total > 0 ? (total >= 1000 ? `${(total/1000).toFixed(1).replace('.0','')}K+` : `${total}+`) : '—';
+    const display = total >= 1000 ? `${(total/1000).toFixed(1).replace('.0','')}K+` : total > 0 ? `${total}+` : null;
     const statEl = document.getElementById('stat-audits');
-    if (statEl) statEl.textContent = display;
+    if (statEl) statEl.textContent = display || '✦';
     const heroEl = document.getElementById('hero-counter');
-    if (heroEl) heroEl.textContent = `${display} auditorías generadas · Sin tarjeta de crédito · Cancelá cuando quieras`;
+    if (heroEl) heroEl.textContent = display
+      ? `${display} auditorías generadas · Sin tarjeta de crédito · Cancelá cuando quieras`
+      : 'Sin tarjeta de crédito · Resultado en 30 segundos · Cancelá cuando quieras';
   } catch(e) {
     const heroEl = document.getElementById('hero-counter');
     if (heroEl) heroEl.textContent = 'Sin tarjeta de crédito · Resultado en 30 segundos · Cancelá cuando quieras';

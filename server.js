@@ -863,11 +863,12 @@ app.post('/api/checkout', optAuth, async (req, res) => {
   const email = req.user?.email || req.body.email || '';
   const variantId = plan === 'pro' ? LS_PRO_VARIANT : LS_STARTER_VARIANT;
   if (!variantId || !LS_STORE_URL) return res.status(500).json({ error: 'Pagos no configurados aún.' });
-  // Construir URL de checkout de Lemon Squeezy con email prefill y metadata del plan
+  const redirectUrl = `${APP_URL}/app?subscribed=true${email ? `&pe=${encodeURIComponent(email)}` : ''}`;
   const params = new URLSearchParams({
     'checkout[email]': email,
     'checkout[custom][plan]': plan || 'basic',
     'checkout[custom][app_url]': APP_URL,
+    'checkout[redirect_url]': redirectUrl,
   });
   const url = `${LS_STORE_URL}/checkout/buy/${variantId}?${params.toString()}`;
   res.json({ url });
