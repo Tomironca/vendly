@@ -7,10 +7,10 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%237C5CFC'/><text y='.9em' font-size='72' x='12' fill='white' font-family='sans-serif' font-weight='900'>V</text></svg>">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#07070E;--bg2:#0F0F1A;--bg3:#16161F;--text:#F0EEF8;--muted:#8B89A0;--accent:#7C5CFC;--accent2:#A688FA;--green:#34D399;--border:rgba(124,92,252,0.15);--border-s:rgba(255,255,255,0.06)}
+:root{--bg:#07070E;--bg2:#0F0F1A;--bg3:#16161F;--text:#F0EEF8;--muted:#8B89A0;--accent:#7C5CFC;--accent2:#A688FA;--green:#34D399;--yellow:#F5C842;--border:rgba(124,92,252,0.15);--border-s:rgba(255,255,255,0.06)}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:32px 24px}
-.wrap{max-width:800px;margin:0 auto}
-.logo{font-size:22px;font-weight:800;margin-bottom:32px;display:block}
+.wrap{max-width:860px;margin:0 auto}
+.logo{font-size:22px;font-weight:800;margin-bottom:32px;display:block;text-decoration:none;color:var(--text)}
 .logo span{color:var(--accent2)}
 h1{font-size:24px;font-weight:700;margin-bottom:6px}
 .sub{color:var(--muted);font-size:14px;margin-bottom:32px}
@@ -21,11 +21,16 @@ label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;text-tra
 select,input,textarea{width:100%;background:var(--bg3);border:1px solid var(--border-s);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border .15s}
 select:focus,input:focus,textarea:focus{border-color:rgba(124,92,252,0.4)}
 textarea{resize:vertical;min-height:80px}
-.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;width:100%;transition:opacity .15s}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s}
 .btn:hover{opacity:.85}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-.output{background:var(--bg3);border:1px solid var(--border-s);border-radius:12px;padding:20px;margin-top:20px;white-space:pre-wrap;font-size:13px;color:var(--text);line-height:1.7;display:none;position:relative}
-.copy-btn{position:absolute;top:12px;right:12px;background:var(--bg2);border:1px solid var(--border-s);border-radius:8px;padding:5px 12px;color:var(--muted);font-size:11px;cursor:pointer;transition:all .15s}
+.btn-ghost{background:var(--bg3);color:var(--muted);border:1px solid var(--border-s);border-radius:10px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-ghost:hover{color:var(--text);border-color:rgba(124,92,252,0.3)}
+.btn-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.output{background:var(--bg3);border:1px solid var(--border-s);border-radius:12px;padding:20px;margin-top:16px;white-space:pre-wrap;font-size:13px;color:var(--text);line-height:1.75;display:none}
+.output-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.output-meta{font-size:11px;color:var(--muted)}
+.copy-btn{background:var(--bg2);border:1px solid var(--border-s);border-radius:8px;padding:5px 12px;color:var(--muted);font-size:11px;cursor:pointer;transition:all .15s}
 .copy-btn:hover{color:var(--text);border-color:var(--accent)}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:24px}
 .stat{background:var(--bg2);border:1px solid var(--border-s);border-radius:12px;padding:16px;text-align:center}
@@ -36,17 +41,26 @@ textarea{resize:vertical;min-height:80px}
 .user-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--text)}
 .plan-badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700}
 .plan-free{background:rgba(139,137,160,0.15);color:var(--muted)}
-.plan-basic{background:rgba(124,92,252,0.15);color:var(--accent2)}
+.plan-basic,.plan-starter{background:rgba(124,92,252,0.15);color:var(--accent2)}
 .plan-pro{background:rgba(52,211,153,0.15);color:var(--green)}
 .loading{display:none;text-align:center;color:var(--muted);padding:20px;font-size:13px}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border-s);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
 .lock{text-align:center;padding:80px 24px}
 .lock input{max-width:280px;margin:16px auto;display:block}
-.lock .btn{max-width:280px;margin:0 auto}
+.lock .btn{max-width:280px;margin:0 auto;display:block;width:100%}
 .tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
 .tab{background:var(--bg3);border:1px solid var(--border-s);border-radius:8px;padding:7px 14px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s}
 .tab.active,.tab:hover{background:rgba(124,92,252,0.1);border-color:rgba(124,92,252,0.3);color:var(--text)}
+.history-section{margin-top:24px}
+.history-section h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.history-item{background:var(--bg3);border:1px solid var(--border-s);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border .15s;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.history-item:hover{border-color:rgba(124,92,252,0.3)}
+.history-item-meta{font-size:11px;color:var(--muted);white-space:nowrap}
+.history-item-text{font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.history-clear{font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;background:none;border:none;padding:0}
+.history-clear:hover{color:var(--text)}
+.mrr-breakdown{font-size:11px;color:var(--muted);margin-top:4px}
 </style>
 </head>
 <body>
@@ -70,7 +84,7 @@ textarea{resize:vertical;min-height:80px}
     <div id="stats-grid" class="stats-grid">
       <div class="stat"><div class="stat-val" id="s-users">—</div><div class="stat-label">Usuarios totales</div></div>
       <div class="stat"><div class="stat-val" id="s-paid">—</div><div class="stat-label">Usuarios pagos</div></div>
-      <div class="stat"><div class="stat-val" id="s-mrr">—</div><div class="stat-label">MRR estimado</div></div>
+      <div class="stat"><div class="stat-val" id="s-mrr">—</div><div class="stat-label">MRR estimado</div><div class="mrr-breakdown" id="s-breakdown"></div></div>
       <div class="stat"><div class="stat-val" id="s-audits">—</div><div class="stat-label">Auditorías totales</div></div>
       <div class="stat"><div class="stat-val" id="s-today">—</div><div class="stat-label">Hoy (auditorías)</div></div>
       <div class="stat"><div class="stat-val" id="s-signups">—</div><div class="stat-label">Hoy (registros)</div></div>
@@ -92,18 +106,39 @@ textarea{resize:vertical;min-height:80px}
       <h2>Generador de contenido con IA</h2>
       <div class="tabs">
         <div class="tab active" onclick="setType('tiktok',this)">TikTok / Reels</div>
-        <div class="tab" onclick="setType('facebook',this)">Facebook grupos</div>
+        <div class="tab" onclick="setType('facebook',this)">Facebook</div>
         <div class="tab" onclick="setType('instagram',this)">Instagram</div>
+        <div class="tab" onclick="setType('linkedin',this)">LinkedIn</div>
         <div class="tab" onclick="setType('whatsapp',this)">WhatsApp</div>
         <div class="tab" onclick="setType('email_cold',this)">Cold email</div>
+        <div class="tab" onclick="setType('newsletter',this)">Newsletter</div>
       </div>
       <div class="form-row">
         <label>Contexto adicional (opcional)</label>
-        <textarea id="ctx" placeholder="Ej: quiero mostrar el score de un producto de ropa para mujer, ángulo de urgencia..."></textarea>
+        <textarea id="ctx" placeholder="Ej: quiero mostrar el score de un producto de ropa para mujer, ángulo de urgencia, para grupo de Tiendanube..."></textarea>
       </div>
-      <button class="btn" onclick="generate()">Generar contenido →</button>
+      <div class="btn-row">
+        <button class="btn" id="gen-btn" onclick="generate()">Generar contenido →</button>
+        <button class="btn-ghost" id="regen-btn" onclick="generate()" style="display:none">↺ Regenerar</button>
+      </div>
       <div class="loading" id="gen-loading"><span class="spinner"></span>Generando con Claude Sonnet...</div>
-      <div class="output" id="gen-output"><button class="copy-btn" onclick="copyOutput()">Copiar</button><span id="gen-text"></span></div>
+
+      <div class="output" id="gen-output">
+        <div class="output-header">
+          <span class="output-meta" id="gen-meta"></span>
+          <button class="copy-btn" onclick="copyOutput()">Copiar todo</button>
+        </div>
+        <div id="gen-text"></div>
+      </div>
+
+      <!-- History -->
+      <div class="history-section" id="history-section" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 style="margin:0">Historial reciente</h3>
+          <button class="history-clear" onclick="clearHistory()">Limpiar</button>
+        </div>
+        <div id="history-list"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -111,6 +146,10 @@ textarea{resize:vertical;min-height:80px}
 <script>
 let secret = '';
 let currentType = 'tiktok';
+const TYPE_LABELS = {
+  tiktok: 'TikTok/Reels', facebook: 'Facebook', instagram: 'Instagram',
+  linkedin: 'LinkedIn', whatsapp: 'WhatsApp', email_cold: 'Cold email', newsletter: 'Newsletter'
+};
 
 function unlock() {
   secret = document.getElementById('admin-pass').value.trim();
@@ -128,6 +167,9 @@ async function loadStats() {
     document.getElementById('s-users').textContent = d.totalUsers;
     document.getElementById('s-paid').textContent = d.paidUsers;
     document.getElementById('s-mrr').textContent = `$${d.mrr}`;
+    const b = d.breakdown || {};
+    document.getElementById('s-breakdown').textContent =
+      `Starter:${b.basic||0} Pro:${b.pro||0} Agency:${b.agency||0}`;
     document.getElementById('s-audits').textContent = d.totalAudits;
     document.getElementById('s-today').textContent = d.todayAudits;
     document.getElementById('s-signups').textContent = d.todaySignups;
@@ -140,6 +182,7 @@ async function loadStats() {
         <td>${new Date(u.created_at).toLocaleDateString('es-AR')}</td>
       </tr>
     `).join('') || '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:16px">Sin usuarios aún</td></tr>';
+    renderHistory();
   } catch(e) { document.getElementById('lock-error').textContent = 'Error de conexión'; }
 }
 
@@ -148,24 +191,37 @@ function setType(type, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('gen-output').style.display = 'none';
+  document.getElementById('regen-btn').style.display = 'none';
 }
 
 async function generate() {
-  const btn = document.querySelector('.card .btn');
+  const btn = document.getElementById('gen-btn');
+  const regenBtn = document.getElementById('regen-btn');
   const loading = document.getElementById('gen-loading');
   const output = document.getElementById('gen-output');
   btn.disabled = true;
   loading.style.display = 'block';
   output.style.display = 'none';
+  regenBtn.style.display = 'none';
+  const ctx = document.getElementById('ctx').value;
   try {
     const r = await fetch('/api/admin/generate-content', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ secret, type: currentType, context: document.getElementById('ctx').value })
+      body: JSON.stringify({ secret, type: currentType, context: ctx })
     });
     const d = await r.json();
-    document.getElementById('gen-text').textContent = d.content || d.error;
+    if (d.error) throw new Error(d.error);
+    const content = d.content || '';
+    const words = content.trim().split(/\s+/).length;
+    const chars = content.length;
+    document.getElementById('gen-meta').textContent =
+      `${TYPE_LABELS[currentType]} · ${words} palabras · ${chars} caracteres`;
+    document.getElementById('gen-text').textContent = content;
     output.style.display = 'block';
+    regenBtn.style.display = 'inline-block';
+    saveToHistory(currentType, ctx, content);
+    renderHistory();
   } catch(e) { alert('Error: ' + e.message); }
   finally { btn.disabled = false; loading.style.display = 'none'; }
 }
@@ -175,8 +231,76 @@ function copyOutput() {
   navigator.clipboard.writeText(text).then(() => {
     const btn = document.querySelector('.copy-btn');
     btn.textContent = '✓ Copiado';
-    setTimeout(() => btn.textContent = 'Copiar', 2000);
+    setTimeout(() => btn.textContent = 'Copiar todo', 2000);
   });
+}
+
+// ── History (localStorage) ─────────────────────────────────────
+const HISTORY_KEY = 'vendly_admin_content_history';
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveToHistory(type, ctx, content) {
+  const history = loadHistory();
+  history.unshift({ type, ctx: ctx.slice(0, 80), content, ts: Date.now() });
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 15)));
+}
+
+function clearHistory() {
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+}
+
+function renderHistory() {
+  const history = loadHistory();
+  const section = document.getElementById('history-section');
+  const list = document.getElementById('history-list');
+  if (!history.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = history.map((item, i) => {
+    const ago = timeAgo(item.ts);
+    const preview = item.content.slice(0, 80).replace(/\n/g, ' ');
+    return `<div class="history-item" onclick="restoreHistory(${i})">
+      <div class="history-item-text">${escHtml(preview)}…</div>
+      <div class="history-item-meta">${TYPE_LABELS[item.type] || item.type} · ${ago}</div>
+    </div>`;
+  }).join('');
+}
+
+function restoreHistory(i) {
+  const history = loadHistory();
+  const item = history[i];
+  if (!item) return;
+  document.getElementById('ctx').value = item.ctx || '';
+  document.getElementById('gen-meta').textContent =
+    `${TYPE_LABELS[item.type]} · restaurado del historial · ${timeAgo(item.ts)}`;
+  document.getElementById('gen-text').textContent = item.content;
+  document.getElementById('gen-output').style.display = 'block';
+  document.getElementById('regen-btn').style.display = 'inline-block';
+  setActiveTab(item.type);
+}
+
+function setActiveTab(type) {
+  currentType = type;
+  document.querySelectorAll('.tab').forEach(t => {
+    const matches = t.getAttribute('onclick')?.includes(`'${type}'`);
+    t.classList.toggle('active', !!matches);
+  });
+}
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'ahora';
+  if (s < 3600) return `${Math.floor(s/60)} min`;
+  if (s < 86400) return `${Math.floor(s/3600)} h`;
+  return `${Math.floor(s/86400)} d`;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
 </body>

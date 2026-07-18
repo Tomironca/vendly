@@ -204,17 +204,17 @@ setInterval(async () => {
 }, 6 * 60 * 60 * 1000);
 
 // DB helpers — async pg wrappers with SQLite-style ? placeholders
-async function await dbGet(sql, params = []) {
+async function dbGet(sql, params = []) {
   const res = await pool.query(toPostgres(sql), params);
   return res.rows[0] || null;
 }
 
-async function await dbAll(sql, params = []) {
+async function dbAll(sql, params = []) {
   const res = await pool.query(toPostgres(sql), params);
   return res.rows;
 }
 
-async function await dbRun(sql, params = []) {
+async function dbRun(sql, params = []) {
   await pool.query(toPostgres(sql), params);
 }
 
@@ -242,14 +242,14 @@ function makeJWT(userId, email, plan) {
 function checkJWT(token) {
   try { return jwt.verify(token, JWT_SECRET); } catch { return null; }
 }
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const p = checkJWT(req.headers['x-session-token']);
   if (!p) return res.status(401).json({ error: 'No autenticado' });
   req.user = await dbGet('SELECT * FROM users WHERE email = ?', [p.email]);
   if (!req.user) return res.status(401).json({ error: 'Usuario no encontrado' });
   next();
 }
-function optAuth(req, res, next) {
+async function optAuth(req, res, next) {
   const p = checkJWT(req.headers['x-session-token']);
   if (p) req.user = await dbGet('SELECT * FROM users WHERE email = ?', [p.email]);
   next();
@@ -646,7 +646,7 @@ async function sendSubscriberWelcomeEmail(email, plan) {
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/app/*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/informe/:token', (req, res) => {
+app.get('/informe/:token', async (req, res) => {
   const r = await dbGet('SELECT product_name, audit_data FROM shared_reports WHERE token = ?', [req.params.token]);
   if (!r) return res.sendFile(path.join(__dirname, 'public', 'index.html'));
   let scores = {};
@@ -672,7 +672,7 @@ app.get('/terminos', (req, res) => res.redirect('/legal'));
 app.get('/privacidad', (req, res) => res.redirect('/legal'));
 
 // Auth
-function createUserIfNeeded(emailLower, passwordHash, ref, ip) {
+async function createUserIfNeeded(emailLower, passwordHash, ref, ip) {
   let referredBy = null, bonusAudits = 1;
   if (ref) {
     const referrer = await dbGet('SELECT id FROM users WHERE ref_code = ?', [ref]);
@@ -710,7 +710,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       await dbRun('UPDATE users SET password_hash = ? WHERE id = ?', [hash, existing.id]);
       user = await dbGet('SELECT * FROM users WHERE id = ?', [existing.id]);
     } else {
-      user = createUserIfNeeded(emailLower, hash, ref, regIp);
+      user = await createUserIfNeeded(emailLower, hash, ref, regIp);
       sendWelcomeEmail(emailLower).catch(e => console.error('Welcome email error:', e.message));
       sendFounderNotification('signup', { email: emailLower }).catch(() => {});
       await dbRun('UPDATE users SET welcomed = 1 WHERE id = ?', [user.id]);
@@ -750,7 +750,7 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
   } catch(e) { res.status(500).json({ error: 'Error enviando el email.' }); }
 });
 
-app.get('/api/auth/verify', (req, res) => {
+app.get('/api/auth/verify', async (req, res) => {
   const { token } = req.query;
   if (!token) return res.redirect('/app?error=invalid');
   let payload;
@@ -836,7 +836,7 @@ app.post('/api/audit', auditLimiter, optAuth, async (req, res) => {
 });
 
 // Audit history + aggregate stats
-app.get('/api/audits', requireAuth, (req, res) => {
+app.get('/api/audits', requireAuth, async (req, res) => {
   const audits = await dbAll('SELECT id, product_name, product_url, score_conversion, score_confianza, score_seo, created_at FROM audits WHERE user_id = ? ORDER BY created_at DESC LIMIT 50', [req.user.id]);
   const stats = audits.length > 0 ? {
     total: audits.length,
@@ -847,7 +847,7 @@ app.get('/api/audits', requireAuth, (req, res) => {
   res.json({ success: true, audits, stats });
 });
 
-app.get('/api/audits/:id', requireAuth, (req, res) => {
+app.get('/api/audits/:id', requireAuth, async (req, res) => {
   const a = await dbGet('SELECT * FROM audits WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
   if (!a) return res.status(404).json({ error: 'No encontrado' });
   res.json({ success: true, audit: { ...a, audit_data: JSON.parse(a.audit_data) } });
@@ -936,7 +936,8 @@ app.post('/api/webhook', async (req, res) => {
         const limit = plan === 'pro' ? 999999 : 30;
         const existing = await dbGet('SELECT id FROM users WHERE email = ?', [email]);
         if (!existing) await dbRun('INSERT INTO users (email) VALUES (?)', [email]);
-        const wasAlreadyPaid = await dbGet('SELECT plan FROM users WHERE email = ?', [email])?.plan;
+        const wasAlreadyPaidRow = await dbGet('SELECT plan FROM users WHERE email = ?', [email]);
+        const wasAlreadyPaid = wasAlreadyPaidRow?.plan;
         await dbRun('UPDATE users SET plan=?, status=?, audits_limit=?, subscription_id=?, stripe_customer_id=?, audits_reset_at=NOW(), updated_at=NOW() WHERE email=?',
           [plan, 'active', limit, subscriptionId, customerId, email]);
         console.log(`Activated ${plan} for ${email}`);
@@ -972,7 +973,7 @@ app.post('/api/webhook', async (req, res) => {
 });
 
 // Analytics
-app.post('/api/analytics/event', optAuth, (req, res) => {
+app.post('/api/analytics/event', optAuth, async (req, res) => {
   const { event, props } = req.body;
   if (!event || typeof event !== 'string' || event.length > 64) return res.status(400).json({ error: 'Evento inválido' });
   const userId = req.user?.id || null;
@@ -983,7 +984,7 @@ app.post('/api/analytics/event', optAuth, (req, res) => {
 });
 
 // Share
-app.post('/api/share', (req, res) => {
+app.post('/api/share', async (req, res) => {
   const { audit, product } = req.body;
   if (!audit) return res.status(400).json({ error: 'Datos requeridos' });
   const token = crypto.randomBytes(16).toString('hex');
@@ -993,14 +994,14 @@ app.post('/api/share', (req, res) => {
   res.json({ success: true, token, url: `/informe/${token}` });
 });
 
-app.get('/api/report/:token', (req, res) => {
+app.get('/api/report/:token', async (req, res) => {
   const r = await dbGet('SELECT * FROM shared_reports WHERE token = ?', [req.params.token]);
   if (!r) return res.status(404).json({ error: 'No encontrado o expirado' });
   res.json({ success: true, audit: JSON.parse(r.audit_data), product: { name: r.product_name } });
 });
 
 // Referral info del usuario
-app.get('/api/referral', requireAuth, (req, res) => {
+app.get('/api/referral', requireAuth, async (req, res) => {
   const user = req.user;
   if (!user.ref_code) {
     const code = crypto.createHash('sha256').update(`${user.id}-${JWT_SECRET}`).digest('hex').slice(0, 8);
@@ -1080,7 +1081,9 @@ app.post('/api/admin/generate-content', async (req, res) => {
     facebook: `Escribí 3 variantes de post para grupos de Facebook de dropshipping y e-commerce argentinos que promuevan Vendly (vend-ly.store). Cada variante debe tener un ángulo diferente: 1) mostrar un score real de auditoría, 2) contar un antes/después de mejoras implementadas, 3) hacer una pregunta que genere debate. Tono auténtico, no publicitario. Context: ${context||''}. Formato: POST 1: / POST 2: / POST 3:`,
     instagram: `Creá 3 captions de Instagram para promover Vendly (vend-ly.store) a vendedores de e-commerce LATAM. Cada uno debe tener: hook en la primera línea, valor concreto, CTA, y 10 hashtags relevantes. Ángulos: 1) educativo sobre errores de conversión, 2) antes/después de una auditoría, 3) urgencia/beneficio directo. Context: ${context||''}`,
     whatsapp: `Escribí 5 mensajes de WhatsApp personalizados para enviar a vendedores online de Argentina que podrían beneficiarse de Vendly (vend-ly.store). Cada mensaje debe ser breve (max 3 líneas), no sonar como spam, y mencionar algo específico del contexto: ${context||'que venden en Tiendanube o Shopify'}. CTA: probar gratis. Formato: MENSAJE 1: / MENSAJE 2: / etc.`,
-    email_cold: `Escribí 3 subject lines + email de frío (max 150 palabras) para contactar a vendedores de e-commerce argentinos y ofrecerles Vendly (vend-ly.store). Enfocate en el dolor de no saber qué está fallando en la tienda. Tono: de igual a igual, no vendedor. Context: ${context||''}`
+    email_cold: `Escribí 3 subject lines + email de frío (max 150 palabras) para contactar a vendedores de e-commerce argentinos y ofrecerles Vendly (vend-ly.store). Enfocate en el dolor de no saber qué está fallando en la tienda. Tono: de igual a igual, no vendedor. Context: ${context||''}`,
+    linkedin: `Escribí 3 posts para LinkedIn orientados a founders y dueños de e-commerce en Argentina y LATAM. Cada post debe mencionar Vendly (vend-ly.store) de forma natural, como aprendizaje o herramienta que usás. Ángulos: 1) lección sobre conversión en e-commerce que aprendiste auditando productos, 2) dato sorprendente sobre lo que pierden las tiendas sin optimizar sus páginas de producto, 3) historia de antes/después de aplicar mejoras de una auditoría. Formato de cada post: HOOK (primera línea que pare el scroll) + desarrollo de 200-300 palabras + CTA sutil. Tono: founder que comparte learnings, no marca que vende. Context: ${context||''}`,
+    newsletter: `Escribí una edición completa de newsletter (700-900 palabras) para una lista de vendedores de e-commerce en LATAM. Estructura: asunto del email (3 opciones con diferentes ángulos) + intro personal breve + sección principal "3 cambios que hacen que el 90% de los visitantes compre o se vaya" con tips accionables y concretos + mención natural de Vendly como herramienta + caso de uso o historia breve + CTA para probar Vendly gratis en vend-ly.store. Tono: newsletter de founder, no de empresa — cercano, honesto, con datos reales. Context: ${context||''}`
   };
   const prompt = prompts[type] || prompts.tiktok;
   try {
@@ -1092,7 +1095,7 @@ app.post('/api/admin/generate-content', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/admin/stats', (req, res) => {
+app.get('/api/admin/stats', async (req, res) => {
   const { secret } = req.query;
   if (secret !== (process.env.ADMIN_SECRET || 'vendly_admin_2024')) return res.status(403).json({ error: 'Forbidden' });
   const n = (r) => parseInt(r?.n || r?.count || 0, 10);
@@ -1109,7 +1112,7 @@ app.get('/api/admin/stats', (req, res) => {
   res.json({ totalUsers, paidUsers, totalAudits, todayAudits, todaySignups, recentUsers, mrr, breakdown: { basic: basicUsers, pro: proUsers, agency: agencyUsers } });
 });
 
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', async (req, res) => {
   const total = await dbGet('SELECT COUNT(*) as total FROM audits');
   const users = await dbGet('SELECT COUNT(*) as total FROM users');
   res.json({ totalAudits: total ? total.total : 0, totalUsers: users ? users.total : 0 });
