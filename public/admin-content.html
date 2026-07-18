@@ -61,6 +61,8 @@ textarea{resize:vertical;min-height:80px}
 .history-clear{font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;background:none;border:none;padding:0}
 .history-clear:hover{color:var(--text)}
 .mrr-breakdown{font-size:11px;color:var(--muted);margin-top:4px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:600px){.two-col{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -88,6 +90,22 @@ textarea{resize:vertical;min-height:80px}
       <div class="stat"><div class="stat-val" id="s-audits">—</div><div class="stat-label">Auditorías totales</div></div>
       <div class="stat"><div class="stat-val" id="s-today">—</div><div class="stat-label">Hoy (auditorías)</div></div>
       <div class="stat"><div class="stat-val" id="s-signups">—</div><div class="stat-label">Hoy (registros)</div></div>
+    </div>
+
+    <!-- Funnel + Actions -->
+    <div class="two-col">
+      <div class="card" style="margin-bottom:0">
+        <h2>Funnel de conversión</h2>
+        <div id="funnel-rows"></div>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <h2>Eventos (7 días)</h2>
+        <div id="events-rows"></div>
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border-s)">
+          <button class="btn-ghost" style="width:100%" onclick="sendFollowups()">📨 Enviar follow-ups pendientes</button>
+          <div id="followup-result" style="font-size:12px;color:var(--muted);margin-top:8px;text-align:center"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Recent users -->
@@ -173,6 +191,23 @@ async function loadStats() {
     document.getElementById('s-audits').textContent = d.totalAudits;
     document.getElementById('s-today').textContent = d.todayAudits;
     document.getElementById('s-signups').textContent = d.todaySignups;
+    // Funnel
+    const f = d.funnel || {};
+    document.getElementById('funnel-rows').innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${funnelRow('Registrados', f.registered, f.registered, '#A688FA')}
+        ${funnelRow('Auditaron ≥1', f.activated, f.registered, '#34D399')}
+        ${funnelRow('Pagaron', f.paid, f.registered, '#F5C842')}
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:var(--muted);display:flex;gap:16px">
+        <span>Activación: <strong style="color:var(--text)">${f.activationRate||0}%</strong></span>
+        <span>Pago/Activado: <strong style="color:var(--text)">${f.paidRate||0}%</strong></span>
+      </div>`;
+    // Events
+    const evts = d.topEvents || [];
+    document.getElementById('events-rows').innerHTML = evts.length
+      ? evts.map(e => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border-s);font-size:12px"><span style="color:var(--text)">${escHtml(e.event)}</span><span style="color:var(--muted)">${e.cnt}</span></div>`).join('')
+      : '<p style="color:var(--muted);font-size:12px">Sin eventos aún</p>';
     const tbody = document.getElementById('users-tbody');
     tbody.innerHTML = (d.recentUsers || []).map(u => `
       <tr>
@@ -289,6 +324,38 @@ function setActiveTab(type) {
     const matches = t.getAttribute('onclick')?.includes(`'${type}'`);
     t.classList.toggle('active', !!matches);
   });
+}
+
+function funnelRow(label, val, total, color) {
+  const pct = total ? Math.round((val / total) * 100) : 0;
+  return `<div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+      <span style="color:var(--muted)">${label}</span>
+      <span style="color:var(--text);font-weight:600">${val||0} <span style="color:var(--muted);font-weight:400">(${pct}%)</span></span>
+    </div>
+    <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+      <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width .4s"></div>
+    </div>
+  </div>`;
+}
+
+async function sendFollowups() {
+  const result = document.getElementById('followup-result');
+  result.textContent = 'Enviando…';
+  try {
+    const r = await fetch('/api/admin/followups', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ secret })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    result.textContent = `✓ Enviados: día 3 → ${d.sent3}, día 7 → ${d.sent7}, día 14 → ${d.sent14}`;
+    result.style.color = 'var(--green)';
+  } catch(e) {
+    result.textContent = 'Error: ' + e.message;
+    result.style.color = '#f87171';
+  }
 }
 
 function timeAgo(ts) {

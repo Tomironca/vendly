@@ -218,6 +218,10 @@ async function dbRun(sql, params = []) {
   await pool.query(toPostgres(sql), params);
 }
 
+// ── ASYNC ERROR WRAPPER ───────────────────────────────────────
+// Catches unhandled promise rejections in route handlers and forwards to Express error middleware
+const ar = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
 // ── INPUT SANITIZATION ────────────────────────────────────────
 function sanitizeUrl(raw) {
   if (!raw || typeof raw !== 'string') throw new Error('URL requerida');
@@ -1099,17 +1103,30 @@ app.get('/api/admin/stats', async (req, res) => {
   const { secret } = req.query;
   if (secret !== (process.env.ADMIN_SECRET || 'vendly_admin_2024')) return res.status(403).json({ error: 'Forbidden' });
   const n = (r) => parseInt(r?.n || r?.count || 0, 10);
-  const totalUsers  = n(await dbGet('SELECT COUNT(*) as n FROM users'));
-  const paidUsers   = n(await dbGet("SELECT COUNT(*) as n FROM users WHERE plan != 'free' AND status = 'active'"));
-  const basicUsers  = n(await dbGet("SELECT COUNT(*) as n FROM users WHERE plan = 'basic' AND status = 'active'"));
-  const proUsers    = n(await dbGet("SELECT COUNT(*) as n FROM users WHERE plan = 'pro' AND status = 'active'"));
-  const agencyUsers = n(await dbGet("SELECT COUNT(*) as n FROM users WHERE plan = 'agency' AND status = 'active'"));
-  const mrr = (basicUsers * 9) + (proUsers * 19) + (agencyUsers * 49);
+  const totalUsers   = n(await dbGet('SELECT COUNT(*) as n FROM users'));
+  const paidUsers    = n(await dbGet("SELECT COUNT(*) as n FROM users WHERE plan != 'free' AND status = 'active'"));
+  const basicUsers   = n(await dbGet("SELECT COUNT(*) as n FROM users WHERE plan = 'basic' AND status = 'active'"));
+  const proUsers     = n(await dbGet("SELECT COUNT(*) as n FROM users WHERE plan = 'pro' AND status = 'active'"));
+  const agencyUsers  = n(await dbGet("SELECT COUNT(*) as n FROM users WHERE plan = 'agency' AND status = 'active'"));
+  const mrr          = (basicUsers * 9) + (proUsers * 19) + (agencyUsers * 49);
   const totalAudits  = n(await dbGet('SELECT COUNT(*) as n FROM audits'));
   const todayAudits  = n(await dbGet('SELECT COUNT(*) as n FROM audits WHERE created_at::date = CURRENT_DATE'));
   const todaySignups = n(await dbGet('SELECT COUNT(*) as n FROM users WHERE created_at::date = CURRENT_DATE'));
-  const recentUsers = await dbAll('SELECT email, plan, audits_used, created_at FROM users ORDER BY created_at DESC LIMIT 10');
-  res.json({ totalUsers, paidUsers, totalAudits, todayAudits, todaySignups, recentUsers, mrr, breakdown: { basic: basicUsers, pro: proUsers, agency: agencyUsers } });
+  const activatedUsers = n(await dbGet('SELECT COUNT(DISTINCT user_id) as n FROM audits'));
+  const recentUsers  = await dbAll('SELECT email, plan, audits_used, created_at FROM users ORDER BY created_at DESC LIMIT 10');
+  const topEvents    = await dbAll(`
+    SELECT event, COUNT(*) as cnt FROM events
+    WHERE created_at > NOW() - INTERVAL '7 days'
+    GROUP BY event ORDER BY cnt DESC LIMIT 8
+  `);
+  const funnel = {
+    registered: totalUsers,
+    activated: activatedUsers,
+    paid: paidUsers,
+    activationRate: totalUsers ? Math.round((activatedUsers / totalUsers) * 100) : 0,
+    paidRate: activatedUsers ? Math.round((paidUsers / activatedUsers) * 100) : 0
+  };
+  res.json({ totalUsers, paidUsers, totalAudits, todayAudits, todaySignups, recentUsers, mrr, funnel, topEvents, breakdown: { basic: basicUsers, pro: proUsers, agency: agencyUsers } });
 });
 
 app.get('/api/stats', async (req, res) => {
@@ -1119,6 +1136,18 @@ app.get('/api/stats', async (req, res) => {
 });
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '6.0.0' }));
+
+// ── GLOBAL ERROR MIDDLEWARE ───────────────────────────────────
+// Catches errors forwarded via next(err) from async route handlers
+app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
+  console.error('[unhandled route error]', req.method, req.path, err?.message || err);
+  if (res.headersSent) return;
+  res.status(500).json({ error: 'Error interno del servidor. Intentá de nuevo.' });
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
 
 // Start
 initDb().then(() => {
