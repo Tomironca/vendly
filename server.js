@@ -14,6 +14,13 @@ const fs = require('fs');
 const { Resend } = require('resend');
 const app = express();
 
+// Cache the SPA HTML so /informe/:token doesn't hit disk on every request
+let _spaHtmlCache = null;
+function getSpaHtml() {
+  if (!_spaHtmlCache) _spaHtmlCache = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+  return _spaHtmlCache;
+}
+
 // Trust Railway's reverse proxy so req.ip contains the real client IP
 app.set('trust proxy', 1);
 
@@ -64,6 +71,15 @@ const scrapeLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demasiados análisis de URL. Esperá unos minutos.' },
+});
+
+// Admin: low limit to prevent brute-force on the password
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas peticiones al admin. Esperá unos minutos.' },
 });
 
 app.use('/api/', apiLimiter);
@@ -679,7 +695,7 @@ app.get('/informe/:token', async (req, res) => {
   const desc = scores.conversion
     ? `Score de conversión ${scores.conversion}/100 · SEO ${scores.seo}/100 · Confianza ${scores.confianza}/100. Auditá tu producto con IA.`
     : 'Informe de auditoría de e-commerce generado con Vendly IA.';
-  const spaHtml = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+  const spaHtml = getSpaHtml();
   const patched = spaHtml.replace(
     '<title>Vendly — Auditoría de e-commerce con IA para LATAM</title>',
     `<title>${title}</title>
@@ -1044,7 +1060,7 @@ app.get('/api/referral', requireAuth, async (req, res) => {
 });
 
 // Admin: enviar follow-ups a usuarios que corresponda
-app.post('/api/admin/followups', async (req, res) => {
+app.post('/api/admin/followups', adminLimiter, async (req, res) => {
   const { secret } = req.body;
   if (secret !== (process.env.ADMIN_SECRET || 'vendly_admin_2024')) {
     return res.status(403).json({ error: 'Forbidden' });
@@ -1098,7 +1114,7 @@ app.post('/api/admin/followups', async (req, res) => {
 // Content generator (admin)
 app.get('/admin/content', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-content.html')));
 
-app.post('/api/admin/generate-content', async (req, res) => {
+app.post('/api/admin/generate-content', adminLimiter, async (req, res) => {
   const { secret, type, context } = req.body;
   if (secret !== (process.env.ADMIN_SECRET || 'vendly_admin_2024')) return res.status(403).json({ error: 'Forbidden' });
   const prompts = {
@@ -1120,7 +1136,7 @@ app.post('/api/admin/generate-content', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/admin/stats', async (req, res) => {
+app.get('/api/admin/stats', adminLimiter, async (req, res) => {
   const { secret } = req.query;
   if (secret !== (process.env.ADMIN_SECRET || 'vendly_admin_2024')) return res.status(403).json({ error: 'Forbidden' });
   const n = (r) => parseInt(r?.n || r?.count || 0, 10);
