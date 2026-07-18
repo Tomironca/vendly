@@ -426,7 +426,7 @@ footer span{color:var(--accent2)}
 
 <div class="upgrade-nudge" id="upgrade-nudge">
   <div class="un-text">
-    ¿Querés auditar más productos? <span>· Starter desde USD 9/mes — 30 auditorías mensuales</span>
+    ¿Querés desbloquear el informe de <span id="nudge-product-name">tu producto</span>? <span>· Starter desde USD 9/mes — 30 auditorías</span>
   </div>
   <div class="un-actions">
     <button class="un-btn un-btn-primary" onclick="closeNudge();showUpgradeModal()">Ver planes →</button>
@@ -481,8 +481,14 @@ footer span{color:var(--accent2)}
 <div class="modal-overlay" id="upgrade-modal">
   <div class="modal" style="max-width:480px">
     <button class="modal-close" onclick="closeUpgradeModal()">✕</button>
-    <div class="modal-title">Desbloqueá el informe completo</div>
+    <div class="modal-title" id="upgrade-modal-title">Desbloqueá el informe completo</div>
     <div class="modal-sub">Tu auditoría ya está lista. Suscribite para acceder a todo.</div>
+    <div id="upgrade-modal-product-ctx" style="display:none;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;line-height:1.55">
+      <span style="color:var(--green);font-weight:700">✓ Informe listo:</span>
+      <strong id="upgrade-modal-product-name" style="color:var(--text)"></strong> —
+      Score de conversión: <strong id="upgrade-modal-score" style="color:var(--accent3)"></strong>/100.
+      Desbloqueá el plan de acción y todos los copies listos para usar.
+    </div>
     <!-- Lo que se desbloquea -->
     <div style="background:rgba(124,92,252,0.06);border:1px solid rgba(124,92,252,0.2);border-radius:14px;padding:14px 16px;margin-bottom:16px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent3);margin-bottom:10px">Lo que desbloqueás ahora</div>
@@ -524,6 +530,7 @@ footer span{color:var(--accent2)}
     <div style="text-align:center;font-size:12px;color:var(--muted);margin:8px 0 4px;display:flex;align-items:center;justify-content:center;gap:5px;">
       <span style="color:var(--green)">🛡️</span> 30 días garantía de devolución · Cancelá cuando quieras
     </div>
+    <div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:4px;opacity:.8">✦ +500 vendedores ya mejoraron su e-commerce con Vendly</div>
     <div class="divider">ya pagué</div>
     <div class="auth-row">
       <input type="email" id="upgrade-email" placeholder="email con el que pagaste">
@@ -1432,7 +1439,22 @@ async function sendForgotPassword() {
 }
 
 // ── UPGRADE ───────────────────────────────────────────────────
-function showUpgradeModal() { document.getElementById('upgrade-modal').classList.add('show'); selectPlan('basic'); track('upgrade_modal_open'); }
+function showUpgradeModal() {
+  const ctx = document.getElementById('upgrade-modal-product-ctx');
+  if (currentAudit) {
+    const pname = document.getElementById('rp-name').textContent;
+    document.getElementById('upgrade-modal-product-name').textContent = pname.slice(0, 40);
+    document.getElementById('upgrade-modal-score').textContent = currentAudit.scores?.conversion || '—';
+    document.getElementById('upgrade-modal-title').textContent = `Desbloqueá el informe de ${pname.slice(0, 25)}`;
+    ctx.style.display = '';
+  } else {
+    document.getElementById('upgrade-modal-title').textContent = 'Desbloqueá el informe completo';
+    ctx.style.display = 'none';
+  }
+  document.getElementById('upgrade-modal').classList.add('show');
+  selectPlan('basic');
+  track('upgrade_modal_open');
+}
 function closeUpgradeModal() { document.getElementById('upgrade-modal').classList.remove('show'); hideErr('upgrade-error'); }
 function selectPlan(plan) {
   selectedPlan = plan;
@@ -1788,6 +1810,8 @@ function track(event, props) {
 let toastTimer;
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),3000); }
 function showUpgradeNudge() {
+  const name = currentAudit ? document.getElementById('rp-name').textContent : '';
+  if (name) document.getElementById('nudge-product-name').textContent = `"${name.slice(0, 28)}"`;
   document.getElementById('upgrade-nudge').classList.add('show');
 }
 function closeNudge() {
