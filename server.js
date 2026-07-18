@@ -260,10 +260,28 @@ async function optAuth(req, res, next) {
 }
 
 // ── SCRAPER ───────────────────────────────────────────────────
+const scrapeCache = new Map(); // url → { data, ts }
+const SCRAPE_TTL = 5 * 60 * 1000; // 5 min
+const SCRAPE_CACHE_MAX = 150;
+function pruneScrapeCache() {
+  const now = Date.now();
+  for (const [k, v] of scrapeCache) {
+    if (now - v.ts > SCRAPE_TTL) scrapeCache.delete(k);
+  }
+  if (scrapeCache.size > SCRAPE_CACHE_MAX) {
+    const oldest = [...scrapeCache.entries()].sort((a, b) => a[1].ts - b[1].ts);
+    oldest.slice(0, scrapeCache.size - SCRAPE_CACHE_MAX).forEach(([k]) => scrapeCache.delete(k));
+  }
+}
+
 async function scrape(rawUrl) {
   // Auto-add https:// if missing
   let url = rawUrl.trim();
   if (url && !url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+
+  pruneScrapeCache();
+  const cached = scrapeCache.get(url);
+  if (cached && Date.now() - cached.ts < SCRAPE_TTL) return cached.data;
 
   let data;
   try {
@@ -309,7 +327,7 @@ async function scrape(rawUrl) {
 
   const bodyText = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 2500);
 
-  return {
+  const result = {
     name: $('h1').first().text().trim() || $('meta[property="og:title"]').attr('content') || '',
     description: $('meta[property="og:description"]').attr('content') || $('meta[name="description"]').attr('content') || productDesc || '',
     productDescription: productDesc,
@@ -320,6 +338,8 @@ async function scrape(rawUrl) {
     url,
     bodyText
   };
+  scrapeCache.set(url, { data: result, ts: Date.now() });
+  return result;
 }
 
 // ── AUDIT PROMPT MODULES ──────────────────────────────────────
