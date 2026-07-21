@@ -862,7 +862,7 @@ footer span{color:var(--accent2)}
     <!-- Descripción optimizada — TÍTULO+CORTA free, LARGA+BULLETS premium -->
     <div class="rc" id="section-desc">
       <div class="rc-head"><div class="rc-ico ico-p">✦</div><div class="rc-tit">Descripción optimizada</div></div>
-      <div class="desc-sec"><div class="desc-sec-tit">Título SEO</div><div class="desc-box"><div class="desc-txt" id="d-tit"></div><button class="copy-btn" onclick="copyEl(this,'d-tit')">Copiar</button></div></div>
+      <div class="desc-sec"><div class="desc-sec-tit">Título SEO</div><div class="desc-box"><div class="desc-txt" id="d-tit"></div><div id="d-tit-len" style="font-size:11px;margin-top:4px;font-weight:600"></div><button class="copy-btn" onclick="copyEl(this,'d-tit')">Copiar</button></div></div>
       <div class="desc-sec"><div class="desc-sec-tit">Descripción corta</div><div class="desc-box"><div class="desc-txt" id="d-cor"></div><button class="copy-btn" onclick="copyEl(this,'d-cor')">Copiar</button></div></div>
       <div id="desc-premium-wrap">
         <div class="desc-sec"><div class="desc-sec-tit">Descripción larga <span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 7px;border-radius:100px;margin-left:5px">PRO</span></div><div class="desc-box"><div class="desc-txt" id="d-lar"></div><button class="copy-btn" onclick="copyEl(this,'d-lar')">Copiar</button></div></div>
@@ -1362,6 +1362,9 @@ function renderAudit(a, productName, hasComp) {
   });
   const d = a.descripcion_optimizada;
   setText('d-tit', d.titulo_seo); setText('d-cor', d.descripcion_corta); setText('d-lar', d.descripcion_larga);
+  const titLen = (d.titulo_seo||'').length;
+  const lenEl = document.getElementById('d-tit-len');
+  if (lenEl) { const col=titLen<=60?'var(--green)':titLen<=70?'var(--gold)':'var(--red)'; lenEl.style.color=col; lenEl.textContent=`${titLen} caracteres ${titLen<=60?'✓ ideal para Google':titLen<=70?'⚠ algo largo':' demasiado largo'}`; }
   const bl = document.getElementById('d-bul'); bl.innerHTML='';
   d.bullet_points.forEach(b=>{ const li=document.createElement('li'); li.textContent=b; bl.appendChild(li); });
   const at = document.getElementById('ads-tabs'), ap = document.getElementById('ads-panels');
