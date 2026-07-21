@@ -850,7 +850,7 @@ footer span{color:var(--accent2)}
       <div class="desc-sec"><div class="desc-sec-tit">Descripción corta</div><div class="desc-box"><div class="desc-txt" id="d-cor"></div><button class="copy-btn" onclick="copyEl(this,'d-cor')">Copiar</button></div></div>
       <div id="desc-premium-wrap">
         <div class="desc-sec"><div class="desc-sec-tit">Descripción larga <span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 7px;border-radius:100px;margin-left:5px">PRO</span></div><div class="desc-box"><div class="desc-txt" id="d-lar"></div><button class="copy-btn" onclick="copyEl(this,'d-lar')">Copiar</button></div></div>
-        <div class="desc-sec"><div class="desc-sec-tit">Bullet points <span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 7px;border-radius:100px;margin-left:5px">PRO</span></div><div class="desc-box"><ul class="bul-list" id="d-bul"></ul></div></div>
+        <div class="desc-sec"><div class="desc-sec-tit">Bullet points <span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 7px;border-radius:100px;margin-left:5px">PRO</span></div><div class="desc-box"><ul class="bul-list" id="d-bul"></ul><button class="copy-btn" style="position:static;margin-top:7px" onclick="copyBullets(this)">Copiar todos</button></div></div>
       </div>
     </div>
     <!-- SECCIONES PREMIUM -->
@@ -1946,6 +1946,7 @@ function maybeShowFirstReportTip() {
 }
 function copyFullAd(btn,i){ const h=document.getElementById('adh-'+i)?.textContent||''; const t=document.getElementById('adt-'+i)?.textContent||''; const d=document.getElementById('add-'+i)?.textContent||''; const full=`Headline: ${h}\n\nTexto principal:\n${t}\n\nDescripción: ${d}`; navigator.clipboard.writeText(full).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar todo'; btn.classList.remove('copied'); },2000); }); }
 function copyKw(el,text){ navigator.clipboard.writeText(text).then(()=>{ el.classList.add('copied'); setTimeout(()=>el.classList.remove('copied'),1500); }); }
+function copyBullets(btn){ const items=[...document.querySelectorAll('#d-bul li')].map(li=>li.textContent).join('\n'); navigator.clipboard.writeText(items).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar todos'; btn.classList.remove('copied'); },2000); }); }
 function copyIgCaption(btn,i){ const el=document.getElementById('igc-'+i); if(!el) return; const text=el.innerText||el.textContent; navigator.clipboard.writeText(text).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar'; btn.classList.remove('copied'); },2000); }); }
 function showErr(id,msg){ const el=document.getElementById(id); if(el){ el.textContent=msg; el.classList.add('show'); } }
 function hideErr(id){ const el=document.getElementById(id); if(el)el.classList.remove('show'); }
