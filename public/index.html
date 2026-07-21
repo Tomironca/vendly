@@ -996,6 +996,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (!token && !urlSession && window.innerWidth > 768) {
     setTimeout(() => { const el = document.getElementById('product-url'); if (el) el.focus(); }, 300);
   }
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (document.getElementById('login-modal')?.classList.contains('show')) { closeLoginModal(); return; }
+    if (document.getElementById('upgrade-modal')?.classList.contains('show')) { closeUpgradeModal(); return; }
+    if (document.getElementById('dashboard')?.classList.contains('show')) { closeDashboard(); return; }
+  });
 });
 
 // ── STICKY REPORT BAR ─────────────────────────────────────────
