@@ -1606,6 +1606,17 @@ function renderAudit(a, productName, hasComp) {
     initStickyBar(productName);
     maybeShowFirstReportTip();
     if (avgScore >= 80) setTimeout(launchConfetti, 800);
+    // Timed upgrade nudge for free users
+    const isPaidNow = userPlan==='pro'||userPlan==='basic'||userPlan==='agency';
+    if (!isPaidNow && !sessionStorage.getItem('vnd_timed_nudge')) {
+      setTimeout(()=>{
+        if (userPlan==='pro'||userPlan==='basic'||userPlan==='agency') return;
+        if (sessionStorage.getItem('vnd_timed_nudge')) return;
+        sessionStorage.setItem('vnd_timed_nudge','1');
+        showUpgradeModal();
+        track('timed_nudge_90s');
+      }, 90000);
+    }
   },100);
 }
 
