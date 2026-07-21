@@ -2060,8 +2060,20 @@ function updatePlanProgress() {
   const done = document.querySelectorAll('#r-plan .plan-item.plan-done').length;
   const p = document.getElementById('plan-progress');
   if (!p || !total) return;
-  p.textContent = done === total && total > 0 ? '✓ Todo completado' : `${done}/${total} completados`;
-  p.style.color = done === total && total > 0 ? 'var(--green)' : 'var(--muted)';
+  const allDone = done === total && total > 0;
+  p.textContent = allDone ? '✓ Todo completado' : `${done}/${total} completados`;
+  p.style.color = allDone ? 'var(--green)' : 'var(--muted)';
+  const existingCelebration = document.getElementById('plan-celebration');
+  if (allDone && !existingCelebration) {
+    const cel = document.createElement('div');
+    cel.id = 'plan-celebration';
+    cel.style.cssText = 'margin-top:14px;background:linear-gradient(135deg,rgba(52,211,153,0.08),rgba(52,211,153,0.04));border:1px solid rgba(52,211,153,0.25);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap';
+    cel.innerHTML = `<div style="font-size:22px">🏆</div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:3px">¡Plan completado! Excelente trabajo.</div><div style="font-size:12px;color:var(--muted)">Re-auditá para ver cuánto mejoraron tus scores.</div></div><button onclick="reAudit(document.getElementById('reaudit-btn'))" style="flex-shrink:0;background:var(--green);color:#000;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Re-auditar →</button>`;
+    document.getElementById('r-plan').after(cel);
+    launchConfetti();
+  } else if (!allDone && existingCelebration) {
+    existingCelebration.remove();
+  }
 }
 function launchConfetti() {
   const colors = ['#7C5CFC','#A688FA','#34D399','#F5C842','#60A5FA','#F87171','#C4B5FD'];
