@@ -692,7 +692,7 @@ footer span{color:var(--accent2)}
       <div class="form-group">
         <label>URL del producto (Tiendanube, Shopify, MercadoShops...)</label>
         <div class="url-row">
-          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre">
+          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre" onkeydown="if(event.key==='Enter'){event.preventDefault();doScrape('product','url-result','url-name','url-desc','scrape-error');}">
           <button class="btn-sm" onclick="doScrape('product','url-result','url-name','url-desc','scrape-error')">Leer →</button>
         </div>
       </div>
@@ -719,7 +719,7 @@ footer span{color:var(--accent2)}
     <div class="comp-sec" id="comp-sec">
       <div style="font-size:12px;color:var(--accent3);font-weight:600;margin-bottom:8px">URL del competidor</div>
       <div class="url-row">
-        <input type="url" id="comp-url" placeholder="https://competidor.com/producto">
+        <input type="url" id="comp-url" placeholder="https://competidor.com/producto" onkeydown="if(event.key==='Enter'){event.preventDefault();doScrape('comp','comp-result','comp-name','comp-desc','comp-error');}">
         <button class="btn-sm" onclick="doScrape('comp','comp-result','comp-name','comp-desc','comp-error')">Leer →</button>
       </div>
       <div class="error-msg" id="comp-error"></div>
