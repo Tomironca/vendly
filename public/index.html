@@ -1350,10 +1350,22 @@ function renderAudit(a, productName, hasComp) {
   const now = new Date();
   document.getElementById('report-date').textContent = now.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
   document.getElementById('rp-name').textContent = productName;
-  setText('r-resumen', a.resumen_ejecutivo);
   const resEl=document.getElementById('r-resumen'), resTog=document.getElementById('r-resumen-toggle');
   resEl.classList.remove('expanded'); resTog.style.display='none';
-  requestAnimationFrame(()=>{ if(resEl.scrollHeight>resEl.clientHeight+4){ resTog.style.display=''; } });
+  // Typewriter word-by-word reveal
+  (function typeWriter(text){
+    resEl.textContent='';
+    const words=text.split(' ');
+    let i=0;
+    const iv=setInterval(()=>{
+      if(i>=words.length){
+        clearInterval(iv);
+        requestAnimationFrame(()=>{ if(resEl.scrollHeight>resEl.clientHeight+4){ resTog.style.display=''; } });
+        return;
+      }
+      resEl.textContent=(resEl.textContent+(i?'  ':'')+words[i++]).trimEnd()+' ';
+    },55);
+  })(a.resumen_ejecutivo||'');
 
   // Diagnóstico crítico
   const dcWrap = document.getElementById('diagnostico-critico-wrap');
