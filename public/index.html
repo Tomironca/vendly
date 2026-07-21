@@ -238,6 +238,9 @@ textarea{min-height:68px;line-height:1.5}
 .kw{background:rgba(124,92,252,0.08);border:1px solid var(--border);border-radius:8px;padding:5px 11px;font-size:13px;color:var(--accent3);cursor:pointer;transition:all .15s}
 .kw:hover{background:rgba(124,92,252,0.15)}.kw.copied{background:rgba(52,211,153,0.1);color:var(--green);border-color:rgba(52,211,153,0.2)}
 .kw-hint{font-size:12px;color:var(--muted);margin-top:9px}
+.rjn-btn{flex-shrink:0;background:var(--bg3);border:1px solid var(--border-s);border-radius:20px;padding:6px 13px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
+.rjn-btn:hover{border-color:var(--accent);color:var(--accent2);background:rgba(124,92,252,0.08)}
+#report-jumpnav::-webkit-scrollbar{display:none}
 .precio-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 14px;font-size:14px;line-height:1.65}
 .plan-list-items{display:flex;flex-direction:column;gap:7px}
 .plan-item{display:flex;gap:11px;align-items:flex-start;background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:12px 14px;transition:opacity .2s}
@@ -803,6 +806,15 @@ footer span{color:var(--accent2)}
     <div class="share-link" id="share-link">
       <span>✓ Link copiado:</span>
       <span class="share-url" id="share-url"></span>
+    </div>
+    <div id="report-jumpnav" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;scrollbar-width:none">
+      <button class="rjn-btn" onclick="document.querySelector('.scores-grid')?.scrollIntoView({behavior:'smooth',block:'start'})">📊 Scores</button>
+      <button class="rjn-btn" onclick="document.getElementById('ganancias-rapidas-wrap')?.scrollIntoView({behavior:'smooth',block:'start'})">⚡ Quick wins</button>
+      <button class="rjn-btn" onclick="document.getElementById('r-plan')?.scrollIntoView({behavior:'smooth',block:'start'})">🎯 Plan</button>
+      <button class="rjn-btn" onclick="document.getElementById('section-ads')?.scrollIntoView({behavior:'smooth',block:'start'})">📣 Meta Ads</button>
+      <button class="rjn-btn" onclick="document.getElementById('section-ig')?.scrollIntoView({behavior:'smooth',block:'start'})">📸 Instagram</button>
+      <button class="rjn-btn" onclick="document.getElementById('section-kw')?.scrollIntoView({behavior:'smooth',block:'start'})">🔍 Keywords</button>
+      <button class="rjn-btn" onclick="document.getElementById('section-carrito')?.scrollIntoView({behavior:'smooth',block:'start'})">📧 Emails</button>
     </div>
     <div class="report-header">
       <div class="report-meta">
