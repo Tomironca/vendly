@@ -887,7 +887,7 @@ footer span{color:var(--accent2)}
       <div class="rc"><div class="rc-head"><div class="rc-ico ico-b">❓</div><div class="rc-tit">Preguntas frecuentes optimizadas</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div><div class="faq-list" id="r-faq"></div></div>
     </div>
     <div class="premium-section" id="section-kw">
-      <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🔍</div><div class="rc-tit">Keywords SEO</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div><div class="kw-grid" id="r-kw"></div><div class="kw-hint">Click para copiar</div></div>
+      <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🔍</div><div class="rc-tit">Keywords SEO</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div><div class="kw-grid" id="r-kw"></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px"><div class="kw-hint">Click para copiar</div><button class="copy-btn" style="position:static;font-size:11px" onclick="copyAllKeywords(this)">Copiar todas</button></div></div>
     </div>
     <div class="premium-section" id="section-precio">
       <div class="rc"><div class="rc-head"><div class="rc-ico ico-o">💰</div><div class="rc-tit">Estrategia de precio</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div><div class="precio-box" id="r-precio"></div></div>
@@ -2108,6 +2108,11 @@ function maybeShowFirstReportTip() {
 }
 function copyFullAd(btn,i){ const h=document.getElementById('adh-'+i)?.textContent||''; const t=document.getElementById('adt-'+i)?.textContent||''; const d=document.getElementById('add-'+i)?.textContent||''; const full=`Headline: ${h}\n\nTexto principal:\n${t}\n\nDescripción: ${d}`; navigator.clipboard.writeText(full).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar todo'; btn.classList.remove('copied'); },2000); }); }
 function copyKw(el,text){ navigator.clipboard.writeText(text).then(()=>{ el.classList.add('copied'); setTimeout(()=>el.classList.remove('copied'),1500); }); }
+function copyAllKeywords(btn) {
+  const kws = [...document.querySelectorAll('#r-kw .kw')].map(k=>k.textContent).join(', ');
+  if (!kws) return;
+  navigator.clipboard.writeText(kws).then(()=>{ btn.textContent='✓ Copiadas'; setTimeout(()=>btn.textContent='Copiar todas',2000); });
+}
 function copyBullets(btn){ const items=[...document.querySelectorAll('#d-bul li')].map(li=>li.textContent).join('\n'); navigator.clipboard.writeText(items).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar todos'; btn.classList.remove('copied'); },2000); }); }
 function copyIgCaption(btn,i){ const el=document.getElementById('igc-'+i); if(!el) return; const text=el.innerText||el.textContent; navigator.clipboard.writeText(text).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar'; btn.classList.remove('copied'); },2000); }); }
 function showErr(id,msg){ const el=document.getElementById(id); if(el){ el.textContent=msg; el.classList.add('show'); } }
