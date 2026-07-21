@@ -2204,6 +2204,13 @@ function togglePlanDone(i, key) {
   if (done) data[i]=1; else delete data[i];
   localStorage.setItem(key, JSON.stringify(data));
   updatePlanProgress();
+  if (done) {
+    const total = document.querySelectorAll('#r-plan .plan-item').length;
+    const doneCount = document.querySelectorAll('#r-plan .plan-item.plan-done').length;
+    const msgs = ['¡Excelente!','¡Muy bien!','¡Sigue así!','¡Genial!'];
+    const m = msgs[Math.floor(Math.random()*msgs.length)];
+    showToast(`${m} ${doneCount}/${total} acciones completadas ✓`);
+  }
 }
 function toggleResumen() {
   const el=document.getElementById('r-resumen'), tog=document.getElementById('r-resumen-toggle');
