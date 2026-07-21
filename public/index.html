@@ -1008,6 +1008,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (!token && !urlSession && window.innerWidth > 768) {
     setTimeout(() => { const el = document.getElementById('product-url'); if (el) el.focus(); }, 300);
   }
+  const lastUrl = localStorage.getItem('vnd_last_url');
+  if (lastUrl) { const el = document.getElementById('product-url'); if (el && !el.value) el.value = lastUrl; }
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (document.getElementById('login-modal')?.classList.contains('show')) { closeLoginModal(); return; }
@@ -1266,6 +1268,7 @@ async function runAudit() {
     }
     if (!data.success) throw new Error(data.error);
     currentAudit = data.audit;
+    if (product.url) localStorage.setItem('vnd_last_url', product.url);
     if (data.plan) updatePlanBanner(data.plan, data.auditsUsed, data.auditsLimit);
     track('audit_complete', { country, tone, score_conversion: data.audit?.scores?.conversion, score_seo: data.audit?.scores?.seo, plan: data.plan });
     renderAudit(data.audit, product.name || product.url, !!competitorProduct);
