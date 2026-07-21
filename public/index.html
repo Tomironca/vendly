@@ -1014,6 +1014,18 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
   const lastUrl = localStorage.getItem('vnd_last_url');
   if (lastUrl) { const el = document.getElementById('product-url'); if (el && !el.value) el.value = lastUrl; }
+  const lastTs = parseInt(localStorage.getItem('vnd_last_audit_ts')||'0');
+  if (lastUrl && lastTs) {
+    const daysSince = Math.floor((Date.now() - lastTs) / 86400000);
+    if (daysSince >= 3) {
+      const banner = document.createElement('div');
+      banner.style.cssText = 'background:rgba(124,92,252,0.07);border:1px solid rgba(124,92,252,0.2);border-radius:12px;padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px';
+      const label = daysSince === 1 ? 'ayer' : `hace ${daysSince} días`;
+      banner.innerHTML = `<span style="flex:1;color:var(--muted)">⏱ Tu último análisis fue <strong style="color:var(--text)">${label}</strong>. ¿Actualizaste tu listado?</span><button onclick="this.parentNode.remove();document.getElementById('product-url').focus()" style="flex-shrink:0;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Analizar de nuevo →</button><button onclick="this.parentNode.remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">✕</button>`;
+      const wrap = document.querySelector('.wrap');
+      if (wrap) wrap.insertAdjacentElement('afterbegin', banner);
+    }
+  }
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (document.getElementById('login-modal')?.classList.contains('show')) { closeLoginModal(); return; }
@@ -1284,7 +1296,7 @@ async function runAudit() {
     }
     if (!data.success) throw new Error(data.error);
     currentAudit = data.audit;
-    if (product.url) localStorage.setItem('vnd_last_url', product.url);
+    if (product.url) { localStorage.setItem('vnd_last_url', product.url); localStorage.setItem('vnd_last_audit_ts', Date.now()); }
     if (data.plan) updatePlanBanner(data.plan, data.auditsUsed, data.auditsLimit);
     track('audit_complete', { country, tone, score_conversion: data.audit?.scores?.conversion, score_seo: data.audit?.scores?.seo, plan: data.plan });
     renderAudit(data.audit, product.name || product.url, !!competitorProduct);
