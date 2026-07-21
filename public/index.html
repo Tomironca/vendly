@@ -1293,8 +1293,9 @@ function renderAudit(a, productName, hasComp) {
     ig.insertAdjacentHTML('beforeend',`<div class="ig-post"><div class="ig-ph"><span class="ig-tipo">${p.tipo}</span></div><div class="ig-hook">"${p.hook}"</div><div class="ig-cap" id="igc-${i}">${(p.caption||'').replace(/\n/g,'<br>')}</div><div style="display:flex;gap:8px;margin-top:8px"><div class="ig-exp" onclick="toggleIg(${i},this)" style="flex:1">Ver más ↓</div><button class="copy-btn" style="position:static;font-size:11px" onclick="copyIgCaption(this,${i})">Copiar</button></div></div>`);
   });
   const fq = document.getElementById('r-faq'); fq.innerHTML='';
-  (a.preguntas_frecuentes||[]).forEach(f=>{
-    fq.insertAdjacentHTML('beforeend',`<div class="faq-item"><div class="faq-q-text">${f.pregunta}</div><div class="faq-a-text">${f.respuesta}</div></div>`);
+  (a.preguntas_frecuentes||[]).forEach((f,i)=>{
+    const fid=`faq-a-${i}`;
+    fq.insertAdjacentHTML('beforeend',`<div class="faq-item"><div class="faq-q-text">${f.pregunta}</div><div class="faq-a-text" id="${fid}">${f.respuesta}</div><button class="copy-btn" style="position:static;margin-top:5px;font-size:11px" onclick="copyEl(this,'${fid}')">Copiar respuesta</button></div>`);
   });
   const kw = document.getElementById('r-kw'); kw.innerHTML='';
   (a.keywords_seo||[]).forEach(k=>kw.insertAdjacentHTML('beforeend',`<span class="kw" onclick="copyKw(this,'${k.replace(/'/g,"\\'")}'">${k}</span>`));
