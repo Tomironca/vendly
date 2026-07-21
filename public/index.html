@@ -792,6 +792,7 @@ footer span{color:var(--accent2)}
         <button class="btn btn-outline" id="copy-report-btn" onclick="copyFullReport(this)">📋 Copiar reporte</button>
         <button class="btn btn-outline" id="wa-share-btn" style="display:none;background:rgba(37,211,102,0.08);border-color:rgba(37,211,102,0.3);color:#25D366" onclick="shareWhatsApp()">WhatsApp</button>
       </div>
+      <button class="btn-sm" id="reaudit-btn" onclick="reAudit(this)" style="background:rgba(124,92,252,0.12);border-color:rgba(124,92,252,0.35);color:var(--accent3)">🔄 Re-auditar</button>
       <button class="btn-sm" onclick="resetApp()">← Nueva auditoría</button>
     </div>
     <div class="share-link" id="share-link">
@@ -2079,6 +2080,12 @@ function closeNudge() {
   document.getElementById('upgrade-nudge').classList.remove('show');
 }
 
+function reAudit(btn) {
+  if (!currentProduct && !currentAudit) return;
+  const orig = btn.textContent;
+  btn.textContent = 'Auditando...'; btn.disabled = true;
+  runAudit().finally(() => { btn.textContent = orig; btn.disabled = false; });
+}
 function resetApp(){
   currentProduct=null; currentCompetitor=null; currentAudit=null;
   document.title = 'Vendly — Auditoría de productos con IA';
