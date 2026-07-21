@@ -882,7 +882,7 @@ footer span{color:var(--accent2)}
     </div>
     <!-- Descripción optimizada — TÍTULO+CORTA free, LARGA+BULLETS premium -->
     <div class="rc" id="section-desc">
-      <div class="rc-head"><div class="rc-ico ico-p">✦</div><div class="rc-tit">Descripción optimizada</div></div>
+      <div class="rc-head"><div class="rc-ico ico-p">✦</div><div class="rc-tit">Descripción optimizada</div><button class="copy-btn" style="position:static;margin-left:auto;font-size:11px" onclick="copyListing(this)">Copiar para listing</button></div>
       <div class="desc-sec"><div class="desc-sec-tit">Título SEO</div><div class="desc-box"><div class="desc-txt" id="d-tit"></div><div id="d-tit-len" style="font-size:11px;margin-top:4px;font-weight:600"></div><button class="copy-btn" onclick="copyEl(this,'d-tit')">Copiar</button></div></div>
       <div class="desc-sec"><div class="desc-sec-tit">Descripción corta</div><div class="desc-box"><div class="desc-txt" id="d-cor"></div><button class="copy-btn" onclick="copyEl(this,'d-cor')">Copiar</button></div></div>
       <div id="desc-premium-wrap">
@@ -2148,6 +2148,13 @@ function maybeShowFirstReportTip() {
 }
 function copyFullAd(btn,i){ const h=document.getElementById('adh-'+i)?.textContent||''; const t=document.getElementById('adt-'+i)?.textContent||''; const d=document.getElementById('add-'+i)?.textContent||''; const full=`Headline: ${h}\n\nTexto principal:\n${t}\n\nDescripción: ${d}`; navigator.clipboard.writeText(full).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar todo'; btn.classList.remove('copied'); },2000); }); }
 function copyKw(el,text){ navigator.clipboard.writeText(text).then(()=>{ el.classList.add('copied'); setTimeout(()=>el.classList.remove('copied'),1500); }); }
+function copyListing(btn) {
+  const title = document.getElementById('d-tit')?.textContent || '';
+  const desc = document.getElementById('d-cor')?.textContent || '';
+  if (!title && !desc) return;
+  const text = `${title}\n\n${desc}`.trim();
+  navigator.clipboard.writeText(text).then(()=>{ btn.textContent='✓ Copiado'; setTimeout(()=>btn.textContent='Copiar para listing',2000); });
+}
 function copyList(btn, listId, label) {
   const items = [...document.querySelectorAll(`#${listId} li`)].map((li,i)=>`${i+1}. ${li.textContent.replace(/^[✓!→]\s*/,'')}`).join('\n');
   if (!items) return;
