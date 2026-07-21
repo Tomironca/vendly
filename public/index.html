@@ -382,6 +382,9 @@ textarea{min-height:68px;line-height:1.5}
 .pc-pro{background:rgba(124,92,252,0.1);color:var(--accent3);border:1px solid var(--border)}
 .dash-section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:12px}
 .audit-list-dash{display:flex;flex-direction:column;gap:8px}
+.audit-skeleton{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px 15px;height:58px;position:relative;overflow:hidden}
+.audit-skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 25%,rgba(255,255,255,0.04) 50%,transparent 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .audit-item{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px 15px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s}
 .audit-item:hover{border-color:rgba(124,92,252,0.4)}
 .audit-scores-row{display:flex;gap:5px;flex-shrink:0}
@@ -1630,6 +1633,8 @@ async function openDashboard() {
 function closeDashboard() { document.getElementById('dashboard').classList.remove('show'); }
 
 async function loadDashboard() {
+  const listEl = document.getElementById('audit-list-dash');
+  if (listEl) listEl.innerHTML = '<div class="audit-skeleton"></div><div class="audit-skeleton"></div><div class="audit-skeleton"></div>';
   try {
     const [sr, ar] = await Promise.all([
       fetch('/api/session',{headers:{'x-session-token':sessionToken}}),
