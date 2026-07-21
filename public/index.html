@@ -357,6 +357,20 @@ textarea{min-height:68px;line-height:1.5}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .plans-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 @media(max-width:420px){.plans-grid{grid-template-columns:1fr}}
+@media print{
+  nav,#loading,.action-bar,.sticky-report-bar,#upgrade-nudge,#first-report-toast,
+  .premium-overlay,.premium-lock-btn,#report-jumpnav,#plan-upsell-cta,
+  #reaudit-btn,.copy-btn,.plan-check,.rjn-btn{display:none!important}
+  body{background:#fff!important;color:#111!important}
+  body::before{display:none}
+  .wrap{max-width:100%;padding:0 16px}
+  .rc{background:#f9f9f9!important;border:1px solid #ddd!important;break-inside:avoid;margin-bottom:12px}
+  .score-card{background:#f5f5ff!important;border:1px solid #c4b5fd!important;break-inside:avoid}
+  .results{display:block!important}
+  .premium-content-blur{filter:none!important;pointer-events:auto!important}
+  a{color:#111!important}
+  .hero,.modal-overlay{display:none!important}
+}
 .plan-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:all .2s;position:relative}
 .plan-card:hover,.plan-card.selected{border-color:rgba(124,92,252,0.4);background:rgba(124,92,252,0.06)}
 .plan-card.popular{border-color:rgba(124,92,252,0.35)}
