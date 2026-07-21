@@ -1289,7 +1289,7 @@ function renderAudit(a, productName, hasComp) {
   });
   const ig = document.getElementById('r-ig'); ig.innerHTML='';
   a.instagram_posts.forEach((p,i)=>{
-    ig.insertAdjacentHTML('beforeend',`<div class="ig-post"><div class="ig-ph"><span class="ig-tipo">${p.tipo}</span></div><div class="ig-hook">"${p.hook}"</div><div class="ig-cap" id="igc-${i}">${(p.caption||'').replace(/\n/g,'<br>')}</div><div class="ig-exp" onclick="toggleIg(${i},this)">Ver más ↓</div></div>`);
+    ig.insertAdjacentHTML('beforeend',`<div class="ig-post"><div class="ig-ph"><span class="ig-tipo">${p.tipo}</span></div><div class="ig-hook">"${p.hook}"</div><div class="ig-cap" id="igc-${i}">${(p.caption||'').replace(/\n/g,'<br>')}</div><div style="display:flex;gap:8px;margin-top:8px"><div class="ig-exp" onclick="toggleIg(${i},this)" style="flex:1">Ver más ↓</div><button class="copy-btn" style="position:static;font-size:11px" onclick="copyIgCaption(this,${i})">Copiar</button></div></div>`);
   });
   const fq = document.getElementById('r-faq'); fq.innerHTML='';
   (a.preguntas_frecuentes||[]).forEach(f=>{
@@ -1898,6 +1898,7 @@ function maybeShowFirstReportTip() {
 }
 function copyFullAd(btn,i){ const h=document.getElementById('adh-'+i)?.textContent||''; const t=document.getElementById('adt-'+i)?.textContent||''; const d=document.getElementById('add-'+i)?.textContent||''; const full=`Headline: ${h}\n\nTexto principal:\n${t}\n\nDescripción: ${d}`; navigator.clipboard.writeText(full).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar todo'; btn.classList.remove('copied'); },2000); }); }
 function copyKw(el,text){ navigator.clipboard.writeText(text).then(()=>{ el.classList.add('copied'); setTimeout(()=>el.classList.remove('copied'),1500); }); }
+function copyIgCaption(btn,i){ const el=document.getElementById('igc-'+i); if(!el) return; const text=el.innerText||el.textContent; navigator.clipboard.writeText(text).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar'; btn.classList.remove('copied'); },2000); }); }
 function showErr(id,msg){ const el=document.getElementById(id); if(el){ el.textContent=msg; el.classList.add('show'); } }
 function hideErr(id){ const el=document.getElementById(id); if(el)el.classList.remove('show'); }
 // ── ANALYTICS ─────────────────────────────────────────────────
