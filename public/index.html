@@ -1582,18 +1582,28 @@ function renderAudit(a, productName, hasComp) {
 
 function applyPaywall() {
   const isPaid = userPlan === 'pro' || userPlan === 'basic' || userPlan === 'agency';
-  const premiumSections = ['section-ads','section-ig','section-faq','section-kw','section-precio','section-carrito','section-whatsapp'];
+  const pName = (document.getElementById('rp-name')?.textContent || 'tu producto').slice(0,30);
+  const sectionMeta = {
+    'section-ads':      { title:'5 copies de Meta Ads listos', sub:`Copies A/B de headline, texto principal y descripción creados para "${pName}" — listos para pegar en Ads Manager.` },
+    'section-ig':       { title:'3 posts de Instagram con hook', sub:`Captions completos con gancho, desarrollo y CTA personalizados para "${pName}".` },
+    'section-faq':      { title:'FAQ respondida por la IA', sub:`Las 5 preguntas más frecuentes de compradores de "${pName}", redactadas y listas para publicar.` },
+    'section-kw':       { title:'Keywords SEO de alto volumen', sub:`Palabras clave de búsqueda para que más compradores encuentren "${pName}" en Mercado Libre.` },
+    'section-precio':   { title:'Estrategia de precio optimizada', sub:`Análisis de margen, precio psicológico y recomendación de posicionamiento para "${pName}".` },
+    'section-carrito':  { title:'Email de carrito abandonado', sub:`Secuencia de recuperación de carrito personalizada para compradores de "${pName}".` },
+    'section-whatsapp': { title:'Template de WhatsApp de venta', sub:`Respuesta lista para copiar cuando alguien te pregunta por "${pName}" en WhatsApp.` },
+  };
+  const premiumSections = Object.keys(sectionMeta);
   premiumSections.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    // Limpiar overlays previos
     el.querySelectorAll('.premium-overlay').forEach(o=>o.remove());
     el.querySelectorAll('.rc').forEach(rc=>rc.classList.remove('premium-content-blur'));
     if (!isPaid) {
       el.querySelector('.rc')?.classList.add('premium-content-blur');
+      const {title, sub} = sectionMeta[id];
       const overlay = document.createElement('div');
       overlay.className='premium-overlay';
-      overlay.innerHTML=`<div class="premium-lock-badge">✦ STARTER / PRO</div><div class="premium-lock-title">Sección bloqueada</div><div class="premium-lock-sub">Desbloqueá anuncios, emails de carrito, template de WhatsApp, posts, FAQs, keywords y más.</div><button class="premium-lock-btn" onclick="showUpgradeModal()">Ver planes desde $9/mes →</button>`;
+      overlay.innerHTML=`<div class="premium-lock-badge">✦ STARTER / PRO</div><div class="premium-lock-title">${title}</div><div class="premium-lock-sub">${sub}</div><button class="premium-lock-btn" onclick="showUpgradeModal()">Desbloquear desde $9/mes →</button>`;
       el.appendChild(overlay);
     }
   });
