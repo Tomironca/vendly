@@ -1414,6 +1414,17 @@ function applyPaywall() {
       el.appendChild(overlay);
     }
   });
+  // CTA de upgrade después del plan para free users
+  const planUpsell = document.getElementById('plan-upsell-cta');
+  if (planUpsell) planUpsell.remove();
+  if (!isPaid) {
+    const pu = document.createElement('div');
+    pu.id = 'plan-upsell-cta';
+    pu.style.cssText = 'margin-top:14px;background:linear-gradient(135deg,rgba(124,92,252,0.08),rgba(93,63,211,0.04));border:1px solid rgba(124,92,252,0.25);border-radius:14px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
+    pu.innerHTML = `<div><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">✦ Desbloqueá 7 secciones más</div><div style="font-size:12px;color:var(--muted)">5 copies Meta Ads · 3 posts Instagram · FAQ · Keywords SEO · Template WhatsApp · Email carrito · Estrategia de precio</div></div><button onclick="showUpgradeModal()" style="flex-shrink:0;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Ver planes →</button>`;
+    const planEl = document.getElementById('r-plan');
+    if (planEl && planEl.parentNode) planEl.parentNode.insertAdjacentElement('afterend', pu);
+  }
   // Bloquear desc larga + bullets
   const descPremium = document.getElementById('desc-premium-wrap');
   if (descPremium) {
