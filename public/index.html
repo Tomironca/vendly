@@ -846,7 +846,7 @@ footer span{color:var(--accent2)}
         <div class="report-title">📊 Informe de Auditoría Vendly</div>
         <div class="report-date" id="report-date"></div>
       </div>
-      <div class="report-product">Producto: <strong id="rp-name"></strong></div>
+      <div class="report-product">Producto: <strong id="rp-name"></strong> <span id="score-delta-badge" style="display:none;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle"></span></div>
       <div class="resumen-text" id="r-resumen"></div>
       <span class="resumen-toggle" id="r-resumen-toggle" onclick="toggleResumen()" style="display:none">Ver más ↓</span>
     </div>
@@ -1528,6 +1528,35 @@ function renderAudit(a, productName, hasComp) {
 
   // Aplicar paywall para usuarios free
   applyPaywall();
+
+  // Score history delta badge
+  (function() {
+    const key = 'vnd_score_hist';
+    const urlKey = (currentProduct?.url || productName).slice(0,80);
+    let hist = {};
+    try { hist = JSON.parse(localStorage.getItem(key)||'{}'); } catch(e){}
+    const prev = hist[urlKey];
+    const badge = document.getElementById('score-delta-badge');
+    if (badge) {
+      if (prev !== undefined) {
+        const delta = avgScore - prev;
+        if (delta > 0) {
+          badge.textContent = `▲ +${delta} pts`;
+          badge.style.cssText += ';background:rgba(52,211,153,0.15);color:#34D399;display:inline-block';
+        } else if (delta < 0) {
+          badge.textContent = `▼ ${delta} pts`;
+          badge.style.cssText += ';background:rgba(239,68,68,0.12);color:#F87171;display:inline-block';
+        } else {
+          badge.style.display='none';
+        }
+      } else { badge.style.display='none'; }
+    }
+    hist[urlKey] = avgScore;
+    // keep at most 200 entries
+    const keys = Object.keys(hist);
+    if (keys.length > 200) delete hist[keys[0]];
+    try { localStorage.setItem(key, JSON.stringify(hist)); } catch(e){}
+  })();
 
   document.getElementById('results').classList.add('show');
   document.title = `${productName.slice(0,30)} — Score ${avgScore}/100 | Vendly`;
