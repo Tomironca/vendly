@@ -874,6 +874,7 @@ footer span{color:var(--accent2)}
       <div class="score-card sc-conf" onclick="document.getElementById('r-plan').scrollIntoView({behavior:'smooth',block:'start'})" title="Ver plan de acción" style="cursor:pointer"><div class="score-label">Confianza</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc2" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn2">0</div></div><div id="sb2" style="font-size:10px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:4px"></div><div class="score-exp" id="se2"></div></div>
       <div class="score-card sc-seo" onclick="document.getElementById('r-plan').scrollIntoView({behavior:'smooth',block:'start'})" title="Ver plan de acción" style="cursor:pointer"><div class="score-label">SEO</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc3" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn3">0</div></div><div id="sb3" style="font-size:10px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:4px"></div><div class="score-exp" id="se3"></div></div>
     </div>
+    <div id="score-benchmark" style="display:none;font-size:12px;font-weight:600;padding:6px 14px;border-radius:100px;text-align:center;margin-bottom:10px;border:1px solid transparent"></div>
     <div class="rc" id="ganancias-rapidas-wrap" style="display:none">
       <div class="rc-head"><div class="rc-ico" style="background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.25);color:var(--gold)">⚡</div><div class="rc-tit">Ganancias rápidas — hacé esto hoy</div></div>
       <div id="r-ganancias" style="display:flex;flex-direction:column;gap:10px"></div>
@@ -1551,6 +1552,22 @@ function renderAudit(a, productName, hasComp) {
   if (waText) waText.textContent = a.template_whatsapp || '';
 
   // Aplicar paywall para usuarios free
+  // Score benchmark pill
+  (function(){
+    const bm = document.getElementById('score-benchmark');
+    if (!bm) return;
+    const tiers = [
+      [80,'📊 Tu producto compite con los mejores del mercado','rgba(52,211,153,0.1)','rgba(52,211,153,0.3)','#34D399'],
+      [70,'📊 Por encima del promedio — seguí mejorando','rgba(96,165,250,0.1)','rgba(96,165,250,0.3)','#60A5FA'],
+      [60,'📊 En la media del mercado — hay margen de mejora','rgba(245,200,66,0.1)','rgba(245,200,66,0.3)','#F5C842'],
+      [50,'📊 Por debajo del promedio — necesita atención','rgba(251,146,60,0.1)','rgba(251,146,60,0.3)','#FB923C'],
+      [0,'⚠️ Urgente: tu producto pierde ventas frente a la competencia','rgba(248,113,113,0.1)','rgba(248,113,113,0.3)','#F87171'],
+    ];
+    const [,msg,bg,border,color] = tiers.find(([min])=>avgScore>=min);
+    bm.textContent = msg;
+    bm.style.cssText += `;background:${bg};border-color:${border};color:${color};display:block`;
+  })();
+
   applyPaywall();
 
   // Score history delta badge
