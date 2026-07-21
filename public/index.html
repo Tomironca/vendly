@@ -883,7 +883,7 @@ footer span{color:var(--accent2)}
         </div>
       </div>
     </div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div></div><div class="plan-list-items" id="r-plan"></div></div>
+    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div><span id="plan-progress" style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500"></span></div><div class="plan-list-items" id="r-plan"></div></div>
     <button class="reset-btn" onclick="resetApp()">← Analizar otro producto</button>
   </div>
 </div>
@@ -1309,6 +1309,7 @@ function renderAudit(a, productName, hasComp) {
     const done = !!planDone[i];
     pl.insertAdjacentHTML('beforeend',`<div class="plan-item${done?' plan-done':''}" id="pi-${i}"><button class="plan-check" onclick="togglePlanDone(${i},'${planKey}')">${done?'✓':''}</button><div class="plan-n">${p.prioridad}</div><div><div class="plan-t">${p.accion}</div><div class="plan-d">${p.impacto_esperado}</div><span class="plan-pl">${p.plazo}</span></div></div>`);
   });
+  updatePlanProgress();
 
   // Audiencia ideal
   const audSec = document.getElementById('section-audiencia');
@@ -1888,6 +1889,15 @@ function togglePlanDone(i, key) {
   const data = JSON.parse(localStorage.getItem(key)||'{}');
   if (done) data[i]=1; else delete data[i];
   localStorage.setItem(key, JSON.stringify(data));
+  updatePlanProgress();
+}
+function updatePlanProgress() {
+  const total = document.querySelectorAll('#r-plan .plan-item').length;
+  const done = document.querySelectorAll('#r-plan .plan-item.plan-done').length;
+  const p = document.getElementById('plan-progress');
+  if (!p || !total) return;
+  p.textContent = done === total && total > 0 ? '✓ Todo completado' : `${done}/${total} completados`;
+  p.style.color = done === total && total > 0 ? 'var(--green)' : 'var(--muted)';
 }
 function maybeShowFirstReportTip() {
   if (localStorage.getItem('vnd_seen_report_tip')) return;
