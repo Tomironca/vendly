@@ -472,7 +472,7 @@ footer span{color:var(--accent2)}
 </div>
 
 <!-- LOGIN MODAL -->
-<div class="modal-overlay" id="login-modal">
+<div class="modal-overlay" id="login-modal" onclick="if(event.target===this)closeLoginModal()">
   <div class="modal">
     <button class="modal-close" onclick="closeLoginModal()">✕</button>
     <div id="login-form">
@@ -515,7 +515,7 @@ footer span{color:var(--accent2)}
 </div>
 
 <!-- UPGRADE MODAL -->
-<div class="modal-overlay" id="upgrade-modal">
+<div class="modal-overlay" id="upgrade-modal" onclick="if(event.target===this)closeUpgradeModal()">
   <div class="modal" style="max-width:480px">
     <button class="modal-close" onclick="closeUpgradeModal()">✕</button>
     <div class="modal-title" id="upgrade-modal-title">Desbloqueá el informe completo</div>
