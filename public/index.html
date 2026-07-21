@@ -949,7 +949,7 @@ footer span{color:var(--accent2)}
         </div>
       </div>
     </div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div><span id="plan-progress" style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500"></span><span id="plan-potential" style="display:none;font-size:11px;color:var(--green);font-weight:600;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:2px 8px"></span></div><div class="plan-list-items" id="r-plan"></div></div>
+    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div><span id="plan-progress" style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500"></span><span id="plan-potential" style="display:none;font-size:11px;color:var(--green);font-weight:600;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:2px 8px"></span><button class="copy-btn" style="position:static;font-size:11px;margin-left:8px" onclick="copyFullPlan(this)">Copiar plan</button></div><div class="plan-list-items" id="r-plan"></div></div>
     <button class="reset-btn" onclick="resetApp()">← Analizar otro producto</button>
   </div>
 </div>
@@ -2220,6 +2220,19 @@ function copyListing(btn) {
   if (!title && !desc) return;
   const text = `${title}\n\n${desc}`.trim();
   navigator.clipboard.writeText(text).then(()=>{ btn.textContent='✓ Copiado'; setTimeout(()=>btn.textContent='Copiar para listing',2000); });
+}
+function copyFullPlan(btn) {
+  const items = [...document.querySelectorAll('#r-plan .plan-item')].map((el,i)=>{
+    const t = el.querySelector('.plan-t')?.textContent||'';
+    const d = el.querySelector('.plan-d')?.textContent||'';
+    const imp = el.querySelector('.plan-imp')?.textContent||'';
+    return `${i+1}. [${imp}] ${t}\n   ${d}`;
+  }).join('\n\n');
+  if (!items) return;
+  const product = document.getElementById('rp-name')?.textContent||'';
+  navigator.clipboard.writeText(`Plan de acción — ${product}\n\n${items}`).then(()=>{
+    btn.textContent='✓ Copiado'; setTimeout(()=>btn.textContent='Copiar plan',2000);
+  });
 }
 function copyList(btn, listId, label) {
   const items = [...document.querySelectorAll(`#${listId} li`)].map((li,i)=>`${i+1}. ${li.textContent.replace(/^[✓!→]\s*/,'')}`).join('\n');
