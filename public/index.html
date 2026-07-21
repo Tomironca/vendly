@@ -235,7 +235,10 @@ textarea{min-height:68px;line-height:1.5}
 .kw-hint{font-size:12px;color:var(--muted);margin-top:9px}
 .precio-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 14px;font-size:14px;line-height:1.65}
 .plan-list-items{display:flex;flex-direction:column;gap:7px}
-.plan-item{display:flex;gap:11px;align-items:flex-start;background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:12px 14px}
+.plan-item{display:flex;gap:11px;align-items:flex-start;background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:12px 14px;transition:opacity .2s}
+.plan-item.plan-done{opacity:0.45}.plan-item.plan-done .plan-t{text-decoration:line-through;color:var(--muted)}
+.plan-check{flex-shrink:0;width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border-s);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;color:transparent;margin-top:1px}
+.plan-item.plan-done .plan-check{background:rgba(52,211,153,0.15);border-color:rgba(52,211,153,0.4);color:var(--green)}
 .plan-n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#5D3FD3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;margin-top:1px}
 .plan-t{font-size:14px;font-weight:500;margin-bottom:3px}
 .plan-d{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:5px}
@@ -1299,8 +1302,11 @@ function renderAudit(a, productName, hasComp) {
   const planItems = a.plan_accion || a.mejoras_recomendadas?.map((m,i) => ({
     prioridad: i+1, accion: m.titulo, impacto_esperado: m.descripcion, plazo: m.impacto === 'ALTO' ? 'Esta semana' : m.impacto === 'MEDIO' ? 'Próximas 2 semanas' : 'Este mes'
   })) || [];
-  planItems.forEach(p=>{
-    pl.insertAdjacentHTML('beforeend',`<div class="plan-item"><div class="plan-n">${p.prioridad}</div><div><div class="plan-t">${p.accion}</div><div class="plan-d">${p.impacto_esperado}</div><span class="plan-pl">${p.plazo}</span></div></div>`);
+  const planKey = 'vnd_plan_' + btoa(encodeURIComponent(productName)).slice(0,24);
+  const planDone = JSON.parse(localStorage.getItem(planKey)||'{}');
+  planItems.forEach((p,i)=>{
+    const done = !!planDone[i];
+    pl.insertAdjacentHTML('beforeend',`<div class="plan-item${done?' plan-done':''}" id="pi-${i}"><button class="plan-check" onclick="togglePlanDone(${i},'${planKey}')">${done?'✓':''}</button><div class="plan-n">${p.prioridad}</div><div><div class="plan-t">${p.accion}</div><div class="plan-d">${p.impacto_esperado}</div><span class="plan-pl">${p.plazo}</span></div></div>`);
   });
 
   // Audiencia ideal
@@ -1873,6 +1879,15 @@ function setText(id,text){ const el=document.getElementById(id); if(el)el.textCo
 function switchAdTab(i,btn){ document.querySelectorAll('.ad-tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.ad-panel').forEach(p=>p.classList.remove('active')); btn.classList.add('active'); document.getElementById('adp-'+i).classList.add('active'); }
 function toggleIg(i,btn){ const c=document.getElementById('igc-'+i); c.classList.toggle('expanded'); btn.textContent=c.classList.contains('expanded')?'Ver menos ↑':'Ver más ↓'; }
 function copyEl(btn,id){ const text=document.getElementById(id).textContent; navigator.clipboard.writeText(text).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar'; btn.classList.remove('copied'); },2000); }); }
+function togglePlanDone(i, key) {
+  const el = document.getElementById('pi-'+i);
+  const btn = el.querySelector('.plan-check');
+  const done = el.classList.toggle('plan-done');
+  btn.textContent = done ? '✓' : '';
+  const data = JSON.parse(localStorage.getItem(key)||'{}');
+  if (done) data[i]=1; else delete data[i];
+  localStorage.setItem(key, JSON.stringify(data));
+}
 function maybeShowFirstReportTip() {
   if (localStorage.getItem('vnd_seen_report_tip')) return;
   const t = document.createElement('div');
