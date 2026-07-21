@@ -961,7 +961,7 @@ footer span{color:var(--accent2)}
         </div>
       </div>
     </div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div><span id="plan-progress" style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500"></span><span id="plan-potential" style="display:none;font-size:11px;color:var(--green);font-weight:600;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:2px 8px"></span><button class="copy-btn" style="position:static;font-size:11px;margin-left:8px" onclick="copyFullPlan(this)">Copiar plan</button></div><div class="plan-list-items" id="r-plan"></div></div>
+    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div><span id="plan-progress" style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500"></span><span id="plan-potential" style="display:none;font-size:11px;color:var(--green);font-weight:600;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:2px 8px"></span><button class="copy-btn" style="position:static;font-size:11px;margin-left:8px" onclick="copyFullPlan(this)">Copiar plan</button></div><div id="plan-prog-bar-wrap" style="display:none;height:4px;background:var(--bg3);border-radius:4px;margin-bottom:10px;overflow:hidden"><div id="plan-prog-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#34D399);border-radius:4px;transition:width .4s ease"></div></div><div class="plan-list-items" id="r-plan"></div></div>
     <button class="reset-btn" onclick="resetApp()">← Analizar otro producto</button>
   </div>
 </div>
@@ -2225,6 +2225,13 @@ function updatePlanProgress() {
   const allDone = done === total && total > 0;
   p.textContent = allDone ? '✓ Todo completado' : `${done}/${total} completados`;
   p.style.color = allDone ? 'var(--green)' : 'var(--muted)';
+  const barWrap = document.getElementById('plan-prog-bar-wrap');
+  const bar = document.getElementById('plan-prog-bar');
+  if (barWrap && bar) {
+    barWrap.style.display = 'block';
+    bar.style.width = Math.round((done/total)*100) + '%';
+    bar.style.background = allDone ? '#34D399' : 'linear-gradient(90deg,var(--accent),#34D399)';
+  }
   const existingCelebration = document.getElementById('plan-celebration');
   if (allDone && !existingCelebration) {
     const cel = document.createElement('div');
