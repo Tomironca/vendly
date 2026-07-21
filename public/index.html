@@ -546,6 +546,18 @@ footer span{color:var(--accent2)}
   </div>
 </div>
 
+<!-- EXIT INTENT OVERLAY -->
+<div id="exit-intent-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)closeExitIntent()">
+  <div style="background:var(--bg2);border:1px solid rgba(124,92,252,0.3);border-radius:20px;padding:28px 28px 24px;max-width:400px;width:90%;text-align:center;position:relative">
+    <button onclick="closeExitIntent()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1">✕</button>
+    <div style="font-size:28px;margin-bottom:8px">⚠️</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:6px;color:var(--text)">¡Espera un momento!</div>
+    <div id="exit-intent-msg" style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:18px">Tu auditoría ya está lista — los copies de Meta Ads, posts de Instagram y más están generados y esperándote.</div>
+    <button onclick="closeExitIntent();showUpgradeModal()" style="width:100%;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px">Ver planes desde $9/mes →</button>
+    <button onclick="closeExitIntent()" style="width:100%;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Seguir explorando el informe gratis</button>
+  </div>
+</div>
+
 <!-- UPGRADE MODAL -->
 <div class="modal-overlay" id="upgrade-modal" onclick="if(event.target===this)closeUpgradeModal()">
   <div class="modal" style="max-width:480px">
@@ -1763,6 +1775,25 @@ function showUpgradeModal() {
   track('upgrade_modal_open');
 }
 function closeUpgradeModal() { document.getElementById('upgrade-modal').classList.remove('show'); hideErr('upgrade-error'); }
+
+// ── EXIT INTENT ───────────────────────────────────────────────
+function closeExitIntent() { document.getElementById('exit-intent-overlay').style.display='none'; }
+(function initExitIntent(){
+  let fired = false;
+  document.addEventListener('mouseleave', e => {
+    if (fired || e.clientY > 5) return;
+    const isPaid = userPlan==='pro'||userPlan==='basic'||userPlan==='agency';
+    if (!currentAudit || isPaid) return;
+    if (sessionStorage.getItem('vnd_exit_shown')) return;
+    fired = true;
+    sessionStorage.setItem('vnd_exit_shown','1');
+    const pName = document.getElementById('rp-name')?.textContent||'tu producto';
+    const msgEl = document.getElementById('exit-intent-msg');
+    if (msgEl) msgEl.textContent = `Tu auditoría de "${pName.slice(0,30)}" ya está lista — copies de Meta Ads, posts de Instagram, keywords SEO y más están generados y esperándote.`;
+    document.getElementById('exit-intent-overlay').style.display='flex';
+    track('exit_intent_shown');
+  });
+})();
 function selectPlan(plan) {
   selectedPlan = plan;
   document.getElementById('pc-starter').classList.toggle('selected', plan==='basic');
