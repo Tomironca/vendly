@@ -1441,7 +1441,7 @@ function renderAudit(a, productName, hasComp) {
   });
   const ig = document.getElementById('r-ig'); ig.innerHTML='';
   a.instagram_posts.forEach((p,i)=>{
-    ig.insertAdjacentHTML('beforeend',`<div class="ig-post"><div class="ig-ph"><span class="ig-tipo">${p.tipo}</span></div><div class="ig-hook">"${p.hook}"</div><div class="ig-cap" id="igc-${i}">${(p.caption||'').replace(/\n/g,'<br>')}</div><div style="display:flex;gap:8px;margin-top:8px"><div class="ig-exp" onclick="toggleIg(${i},this)" style="flex:1">Ver más ↓</div><button class="copy-btn" style="position:static;font-size:11px" onclick="copyIgCaption(this,${i})">Copiar</button></div></div>`);
+    ig.insertAdjacentHTML('beforeend',`<div class="ig-post"><div class="ig-ph"><span class="ig-tipo">${p.tipo}</span></div><div class="ig-hook">"${p.hook}"</div><div class="ig-cap" id="igc-${i}" contenteditable="true" spellcheck="false" style="outline:none;cursor:text;border-bottom:1px dashed rgba(124,92,252,0.25)">${(p.caption||'').replace(/\n/g,'<br>')}</div><div style="display:flex;gap:8px;margin-top:8px;align-items:center"><span style="font-size:10px;color:var(--muted);flex:1">· editable</span><div class="ig-exp" onclick="toggleIg(${i},this)">Ver más ↓</div><button class="copy-btn" style="position:static;font-size:11px" onclick="copyIgCaption(this,${i})">Copiar</button></div></div>`);
   });
   const fq = document.getElementById('r-faq'); fq.innerHTML='';
   (a.preguntas_frecuentes||[]).forEach((f,i)=>{
