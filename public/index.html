@@ -1773,7 +1773,7 @@ async function loadDashboard() {
     if (badge && audits.length > 0) { badge.textContent = audits.length; badge.style.display = ''; }
     const list = document.getElementById('audit-list-dash');
     if (audits.length === 0) {
-      list.innerHTML = `<div class="audit-empty"><div class="audit-empty-icon">📊</div><div style="font-size:14px;font-weight:500;margin-bottom:4px">Todavía no generaste ninguna auditoría</div><div style="font-size:13px;color:var(--muted)">Cerrá este panel y auditá tu primer producto</div></div>`;
+      list.innerHTML = `<div class="audit-empty"><div class="audit-empty-icon">🚀</div><div style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)">Auditá tu primer producto</div><div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5">Pegá la URL de tu producto y obtenés scores de conversión, anuncios y un plan de acción en 30 segundos.</div><button onclick="closeDashboard();setTimeout(()=>{const el=document.getElementById('product-url');if(el){el.focus();el.style.borderColor='rgba(124,92,252,0.6)';el.style.boxShadow='0 0 0 3px rgba(124,92,252,0.15)';setTimeout(()=>{el.style.borderColor='';el.style.boxShadow='';},3000);}},200)" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Auditar ahora →</button></div>`;
     } else {
       list.innerHTML = audits.map((a, i) => {
         const date = new Date(a.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
