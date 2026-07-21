@@ -850,8 +850,8 @@ footer span{color:var(--accent2)}
       <div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:7px">Oportunidades</div><ul class="check-list" id="comp-opps"></ul></div>
       <div class="precio-box" id="comp-conclusion"></div>
     </div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">✓</div><div class="rc-tit">Fortalezas</div><div class="rc-ct" id="fort-ct"></div></div><ul class="check-list" id="r-fort"></ul></div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-r">⚠</div><div class="rc-tit">Debilidades</div><div class="rc-ct" id="deb-ct"></div></div><ul class="check-list" id="r-deb"></ul></div>
+    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">✓</div><div class="rc-tit">Fortalezas</div><div class="rc-ct" id="fort-ct"></div><button class="copy-btn" style="position:static;margin-left:auto;font-size:11px" onclick="copyList(this,'r-fort','Fortalezas')">Copiar</button></div><ul class="check-list" id="r-fort"></ul></div>
+    <div class="rc"><div class="rc-head"><div class="rc-ico ico-r">⚠</div><div class="rc-tit">Debilidades</div><div class="rc-ct" id="deb-ct"></div><button class="copy-btn" style="position:static;margin-left:auto;font-size:11px" onclick="copyList(this,'r-deb','Debilidades')">Copiar</button></div><ul class="check-list" id="r-deb"></ul></div>
     <div class="rc"><div class="rc-head"><div class="rc-ico ico-b">↑</div><div class="rc-tit">Mejoras recomendadas</div></div><div class="mejoras" id="r-mej"></div></div>
     <!-- Audiencia ideal — FREE -->
     <div class="rc" id="section-audiencia">
@@ -2143,6 +2143,11 @@ function maybeShowFirstReportTip() {
 }
 function copyFullAd(btn,i){ const h=document.getElementById('adh-'+i)?.textContent||''; const t=document.getElementById('adt-'+i)?.textContent||''; const d=document.getElementById('add-'+i)?.textContent||''; const full=`Headline: ${h}\n\nTexto principal:\n${t}\n\nDescripción: ${d}`; navigator.clipboard.writeText(full).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar todo'; btn.classList.remove('copied'); },2000); }); }
 function copyKw(el,text){ navigator.clipboard.writeText(text).then(()=>{ el.classList.add('copied'); setTimeout(()=>el.classList.remove('copied'),1500); }); }
+function copyList(btn, listId, label) {
+  const items = [...document.querySelectorAll(`#${listId} li`)].map((li,i)=>`${i+1}. ${li.textContent.replace(/^[✓!→]\s*/,'')}`).join('\n');
+  if (!items) return;
+  navigator.clipboard.writeText(`${label}:\n${items}`).then(()=>{ btn.textContent='✓ Copiado'; setTimeout(()=>btn.textContent='Copiar',2000); });
+}
 function copyAllKeywords(btn) {
   const kws = [...document.querySelectorAll('#r-kw .kw')].map(k=>k.textContent).join(', ');
   if (!kws) return;
