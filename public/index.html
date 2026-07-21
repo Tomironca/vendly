@@ -1400,6 +1400,8 @@ function renderAudit(a, productName, hasComp) {
   applyPaywall();
 
   document.getElementById('results').classList.add('show');
+  const avgScore = Math.round((a.scores.conversion + a.scores.confianza + a.scores.seo) / 3);
+  document.title = `${productName.slice(0,30)} — Score ${avgScore}/100 | Vendly`;
   setTimeout(()=>{
     document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
     initStickyBar(productName);
@@ -1984,6 +1986,7 @@ function closeNudge() {
 
 function resetApp(){
   currentProduct=null; currentCompetitor=null; currentAudit=null;
+  document.title = 'Vendly — Auditoría de productos con IA';
   document.getElementById('results').classList.remove('show');
   ['product-url','manual-name','manual-desc','manual-price','manual-url','comp-url'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value=''; });
   ['url-result','comp-result','share-link'].forEach(id=>document.getElementById(id).classList.remove('show'));
