@@ -463,7 +463,10 @@ footer span{color:var(--accent2)}
 
 <!-- STICKY REPORT BAR -->
 <div class="sticky-report-bar" id="sticky-report-bar">
-  <div class="srb-product" id="srb-product-name"></div>
+  <div style="display:flex;flex-direction:column;flex:1;min-width:0;gap:1px">
+    <div class="srb-product" id="srb-product-name"></div>
+    <div id="srb-free-hint" style="display:none;font-size:10px;color:var(--accent3);white-space:nowrap">✦ 7 secciones bloqueadas — Ver planes</div>
+  </div>
   <div class="srb-actions">
     <button class="srb-btn" onclick="exportPDF()">⬇ PDF</button>
     <button class="srb-btn" onclick="shareReport()">🔗 Compartir</button>
@@ -1026,6 +1029,8 @@ function initStickyBar(productName) {
   document.getElementById('srb-product-name').textContent = productName || '';
   const isPaid = userPlan === 'pro' || userPlan === 'basic' || userPlan === 'agency';
   document.getElementById('srb-upgrade-btn').style.display = isPaid ? 'none' : '';
+  const freeHint = document.getElementById('srb-free-hint');
+  if (freeHint) freeHint.style.display = isPaid ? 'none' : '';
   if (stickyBarObserver) stickyBarObserver.disconnect();
   if (!actionBar) return;
   stickyBarObserver = new IntersectionObserver(([entry]) => {
