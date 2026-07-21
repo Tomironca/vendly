@@ -157,7 +157,9 @@ textarea{min-height:68px;line-height:1.5}
 .report-date{font-size:12px;color:var(--muted);background:var(--bg3);padding:4px 12px;border-radius:100px;border:1px solid var(--border)}
 .report-product{font-size:13px;color:var(--muted);margin-bottom:12px}
 .report-product strong{color:var(--text)}
-.resumen-text{font-size:14px;line-height:1.7;color:var(--text);font-weight:300}
+.resumen-text{font-size:14px;line-height:1.7;color:var(--text);font-weight:300;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.resumen-text.expanded{display:block;-webkit-line-clamp:unset}
+.resumen-toggle{font-size:12px;color:var(--accent3);cursor:pointer;margin-top:6px;display:inline-block;user-select:none}
 .scores-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
 @media(max-width:520px){.scores-grid{grid-template-columns:1fr}}
 .score-card{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:16px;text-align:center}
@@ -783,6 +785,7 @@ footer span{color:var(--accent2)}
       </div>
       <div class="report-product">Producto: <strong id="rp-name"></strong></div>
       <div class="resumen-text" id="r-resumen"></div>
+      <span class="resumen-toggle" id="r-resumen-toggle" onclick="toggleResumen()" style="display:none">Ver más ↓</span>
     </div>
     <div id="diagnostico-critico-wrap" style="display:none;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.25);border-radius:14px;padding:14px 16px;margin-bottom:14px;align-items:flex-start;gap:10px">
       <span style="font-size:18px;flex-shrink:0;margin-top:1px">⚠️</span>
@@ -1209,6 +1212,9 @@ function renderAudit(a, productName, hasComp) {
   document.getElementById('report-date').textContent = now.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
   document.getElementById('rp-name').textContent = productName;
   setText('r-resumen', a.resumen_ejecutivo);
+  const resEl=document.getElementById('r-resumen'), resTog=document.getElementById('r-resumen-toggle');
+  resEl.classList.remove('expanded'); resTog.style.display='none';
+  requestAnimationFrame(()=>{ if(resEl.scrollHeight>resEl.clientHeight+4){ resTog.style.display=''; } });
 
   // Diagnóstico crítico
   const dcWrap = document.getElementById('diagnostico-critico-wrap');
@@ -1891,6 +1897,11 @@ function togglePlanDone(i, key) {
   if (done) data[i]=1; else delete data[i];
   localStorage.setItem(key, JSON.stringify(data));
   updatePlanProgress();
+}
+function toggleResumen() {
+  const el=document.getElementById('r-resumen'), tog=document.getElementById('r-resumen-toggle');
+  const exp=el.classList.toggle('expanded');
+  tog.textContent=exp?'Ver menos ↑':'Ver más ↓';
 }
 function updatePlanProgress() {
   const total = document.querySelectorAll('#r-plan .plan-item').length;
