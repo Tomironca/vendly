@@ -1465,6 +1465,7 @@ function renderAudit(a, productName, hasComp) {
     document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
     initStickyBar(productName);
     maybeShowFirstReportTip();
+    if (avgScore >= 80) setTimeout(launchConfetti, 800);
   },100);
 }
 
@@ -2047,6 +2048,21 @@ function updatePlanProgress() {
   if (!p || !total) return;
   p.textContent = done === total && total > 0 ? '✓ Todo completado' : `${done}/${total} completados`;
   p.style.color = done === total && total > 0 ? 'var(--green)' : 'var(--muted)';
+}
+function launchConfetti() {
+  const colors = ['#7C5CFC','#A688FA','#34D399','#F5C842','#60A5FA','#F87171','#C4B5FD'];
+  for (let i = 0; i < 48; i++) {
+    const el = document.createElement('div');
+    const size = 6 + Math.random() * 7;
+    el.style.cssText = `position:fixed;top:-10px;left:${Math.random()*100}vw;width:${size}px;height:${size}px;background:${colors[i%colors.length]};border-radius:${Math.random()>0.5?'50%':'2px'};z-index:9999;pointer-events:none;opacity:1;transform:rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(el);
+    const dur = 1800 + Math.random() * 1200;
+    const tx = (Math.random()-0.5) * 120;
+    el.animate([
+      {transform:`translateY(0) translateX(0) rotate(0deg)`, opacity:1},
+      {transform:`translateY(${60+Math.random()*40}vh) translateX(${tx}px) rotate(${360+Math.random()*360}deg)`, opacity:0}
+    ],{duration:dur,easing:'cubic-bezier(0.25,0.46,0.45,0.94)',fill:'forwards'}).onfinish = ()=>el.remove();
+  }
 }
 function maybeShowFirstReportTip() {
   if (localStorage.getItem('vnd_seen_report_tip')) return;
