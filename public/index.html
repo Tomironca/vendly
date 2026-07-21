@@ -463,6 +463,7 @@ footer span{color:var(--accent2)}
 
 <!-- STICKY REPORT BAR -->
 <div class="sticky-report-bar" id="sticky-report-bar">
+  <span id="srb-score-chip" style="display:none;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);border-radius:8px;padding:4px 10px;white-space:nowrap;flex-shrink:0"></span>
   <div style="display:flex;flex-direction:column;flex:1;min-width:0;gap:1px">
     <div class="srb-product" id="srb-product-name"></div>
     <div id="srb-free-hint" style="display:none;font-size:10px;color:var(--accent3);white-space:nowrap">✦ 7 secciones bloqueadas — Ver planes</div>
@@ -1031,6 +1032,16 @@ function initStickyBar(productName) {
   document.getElementById('srb-upgrade-btn').style.display = isPaid ? 'none' : '';
   const freeHint = document.getElementById('srb-free-hint');
   if (freeHint) freeHint.style.display = isPaid ? 'none' : '';
+  const scoreChip = document.getElementById('srb-score-chip');
+  if (scoreChip && currentAudit?.scores) {
+    const s = currentAudit.scores;
+    const avg = Math.round((s.conversion + s.confianza + s.seo) / 3);
+    const [col, bord] = avg >= 80 ? ['#34D399','rgba(52,211,153,0.3)'] : avg >= 60 ? ['#F5C842','rgba(245,200,66,0.3)'] : ['#F87171','rgba(248,113,113,0.3)'];
+    scoreChip.textContent = `${avg}/100`;
+    scoreChip.style.color = col;
+    scoreChip.style.borderColor = bord;
+    scoreChip.style.display = '';
+  }
   if (stickyBarObserver) stickyBarObserver.disconnect();
   if (!actionBar) return;
   stickyBarObserver = new IntersectionObserver(([entry]) => {
