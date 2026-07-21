@@ -662,6 +662,7 @@ footer span{color:var(--accent2)}
     <div class="user-chip" id="user-chip" onclick="openDashboard()">
       <div class="user-dot"></div>
       <span id="user-email-display"></span>
+      <span id="audit-count-badge" style="display:none;background:rgba(124,92,252,0.2);color:var(--accent3);border-radius:100px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:4px"></span>
     </div>
   </div>
 </nav>
@@ -1693,6 +1694,8 @@ async function loadDashboard() {
       usedEl.closest('.dash-stat').querySelector('.dash-stat-label').textContent = `Usadas este mes · renueva en ${daysLeft}d`;
     }
 
+    const badge = document.getElementById('audit-count-badge');
+    if (badge && audits.length > 0) { badge.textContent = audits.length; badge.style.display = ''; }
     const list = document.getElementById('audit-list-dash');
     if (audits.length === 0) {
       list.innerHTML = `<div class="audit-empty"><div class="audit-empty-icon">📊</div><div style="font-size:14px;font-weight:500;margin-bottom:4px">Todavía no generaste ninguna auditoría</div><div style="font-size:13px;color:var(--muted)">Cerrá este panel y auditá tu primer producto</div></div>`;
