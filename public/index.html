@@ -1162,7 +1162,26 @@ async function doScrape(type, resultId, nameId, descId, errId) {
     document.getElementById(nameId).textContent = data.product.name || 'Sin nombre';
     document.getElementById(descId).textContent = data.product.description ? data.product.description.slice(0,120)+'...' : 'Sin descripción';
     document.getElementById(resultId).classList.add('show');
-  } catch(e) { showErr(errId, e.message || 'Error al leer la URL'); }
+  } catch(e) {
+    showErr(errId, e.message || 'Error al leer la URL');
+    if (type === 'product') {
+      const errEl = document.getElementById(errId);
+      if (errEl) {
+        const manualBtn = document.createElement('button');
+        manualBtn.className = 'btn-sm'; manualBtn.style.cssText = 'margin-top:8px;font-size:12px';
+        manualBtn.textContent = '✏️ Ingresar datos manualmente';
+        manualBtn.onclick = () => {
+          const manualTab = document.querySelector('.tab:not(.active)');
+          if (manualTab) manualTab.click();
+          const manualUrl = document.getElementById('manual-url');
+          if (manualUrl) { manualUrl.value = url; manualUrl.dispatchEvent(new Event('input')); }
+          document.getElementById('manual-name')?.focus();
+        };
+        errEl.parentNode?.insertBefore(manualBtn, errEl.nextSibling);
+        setTimeout(() => manualBtn.remove(), 8000);
+      }
+    }
+  }
   finally { btn.textContent = orig; btn.disabled = false; }
 }
 
