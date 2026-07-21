@@ -987,6 +987,9 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
     } catch(e) {}
   }
+  if (!token && !urlSession && window.innerWidth > 768) {
+    setTimeout(() => { const el = document.getElementById('product-url'); if (el) el.focus(); }, 300);
+  }
 });
 
 // ── STICKY REPORT BAR ─────────────────────────────────────────
