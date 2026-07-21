@@ -906,7 +906,7 @@ footer span{color:var(--accent2)}
         </div>
       </div>
     </div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div><span id="plan-progress" style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500"></span></div><div class="plan-list-items" id="r-plan"></div></div>
+    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div><span id="plan-progress" style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500"></span><span id="plan-potential" style="display:none;font-size:11px;color:var(--green);font-weight:600;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:2px 8px"></span></div><div class="plan-list-items" id="r-plan"></div></div>
     <button class="reset-btn" onclick="resetApp()">← Analizar otro producto</button>
   </div>
 </div>
@@ -1392,6 +1392,13 @@ function renderAudit(a, productName, hasComp) {
     pl.insertAdjacentHTML('beforeend',`<div class="plan-item${done?' plan-done':''}" id="pi-${i}"><button class="plan-check" onclick="togglePlanDone(${i},'${planKey}')">${done?'✓':''}</button><div class="plan-n">${p.prioridad}</div><div><div class="plan-t">${p.accion}</div><div class="plan-d">${p.impacto_esperado}</div><span class="plan-pl">${p.plazo}</span><span class="plan-imp ${pl_imp[0]}">${pl_imp[1]}</span></div></div>`);
   });
   updatePlanProgress();
+  // Score improvement potential
+  const avgScore = Math.round((a.scores.conversion + a.scores.confianza + a.scores.seo) / 3);
+  const potential = Math.min(avgScore + Math.round(planItems.length * 3.5), 95);
+  const gain = potential - avgScore;
+  const potEl = document.getElementById('plan-potential');
+  if (potEl && gain > 0) { potEl.textContent = `Potencial: ~${potential}/100 (+${gain} pts)`; potEl.style.display=''; }
+  else if (potEl) potEl.style.display='none';
 
   // Audiencia ideal
   const audSec = document.getElementById('section-audiencia');
@@ -1452,7 +1459,6 @@ function renderAudit(a, productName, hasComp) {
   applyPaywall();
 
   document.getElementById('results').classList.add('show');
-  const avgScore = Math.round((a.scores.conversion + a.scores.confianza + a.scores.seo) / 3);
   document.title = `${productName.slice(0,30)} — Score ${avgScore}/100 | Vendly`;
   setTimeout(()=>{
     document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
