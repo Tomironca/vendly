@@ -781,6 +781,7 @@ footer span{color:var(--accent2)}
       <div class="action-bar-left">
         <button class="btn btn-ghost" onclick="exportPDF()">⬇ Exportar PDF</button>
         <button class="btn btn-outline" onclick="shareReport()">🔗 Compartir</button>
+        <button class="btn btn-outline" id="copy-report-btn" onclick="copyFullReport(this)">📋 Copiar reporte</button>
         <button class="btn btn-outline" id="wa-share-btn" style="display:none;background:rgba(37,211,102,0.08);border-color:rgba(37,211,102,0.3);color:#25D366" onclick="shareWhatsApp()">WhatsApp</button>
       </div>
       <button class="btn-sm" onclick="resetApp()">← Nueva auditoría</button>
@@ -1951,6 +1952,41 @@ function setScoreTip(circleId, text) { const c=document.getElementById(circleId)
 function switchAdTab(i,btn){ document.querySelectorAll('.ad-tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.ad-panel').forEach(p=>p.classList.remove('active')); btn.classList.add('active'); document.getElementById('adp-'+i).classList.add('active'); }
 function toggleIg(i,btn){ const c=document.getElementById('igc-'+i); c.classList.toggle('expanded'); btn.textContent=c.classList.contains('expanded')?'Ver menos ↑':'Ver más ↓'; }
 function copyEl(btn,id){ const text=document.getElementById(id).textContent; navigator.clipboard.writeText(text).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar'; btn.classList.remove('copied'); },2000); }); }
+function copyFullReport(btn) {
+  if (!currentAudit) return;
+  const a = currentAudit;
+  const name = document.getElementById('rp-name')?.textContent || '';
+  const sc = (id) => document.getElementById(id)?.textContent || '';
+  const liText = (id) => [...(document.getElementById(id)?.querySelectorAll('li')||[])].map((li,i)=>`${i+1}. ${li.textContent.replace(/^[✓!→]\s*/,'')}`).join('\n');
+  const planItems = [...(document.getElementById('r-plan')?.querySelectorAll('.plan-item')||[])].map((el,i)=>`${i+1}. ${el.querySelector('.plan-t')?.textContent||''}`).join('\n');
+  const lines = [
+    `📊 Auditoría Vendly — ${name}`,
+    `Fecha: ${document.getElementById('report-date')?.textContent||''}`,
+    '',
+    `SCORES`,
+    `• Conversión: ${sc('sn1')}/100 — ${sc('se1')}`,
+    `• Confianza:  ${sc('sn2')}/100 — ${sc('se2')}`,
+    `• SEO:        ${sc('sn3')}/100 — ${sc('se3')}`,
+    '',
+    `RESUMEN EJECUTIVO`,
+    document.getElementById('r-resumen')?.textContent||'',
+    '',
+    `FORTALEZAS`,
+    liText('r-fort'),
+    '',
+    `DEBILIDADES`,
+    liText('r-deb'),
+    '',
+    `PLAN DE ACCIÓN`,
+    planItems,
+    '',
+    '— Generado con Vendly (vend-ly.store)',
+  ];
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>{
+    btn.textContent='✓ Copiado';
+    setTimeout(()=>{ btn.textContent='📋 Copiar reporte'; },2500);
+  });
+}
 function togglePlanDone(i, key) {
   const el = document.getElementById('pi-'+i);
   const btn = el.querySelector('.plan-check');
