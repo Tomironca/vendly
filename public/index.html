@@ -972,6 +972,16 @@ footer span{color:var(--accent2)}
       <div style="font-weight:700;color:var(--red);margin-bottom:3px;font-size:13px" id="conv-gap-title">📉 Oportunidad perdida</div>
       <div id="conv-gap-msg" style="color:var(--muted)"></div>
     </div>
+    <div class="rc" id="comp-suggest-card" style="display:none;border-style:dashed;opacity:.85">
+      <div class="rc-head"><div class="rc-ico ico-r">⚔</div><div class="rc-tit">Análisis vs competidor</div></div>
+      <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:13px;color:var(--text);line-height:1.5;margin-bottom:8px">¿Sabés quién es tu principal competidor en esta categoría? Comparar tu producto con el de ellos revela exactamente dónde perdés ventas.</div>
+          <div style="font-size:11px;color:var(--muted)">Agregá su URL y generamos un análisis head-to-head con ventajas, desventajas y oportunidades.</div>
+        </div>
+        <button onclick="(function(){const sec=document.getElementById('comp-sec');if(sec){sec.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{const inp=document.getElementById('comp-url');if(inp){inp.focus();inp.style.boxShadow='0 0 0 2px rgba(248,113,113,0.5)';setTimeout(()=>inp.style.boxShadow='',1500);}},500);}})()" style="flex-shrink:0;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:var(--red);font-weight:600;font-size:12px;padding:8px 16px;border-radius:10px;cursor:pointer;font-family:inherit;white-space:nowrap">+ Agregar competidor</button>
+      </div>
+    </div>
     <div class="rc" id="ganancias-rapidas-wrap" style="display:none">
       <div class="rc-head"><div class="rc-ico" style="background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.25);color:var(--gold)">⚡</div><div class="rc-tit">Ganancias rápidas — hacé esto hoy</div></div>
       <div id="r-ganancias" style="display:flex;flex-direction:column;gap:10px"></div>
@@ -1593,6 +1603,8 @@ function renderAudit(a, productName, hasComp) {
     ac.oportunidades.forEach(o=>co.insertAdjacentHTML('beforeend',`<li><span class="ci ci-g">→</span>${o}</li>`));
     setText('comp-conclusion', ac.conclusion);
   } else { cc.style.display='none'; }
+  const csg = document.getElementById('comp-suggest-card');
+  if (csg) csg.style.display = (!hasComp || !a.analisis_competidor) ? 'block' : 'none';
 
   // Ganancias rápidas
   const grWrap = document.getElementById('ganancias-rapidas-wrap');
@@ -2898,6 +2910,7 @@ function resetApp(){
   document.getElementById('ai-prompt-btn').style.display='none';
   if (window._disableReadProgress) window._disableReadProgress();
   const eliteBanner = document.getElementById('elite-banner'); if (eliteBanner) eliteBanner.remove();
+  const csg = document.getElementById('comp-suggest-card'); if (csg) csg.style.display='none';
   document.getElementById('diagnostico-critico-wrap').style.display='none';
   document.getElementById('ganancias-rapidas-wrap').style.display='none';
   hideErr('audit-error');
