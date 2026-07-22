@@ -830,7 +830,7 @@ footer span{color:var(--accent2)}
       <div class="form-group">
         <label>URL del producto (Tiendanube, Shopify, MercadoShops...)</label>
         <div class="url-row">
-          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre" onkeydown="if(event.key==='Enter'){event.preventDefault();doScrape('product','url-result','url-name','url-desc','scrape-error');}" oninput="autoSelectCountry(this.value)" onfocus="suggestClipboardUrl()">
+          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre" onkeydown="if(event.key==='Enter'){event.preventDefault();doScrape('product','url-result','url-name','url-desc','scrape-error');}" oninput="autoSelectCountry(this.value)" onfocus="suggestClipboardUrl();showRecentUrls()">
           <button class="btn-sm" onclick="doScrape('product','url-result','url-name','url-desc','scrape-error')">Leer →</button>
         </div>
         <div id="clipboard-suggest" style="display:none;margin-top:6px;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.22);border-radius:8px;padding:7px 10px;font-size:12px;display:flex;align-items:center;gap:8px">
@@ -838,6 +838,7 @@ footer span{color:var(--accent2)}
           <button onclick="useClipboardUrl()" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Usar →</button>
           <button onclick="document.getElementById('clipboard-suggest').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0 2px">✕</button>
         </div>
+        <div id="recent-urls-wrap" style="display:none;margin-top:6px"></div>
       </div>
       <div class="error-msg" id="scrape-error"></div>
       <div class="url-result" id="url-result">
@@ -1485,7 +1486,15 @@ async function runAudit() {
     }
     if (!data.success) throw new Error(data.error);
     currentAudit = data.audit;
-    if (product.url) { localStorage.setItem('vnd_last_url', product.url); localStorage.setItem('vnd_last_audit_ts', Date.now()); }
+    if (product.url) {
+      localStorage.setItem('vnd_last_url', product.url);
+      localStorage.setItem('vnd_last_audit_ts', Date.now());
+      try {
+        let recents = JSON.parse(localStorage.getItem('vnd_recent_urls') || '[]');
+        recents = [product.url, ...recents.filter(u => u !== product.url)].slice(0, 5);
+        localStorage.setItem('vnd_recent_urls', JSON.stringify(recents));
+      } catch(e) {}
+    }
     if (data.plan) updatePlanBanner(data.plan, data.auditsUsed, data.auditsLimit);
     track('audit_complete', { country, tone, score_conversion: data.audit?.scores?.conversion, score_seo: data.audit?.scores?.seo, plan: data.plan });
     renderAudit(data.audit, product.name || product.url, !!competitorProduct);
@@ -2520,6 +2529,28 @@ function animScore(cId,nId,val) {
   setTimeout(()=>{ c.style.strokeDashoffset=offset; c.style.stroke=col; let cur=0; const step=val/50; const iv=setInterval(()=>{ cur=Math.min(cur+step,val); n.textContent=Math.round(cur); n.style.color=col; if(cur>=val){ clearInterval(iv); const gid=nId.replace('sn','sl'); let g=document.getElementById(gid); if(!g){g=document.createElement('div');g.id=gid;g.className='score-grade';n.parentNode.appendChild(g);} g.textContent=lbl; g.style.color=col; } },20); },400);
 }
 function setText(id,text){ const el=document.getElementById(id); if(el)el.textContent=text||''; }
+function showRecentUrls() {
+  const wrap = document.getElementById('recent-urls-wrap');
+  const input = document.getElementById('product-url');
+  if (!wrap || (input && input.value.trim())) return;
+  let recents = [];
+  try { recents = JSON.parse(localStorage.getItem('vnd_recent_urls') || '[]'); } catch(e) {}
+  if (!recents.length) return;
+  wrap.innerHTML = '<div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:.03em">RECIENTES</div>' +
+    recents.slice(0, 3).map(u => {
+      const short = u.replace(/^https?:\/\//,'').replace(/\/$/, '');
+      const display = short.length > 52 ? short.slice(0, 49) + '…' : short;
+      return `<button onclick="(function(url){const inp=document.getElementById('product-url');inp.value=url;autoSelectCountry(url);document.getElementById('recent-urls-wrap').style.display='none';})(${JSON.stringify(u)})" style="display:block;width:100%;text-align:left;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--text2);cursor:pointer;font-family:inherit;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:border-color .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">↩ ${display}</button>`;
+    }).join('');
+  wrap.style.display = 'block';
+  document.addEventListener('click', function hideRecents(e) {
+    if (!wrap.contains(e.target) && e.target.id !== 'product-url') {
+      wrap.style.display = 'none';
+      document.removeEventListener('click', hideRecents);
+    }
+  });
+}
+
 let _clipboardSuggestShown = false;
 async function suggestClipboardUrl() {
   if (_clipboardSuggestShown) return;
