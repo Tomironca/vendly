@@ -1663,6 +1663,13 @@ function renderAudit(a, productName, hasComp) {
     const [,msg,bg,border,color] = tiers.find(([min])=>avgScore>=min);
     bm.textContent = msg;
     bm.style.cssText += `;background:${bg};border-color:${border};color:${color};display:block`;
+    // Percentile badge
+    let pctEl = document.getElementById('score-percentile');
+    if (!pctEl) { pctEl=document.createElement('div'); pctEl.id='score-percentile'; pctEl.style.cssText='text-align:center;margin-bottom:10px;font-size:11px;font-weight:700;letter-spacing:.04em'; bm.insertAdjacentElement('afterend', pctEl); }
+    const pct = avgScore>=90?'top 5%':avgScore>=80?'top 15%':avgScore>=70?'top 30%':avgScore>=60?'top 50%':avgScore>=50?'top 65%':'bottom 40%';
+    const pctIcon = avgScore>=80?'🏆':avgScore>=65?'📈':'📊';
+    const pctColor = avgScore>=80?'var(--green)':avgScore>=60?'var(--gold)':'var(--red)';
+    pctEl.innerHTML = `<span style="background:rgba(0,0,0,0.15);border:1px solid ${pctColor};color:${pctColor};padding:3px 12px;border-radius:100px">${pctIcon} Tu score está en el ${pct} de los productos auditados</span>`;
   })();
 
   // Conversion gap banner for low scores
