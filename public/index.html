@@ -509,6 +509,7 @@ footer span{color:var(--accent2)}
     <div id="srb-free-hint" style="display:none;font-size:10px;color:var(--accent3);white-space:nowrap">✦ 7 secciones bloqueadas — Ver planes</div>
   </div>
   <div class="srb-actions">
+    <button class="srb-btn" onclick="scrollToNewAudit()" title="Auditar otro producto" style="flex-shrink:0">＋ Nuevo</button>
     <button class="srb-btn" onclick="exportPDF()">⬇ PDF</button>
     <button class="srb-btn" onclick="shareReport()">🔗 Compartir</button>
     <button class="srb-btn srb-btn-upgrade" id="srb-upgrade-btn" style="display:none" onclick="showUpgradeModal()">✦ Desbloquear</button>
@@ -2357,6 +2358,12 @@ function useClipboardUrl() {
   autoSelectCountry(window._clipboardUrl);
   document.getElementById('clipboard-suggest').style.display = 'none';
   input.focus();
+}
+function scrollToNewAudit() {
+  const input = document.getElementById('product-url');
+  const card = document.querySelector('.input-card');
+  if (card) card.scrollIntoView({behavior:'smooth', block:'start'});
+  setTimeout(() => { if (input) { input.value=''; input.focus(); _clipboardSuggestShown=false; } }, 500);
 }
 function autoSelectCountry(url) {
   if (!url || url.length < 10) return;
