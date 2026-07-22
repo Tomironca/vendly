@@ -559,6 +559,30 @@ footer span{color:var(--accent2)}
   </div>
 </div>
 
+<!-- STORY SHARE CARD -->
+<div id="story-card-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:14px" onclick="if(event.target===this)closeStoryCard()">
+  <div style="font-size:12px;color:rgba(255,255,255,0.5)">📸 Hacé screenshot de esta card</div>
+  <div id="story-card" style="width:320px;border-radius:24px;overflow:hidden;background:linear-gradient(160deg,#0F0F1A,#1A0D40);border:1px solid rgba(124,92,252,0.4);padding:28px 24px;font-family:'Syne',sans-serif;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.6)">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),#A66DFD,#34D399)"></div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(196,181,253,0.7);margin-bottom:16px">Auditoría Vendly IA</div>
+    <div id="sc-product-name" style="font-size:15px;font-weight:800;color:#F0EEF8;margin-bottom:20px;line-height:1.3"></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:20px">
+      <div style="text-align:center"><div id="sc-conv" style="font-size:36px;font-weight:800;color:#A66DFD"></div><div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Conversión</div></div>
+      <div style="text-align:center"><div id="sc-conf" style="font-size:36px;font-weight:800;color:#34D399"></div><div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Confianza</div></div>
+      <div style="text-align:center"><div id="sc-seo" style="font-size:36px;font-weight:800;color:#F5C842"></div><div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">SEO</div></div>
+    </div>
+    <div id="sc-avg-row" style="background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);border-radius:10px;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <span style="font-size:12px;color:rgba(255,255,255,0.5)">Score promedio</span>
+      <span id="sc-avg" style="font-size:18px;font-weight:800;color:#F0EEF8"></span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px">
+      <span style="color:rgba(255,255,255,0.35)">vend-ly.store</span>
+      <span style="color:rgba(124,92,252,0.8);font-weight:700">✦ Vendly</span>
+    </div>
+  </div>
+  <button onclick="closeStoryCard()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:9px 22px;color:#fff;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Cerrar</button>
+</div>
+
 <!-- EXIT INTENT OVERLAY -->
 <div id="exit-intent-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)closeExitIntent()">
   <div style="background:var(--bg2);border:1px solid rgba(124,92,252,0.3);border-radius:20px;padding:28px 28px 24px;max-width:400px;width:90%;text-align:center;position:relative">
@@ -900,6 +924,7 @@ footer span{color:var(--accent2)}
         <button class="btn btn-outline" id="copy-report-btn" onclick="copyFullReport(this)">📋 Copiar reporte</button>
         <button class="btn btn-outline" id="x-share-btn" onclick="shareOnX()" style="background:rgba(0,0,0,0.2);border-color:rgba(255,255,255,0.12);color:var(--muted)">𝕏 Compartir</button>
         <button class="btn btn-outline" id="wa-share-btn" style="display:none;background:rgba(37,211,102,0.08);border-color:rgba(37,211,102,0.3);color:#25D366" onclick="shareWhatsApp()">💬 WhatsApp</button>
+        <button class="btn btn-outline" id="story-share-btn" style="display:none;background:linear-gradient(135deg,rgba(124,92,252,0.1),rgba(166,136,250,0.06));border-color:rgba(124,92,252,0.3);color:var(--accent3)" onclick="showStoryCard()">📸 Story</button>
       </div>
       <button class="btn-sm" id="reaudit-btn" onclick="reAudit(this)" style="background:rgba(124,92,252,0.12);border-color:rgba(124,92,252,0.35);color:var(--accent3)">🔄 Re-auditar</button>
       <button class="btn-sm" onclick="resetApp()">← Nueva auditoría</button>
@@ -1759,6 +1784,7 @@ function renderAudit(a, productName, hasComp) {
     document.querySelectorAll('.results .rc.rc-hidden').forEach(el=>rcObs.observe(el));
     initStickyBar(productName);
     document.getElementById('wa-share-btn').style.display='';
+    document.getElementById('story-share-btn').style.display='';
     maybeShowFirstReportTip();
     if (avgScore >= 80) setTimeout(launchConfetti, 800);
     // Timed upgrade nudge for free users
@@ -2481,6 +2507,22 @@ function toggleWeeklyPlan() {
     wrap.style.display='block'; btn.textContent='📅 Ocultar plan semanal ↑';
   } else { wrap.style.display='none'; btn.textContent='📅 Ver plan semanal ↓'; }
 }
+function showStoryCard() {
+  if (!currentAudit) return;
+  const s = currentAudit.scores;
+  const avg = Math.round((s.conversion+s.confianza+s.seo)/3);
+  const pName = document.getElementById('rp-name')?.textContent||'';
+  document.getElementById('sc-product-name').textContent = pName.slice(0,50);
+  document.getElementById('sc-conv').textContent = s.conversion;
+  document.getElementById('sc-conf').textContent = s.confianza;
+  document.getElementById('sc-seo').textContent = s.seo;
+  document.getElementById('sc-avg').textContent = avg+'/100';
+  const avgColor = avg>=80?'#34D399':avg>=60?'#F5C842':'#F87171';
+  document.getElementById('sc-avg').style.color = avgColor;
+  const overlay = document.getElementById('story-card-overlay');
+  overlay.style.display='flex'; track('story_card_open');
+}
+function closeStoryCard() { document.getElementById('story-card-overlay').style.display='none'; }
 function copyWeeklyPlan(btn) {
   const days = buildWeeklyPlan();
   const product = document.getElementById('rp-name')?.textContent||'';
@@ -2706,6 +2748,7 @@ function resetApp(){
   ['product-url','manual-name','manual-desc','manual-price','manual-url','comp-url'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value=''; });
   ['url-result','comp-result','share-link'].forEach(id=>document.getElementById(id).classList.remove('show'));
   document.getElementById('wa-share-btn').style.display='none';
+  document.getElementById('story-share-btn').style.display='none';
   document.getElementById('diagnostico-critico-wrap').style.display='none';
   document.getElementById('ganancias-rapidas-wrap').style.display='none';
   hideErr('audit-error');
