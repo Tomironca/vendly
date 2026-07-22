@@ -1641,7 +1641,10 @@ function renderAudit(a, productName, hasComp) {
   a.mejoras_recomendadas.forEach(m=>{
     const cls = m.impacto==='ALTO'?'imp-a':m.impacto==='MEDIO'?'imp-m':'imp-b';
     const impEst = m.impacto_estimado ? `<span style="font-size:11px;color:var(--green);font-weight:600;margin-left:8px">${m.impacto_estimado}</span>` : '';
-    ml.insertAdjacentHTML('beforeend',`<div class="mej"><span class="mej-imp ${cls}">${m.impacto}</span><div><div class="mej-tit">${m.titulo}${impEst}</div><div class="mej-desc">${m.descripcion}</div></div></div>`);
+    const pnEsc = (productName||'').replace(/'/g,"\\'");
+    const titEsc = (m.titulo||'').replace(/'/g,"\\'");
+    const descEsc = (m.descripcion||'').replace(/'/g,"\\'");
+    ml.insertAdjacentHTML('beforeend',`<div class="mej"><span class="mej-imp ${cls}">${m.impacto}</span><div style="flex:1"><div class="mej-tit">${m.titulo}${impEst}</div><div class="mej-desc">${m.descripcion}</div></div><button title="Copiar prompt para IA" onclick="copyMejPrompt(this,'${titEsc}','${descEsc}','${pnEsc}')" style="flex-shrink:0;background:none;border:1px dashed var(--border);border-radius:8px;padding:5px 8px;cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit;margin-left:8px;align-self:flex-start;margin-top:2px;white-space:nowrap;transition:border-color .15s,color .15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">📋</button></div>`);
   });
   const d = a.descripcion_optimizada;
   setText('d-tit', d.titulo_seo); setText('d-cor', d.descripcion_corta); setText('d-lar', d.descripcion_larga);
@@ -2499,6 +2502,20 @@ function shareWhatsApp() {
   const text = `Audité "${product.slice(0,35)}" con Vendly IA:\n⚡ Conversión: ${s.conversion}/100\n🤝 Confianza: ${s.confianza}/100\n🔍 SEO: ${s.seo}/100\nPromedio: ${avg}/100${link}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   track('share_whatsapp');
+}
+
+function copyMejPrompt(btn, titulo, descripcion, pName) {
+  const platform = (currentProduct?.platform || 'MercadoLibre');
+  const prompt = `Soy vendedor en ${platform}. Tengo un producto llamado "${pName || 'mi producto'}" y quiero mejorar un aspecto específico de mi publicación.\n\nMejora a implementar: ${titulo}\n\nContexto: ${descripcion}\n\nNecesito que me des:\n1. Los pasos concretos para implementar esta mejora\n2. El texto/copy listo para copiar y pegar en mi publicación\n3. Un ejemplo práctico adaptado a mi producto\n\nSé específico, directo y orientado a aumentar ventas.`;
+  navigator.clipboard.writeText(prompt).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓';
+    btn.style.borderColor = 'var(--green)';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = orig; btn.style.borderColor = 'var(--border)'; btn.style.color = 'var(--muted)'; }, 1800);
+    showToast('✓ Prompt copiado — pegalo en ChatGPT o Claude');
+    track('copy_mej_prompt');
+  });
 }
 
 function copyAiPrompt(btn) {
