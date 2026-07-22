@@ -697,6 +697,14 @@ footer span{color:var(--accent2)}
         <button class="btn-sm" id="dash-upgrade-btn" style="margin-top:10px;font-size:11px;width:100%" onclick="closeDashboard();showUpgradeModal()">Mejorar plan →</button>
         <button class="btn-sm" id="dash-portal-btn" style="margin-top:6px;font-size:11px;width:100%;display:none" onclick="openPortal()">Gestionar suscripción →</button>
       </div>
+      <div class="dash-stat" id="dash-trend-card" style="display:none">
+        <div class="dash-stat-label" style="margin-bottom:6px">Evolución de scores</div>
+        <svg id="dash-sparkline" width="100%" height="44" viewBox="0 0 120 44" preserveAspectRatio="none" style="display:block;overflow:visible">
+          <polyline id="dash-spark-line" points="" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <g id="dash-spark-dots"></g>
+        </svg>
+        <div id="dash-trend-label" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+      </div>
     </div>
     <div id="dash-kpis" style="display:none"></div>
     <div class="score-chart-wrap" id="chart-wrap" style="display:none">
@@ -2039,6 +2047,26 @@ function renderAuditCards(audits) {
     const reAuditBtn = a.product_url?`<button style="flex-shrink:0;background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.25);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:600;color:var(--accent2);cursor:pointer;font-family:inherit;white-space:nowrap" onclick="reAudit(event,'${a.product_url.replace(/'/g,"\\'")}')">↻ Re-auditar</button>`:'';
     return `<div class="audit-item" onclick="loadAuditById(${a.id})"><div class="audit-scores-row"><span class="asp asp-c">${a.score_conversion}</span><span class="asp asp-f">${a.score_confianza}</span><span class="asp asp-s">${a.score_seo}</span></div><div class="audit-info-dash"><div class="audit-name-dash">${a.product_name||a.product_url||'Producto'}${urgentBadge}</div><div class="audit-date-dash">${date} · Promedio: <span style="color:${avgColor};font-weight:600">${avg}/100</span> ${trend}</div></div>${reAuditBtn||'<div style="color:var(--muted);font-size:16px">→</div>'}</div>`;
   }).join('');
+  // Render sparkline using allAudits (sorted oldest→newest for trend)
+  (function(){
+    const card = document.getElementById('dash-trend-card');
+    const line = document.getElementById('dash-spark-line');
+    const dotsG = document.getElementById('dash-spark-dots');
+    const label = document.getElementById('dash-trend-label');
+    if (!card || !line || !allAudits || allAudits.length < 2) { if(card) card.style.display='none'; return; }
+    const pts = [...allAudits].reverse().slice(-7).map(a=>Math.round((a.score_conversion+a.score_confianza+a.score_seo)/3));
+    const minV = Math.max(0, Math.min(...pts)-10), maxV = Math.min(100, Math.max(...pts)+10);
+    const W=120, H=40, pad=4;
+    const x = (i) => pad + i*(W-pad*2)/(pts.length-1);
+    const y = (v) => H - pad - (v-minV)/(maxV-minV||1)*(H-pad*2);
+    line.setAttribute('points', pts.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' '));
+    const improving = pts[pts.length-1] >= pts[0];
+    line.setAttribute('stroke', improving ? '#34D399' : '#F87171');
+    dotsG.innerHTML = pts.map((v,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="${i===pts.length-1?(improving?'#34D399':'#F87171'):'rgba(255,255,255,0.2)'}" stroke="none"/>`).join('');
+    const diff = pts[pts.length-1] - pts[0];
+    label.innerHTML = diff>0?`<span style="color:#34D399">↑ +${diff} pts</span> vs primer audit`:diff<0?`<span style="color:#F87171">↓ ${diff} pts</span> vs primer audit`:`Score estable`;
+    card.style.display = '';
+  })();
 }
 async function openDashboard() {
   if (!sessionToken) { showLoginModal(); return; }
