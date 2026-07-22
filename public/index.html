@@ -1683,6 +1683,9 @@ function renderAudit(a, productName, hasComp) {
   const ml = document.getElementById('r-mej'); ml.innerHTML='';
   let firstAltoIdx = -1;
   a.mejoras_recomendadas.forEach((m,idx)=>{ if(firstAltoIdx<0 && m.impacto==='ALTO') firstAltoIdx=idx; });
+  const mejNoteKey = 'vnd_mej_notes_' + btoa(encodeURIComponent(productName||'')).slice(0,20);
+  let mejNotes = {};
+  try { mejNotes = JSON.parse(localStorage.getItem(mejNoteKey)||'{}'); } catch(e){}
   a.mejoras_recomendadas.forEach((m,idx)=>{
     const cls = m.impacto==='ALTO'?'imp-a':m.impacto==='MEDIO'?'imp-m':'imp-b';
     const impEst = m.impacto_estimado ? `<span style="font-size:11px;color:var(--green);font-weight:600;margin-left:8px">${m.impacto_estimado}</span>` : '';
@@ -1690,8 +1693,12 @@ function renderAudit(a, productName, hasComp) {
     const titEsc = (m.titulo||'').replace(/'/g,"\\'");
     const descEsc = (m.descripcion||'').replace(/'/g,"\\'");
     const isTop = idx === firstAltoIdx;
-    const promptBtn = `<button title="Copiar prompt para IA" onclick="copyMejPrompt(this,'${titEsc}','${descEsc}','${pnEsc}')" style="flex-shrink:0;background:none;border:1px dashed var(--border);border-radius:8px;padding:5px 8px;cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit;margin-left:8px;align-self:flex-start;margin-top:2px;white-space:nowrap;transition:border-color .15s,color .15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">📋</button>`;
-    const innerRow = `<span class="mej-imp ${cls}">${m.impacto}</span><div style="flex:1"><div class="mej-tit">${m.titulo}${impEst}</div><div class="mej-desc">${m.descripcion}</div></div>${promptBtn}`;
+    const savedNote = (mejNotes[idx]||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const noteId = `mej-note-${idx}`;
+    const noteBlock = `<div id="${noteId}-wrap" style="margin-top:7px;display:${savedNote?'block':'none'}"><div id="${noteId}" contenteditable="true" spellcheck="false" data-idx="${idx}" data-notekey="${mejNoteKey.replace(/'/g,"\\'")}" onblur="saveMejNote(this)" style="min-height:28px;background:rgba(0,0,0,0.18);border:1px dashed rgba(124,92,252,0.3);border-radius:7px;padding:5px 9px;font-size:12px;color:var(--muted);outline:none;font-family:'DM Sans',sans-serif;line-height:1.5;cursor:text" placeholder="Añadir nota...">${savedNote}</div></div>`;
+    const noteBtn = `<button title="Nota" onclick="toggleMejNote(${idx})" style="flex-shrink:0;background:none;border:1px dashed var(--border);border-radius:8px;padding:5px 7px;cursor:pointer;font-size:11px;color:${savedNote?'var(--accent3)':'var(--muted)'};font-family:inherit;margin-left:4px;align-self:flex-start;margin-top:2px;transition:border-color .15s,color .15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='${savedNote?'var(--accent3)':'var(--muted)'}'">✏</button>`;
+    const promptBtn = `<button title="Copiar prompt para IA" onclick="copyMejPrompt(this,'${titEsc}','${descEsc}','${pnEsc}')" style="flex-shrink:0;background:none;border:1px dashed var(--border);border-radius:8px;padding:5px 8px;cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit;margin-left:4px;align-self:flex-start;margin-top:2px;white-space:nowrap;transition:border-color .15s,color .15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">📋</button>`;
+    const innerRow = `<span class="mej-imp ${cls}">${m.impacto}</span><div style="flex:1"><div class="mej-tit">${m.titulo}${impEst}</div><div class="mej-desc">${m.descripcion}</div>${noteBlock}</div>${noteBtn}${promptBtn}`;
     if (isTop) {
       ml.insertAdjacentHTML('beforeend',`<div class="mej" data-impact="${m.impacto}" style="flex-direction:column;background:linear-gradient(135deg,rgba(124,92,252,0.07),rgba(248,113,113,0.04));border:1px solid rgba(124,92,252,0.25);border-radius:12px;padding:12px"><div style="font-size:10px;font-weight:800;color:var(--accent2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">✦ Acción del día</div><div style="display:flex;gap:9px;align-items:flex-start">${innerRow}</div></div>`);
     } else {
@@ -3133,6 +3140,23 @@ function copyPlanChecklist(btn) {
   });
 }
 
+function toggleMejNote(idx) {
+  const wrap = document.getElementById(`mej-note-${idx}-wrap`);
+  if (!wrap) return;
+  const visible = wrap.style.display !== 'none';
+  wrap.style.display = visible ? 'none' : 'block';
+  if (!visible) { const el = document.getElementById(`mej-note-${idx}`); if (el) { el.focus(); const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); } }
+}
+function saveMejNote(el) {
+  const idx = el.dataset.idx;
+  const noteKey = el.dataset.notekey;
+  const text = el.textContent.trim();
+  let notes = {};
+  try { notes = JSON.parse(localStorage.getItem(noteKey)||'{}'); } catch(e){}
+  if (text) notes[idx] = text; else delete notes[idx];
+  try { localStorage.setItem(noteKey, JSON.stringify(notes)); } catch(e){}
+  el.style.color = text ? 'var(--text)' : 'var(--muted)';
+}
 function filterMejoras(level, btn) {
   document.querySelectorAll('#mej-filter-bar .mej-ftab').forEach(t => t.classList.remove('mej-ftab-active'));
   if (btn) btn.classList.add('mej-ftab-active');
