@@ -1625,15 +1625,19 @@ function renderAudit(a, productName, hasComp) {
   const grList = document.getElementById('r-ganancias');
   grList.innerHTML = '';
   if (a.ganancias_rapidas && a.ganancias_rapidas.length) {
+    const grKey = 'vnd_qw_' + btoa(encodeURIComponent(productName)).slice(0,24);
+    let grDone = {}; try { grDone = JSON.parse(localStorage.getItem(grKey)||'{}'); } catch(e) {}
     a.ganancias_rapidas.forEach((g, i) => {
       const gid = `gr-accion-${i}`;
-      grList.insertAdjacentHTML('beforeend', `<div style="background:var(--bg2);border:1px solid rgba(245,200,66,0.15);border-radius:12px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px">
+      const done = !!grDone[i];
+      grList.insertAdjacentHTML('beforeend', `<div id="gr-wrap-${i}" style="background:var(--bg2);border:1px solid ${done?'rgba(52,211,153,0.3)':'rgba(245,200,66,0.15)'};border-radius:12px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px;transition:border-color .2s,opacity .2s;${done?'opacity:.65':''}">
         <div style="background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.2);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--gold);white-space:nowrap;flex-shrink:0">${g.tiempo || '30 min'}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;color:var(--text);line-height:1.5" id="${gid}">${g.accion}</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.5${done?';text-decoration:line-through;color:var(--muted)':''}" id="${gid}">${g.accion}</div>
           ${g.impacto_estimado ? `<div style="font-size:11px;color:var(--green);font-weight:600;margin-top:4px">${g.impacto_estimado}</div>` : ''}
         </div>
         <button class="copy-btn" style="position:static;flex-shrink:0;align-self:center" onclick="copyEl(this,'${gid}')">Copiar</button>
+        <button onclick="toggleQW(${i},'${grKey}')" style="flex-shrink:0;align-self:center;background:${done?'rgba(52,211,153,0.15)':'none'};border:1px solid ${done?'rgba(52,211,153,0.4)':'var(--border)'};border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;color:${done?'#34D399':'var(--muted)'};cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s" id="gr-done-${i}">${done?'✓ Hecho':'Hecho'}</button>
       </div>`);
     });
     grWrap.style.display = 'block';
@@ -2887,6 +2891,20 @@ function togglePlanDone(i, key) {
     showToast(`${m} ${doneCount}/${total} acciones completadas ✓`);
   }
 }
+function toggleQW(i, key) {
+  const wrap = document.getElementById('gr-wrap-'+i);
+  const btn = document.getElementById('gr-done-'+i);
+  const txt = document.getElementById('gr-accion-'+i);
+  const data = JSON.parse(localStorage.getItem(key)||'{}');
+  const done = !data[i];
+  if (done) data[i]=1; else delete data[i];
+  localStorage.setItem(key, JSON.stringify(data));
+  if (wrap) { wrap.style.borderColor = done?'rgba(52,211,153,0.3)':'rgba(245,200,66,0.15)'; wrap.style.opacity = done?'0.65':'1'; }
+  if (txt) { txt.style.textDecoration = done?'line-through':''; txt.style.color = done?'var(--muted)':'var(--text)'; }
+  if (btn) { btn.textContent = done?'✓ Hecho':'Hecho'; btn.style.background = done?'rgba(52,211,153,0.15)':'none'; btn.style.borderColor = done?'rgba(52,211,153,0.4)':'var(--border)'; btn.style.color = done?'#34D399':'var(--muted)'; }
+  if (done) showToast('✓ Quick win marcado como implementado');
+}
+
 function toggleResumen() {
   const el=document.getElementById('r-resumen'), tog=document.getElementById('r-resumen-toggle');
   const exp=el.classList.toggle('expanded');
