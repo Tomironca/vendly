@@ -1587,6 +1587,20 @@ function renderAudit(a, productName, hasComp) {
   animScore('sc1','sn1', a.scores.conversion);
   animScore('sc2','sn2', a.scores.confianza);
   animScore('sc3','sn3', a.scores.seo);
+  // Highlight weakest score card
+  (function(){
+    const scores=[['sc-conv',a.scores.conversion],['sc-conf',a.scores.confianza],['sc-seo',a.scores.seo]];
+    const weakest=scores.reduce((m,s)=>s[1]<m[1]?s:m,scores[0]);
+    const card=document.querySelector('.score-card.'+weakest[0]);
+    if(!card) return;
+    setTimeout(()=>{
+      card.style.transition='box-shadow .4s ease';
+      card.style.boxShadow='0 0 0 2px rgba(248,113,113,0.5),0 0 18px rgba(248,113,113,0.15)';
+      let on=true;
+      const iv=setInterval(()=>{ on=!on; card.style.boxShadow=on?'0 0 0 2px rgba(248,113,113,0.5),0 0 18px rgba(248,113,113,0.15)':'0 0 0 1px rgba(248,113,113,0.2)'; },600);
+      setTimeout(()=>{ clearInterval(iv); card.style.boxShadow='0 0 0 1px rgba(248,113,113,0.22)'; },3000);
+    },1200);
+  })();
   setText('se1', a.scores.conversion_explicacion);
   setText('se2', a.scores.confianza_explicacion);
   setText('se3', a.scores.seo_explicacion);
@@ -3111,6 +3125,7 @@ function resetApp(){
   document.getElementById('diagnostico-critico-wrap').style.display='none';
   document.getElementById('ganancias-rapidas-wrap').style.display='none';
   ['sd1','sd2','sd3'].forEach(id=>{ const el=document.getElementById(id); if(el)el.textContent=''; });
+  document.querySelectorAll('.score-card').forEach(c=>c.style.boxShadow='');
   const ush = document.getElementById('url-score-hint'); if (ush) ush.style.display='none';
   const vtl = document.getElementById('ver-en-tienda-link'); if (vtl) vtl.style.display='none';
   hideErr('audit-error');
