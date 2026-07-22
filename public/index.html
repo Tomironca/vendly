@@ -792,7 +792,7 @@ footer span{color:var(--accent2)}
       <div class="form-group">
         <label>URL del producto (Tiendanube, Shopify, MercadoShops...)</label>
         <div class="url-row">
-          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre" onkeydown="if(event.key==='Enter'){event.preventDefault();doScrape('product','url-result','url-name','url-desc','scrape-error');}">
+          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre" onkeydown="if(event.key==='Enter'){event.preventDefault();doScrape('product','url-result','url-name','url-desc','scrape-error');}" oninput="autoSelectCountry(this.value)">
           <button class="btn-sm" onclick="doScrape('product','url-result','url-name','url-desc','scrape-error')">Leer →</button>
         </div>
       </div>
@@ -2306,6 +2306,21 @@ function animScore(cId,nId,val) {
   setTimeout(()=>{ c.style.strokeDashoffset=offset; c.style.stroke=col; let cur=0; const step=val/50; const iv=setInterval(()=>{ cur=Math.min(cur+step,val); n.textContent=Math.round(cur); n.style.color=col; if(cur>=val){ clearInterval(iv); const gid=nId.replace('sn','sl'); let g=document.getElementById(gid); if(!g){g=document.createElement('div');g.id=gid;g.className='score-grade';n.parentNode.appendChild(g);} g.textContent=lbl; g.style.color=col; } },20); },400);
 }
 function setText(id,text){ const el=document.getElementById(id); if(el)el.textContent=text||''; }
+function autoSelectCountry(url) {
+  if (!url || url.length < 10) return;
+  const u = url.toLowerCase();
+  let country = null;
+  if (/\.com\.ar|mercadolibre\.com\.ar|tiendanube\.com\.ar|mitiendanube\.com\/[^/]*ar/.test(u)) country = 'argentina';
+  else if (/\.com\.mx|mercadolibre\.com\.mx|\.mx\//.test(u)) country = 'mexico';
+  else if (/\.com\.co|mercadolibre\.com\.co/.test(u)) country = 'colombia';
+  else if (/\.es\/|\.es$|amazon\.es|pccomponentes|fnac\.es/.test(u)) country = 'espana';
+  else if (/\.com\.uy/.test(u)) country = 'argentina';
+  else if (/\.com\.pe|\.com\.cl|\.com\.ve|\.com\.bo/.test(u)) country = 'general';
+  if (country) {
+    const sel = document.getElementById('country');
+    if (sel && sel.value !== country) { sel.value = country; sel.style.transition='box-shadow .3s'; sel.style.boxShadow='0 0 0 2px rgba(124,92,252,0.4)'; setTimeout(()=>sel.style.boxShadow='',1200); }
+  }
+}
 function detectPlatform(url) {
   if (!url) return null;
   const u = url.toLowerCase();
