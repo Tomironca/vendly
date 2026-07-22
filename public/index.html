@@ -241,9 +241,14 @@ textarea{min-height:68px;line-height:1.5}
 .ig-exp{display:block;text-align:center;font-size:12px;color:var(--accent3);padding:7px;cursor:pointer;border-top:1px solid var(--border);background:var(--bg3)}
 .faq-list{display:flex;flex-direction:column;gap:7px}
 .faq-item{background:var(--bg2);border:1px solid var(--border);border-radius:11px;overflow:hidden}
-.faq-q-text{display:flex;align-items:flex-start;gap:9px;padding:12px 14px;font-size:14px;font-weight:500}
+.faq-q-text{display:flex;align-items:flex-start;gap:9px;padding:12px 14px;font-size:14px;font-weight:500;cursor:pointer;user-select:none}
+.faq-q-text:hover{background:rgba(124,92,252,0.04)}
 .faq-q-text::before{content:'Q';flex-shrink:0;width:18px;height:18px;background:rgba(124,92,252,0.15);color:var(--accent3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;margin-top:1px}
-.faq-a-text{padding:0 14px 12px 41px;font-size:13px;color:var(--muted);line-height:1.6}
+.faq-chevron{margin-left:auto;font-size:11px;color:var(--muted);flex-shrink:0;transition:transform .2s;margin-top:2px}
+.faq-item.open .faq-chevron{transform:rotate(180deg)}
+.faq-a-body{display:none;padding:0 14px 12px 41px}
+.faq-item.open .faq-a-body{display:block}
+.faq-a-text{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:6px}
 .kw-grid{display:flex;flex-wrap:wrap;gap:7px}
 .kw{background:rgba(124,92,252,0.08);border:1px solid var(--border);border-radius:8px;padding:5px 11px;font-size:13px;color:var(--accent3);cursor:pointer;transition:all .15s}
 .kw:hover{background:rgba(124,92,252,0.15)}.kw.copied{background:rgba(52,211,153,0.1);color:var(--green);border-color:rgba(52,211,153,0.2)}
@@ -1507,7 +1512,7 @@ function renderAudit(a, productName, hasComp) {
   const fq = document.getElementById('r-faq'); fq.innerHTML='';
   (a.preguntas_frecuentes||[]).forEach((f,i)=>{
     const fid=`faq-a-${i}`;
-    fq.insertAdjacentHTML('beforeend',`<div class="faq-item"><div class="faq-q-text">${f.pregunta}</div><div class="faq-a-text" id="${fid}">${f.respuesta}</div><button class="copy-btn" style="position:static;margin-top:5px;font-size:11px" onclick="copyEl(this,'${fid}')">Copiar respuesta</button></div>`);
+    fq.insertAdjacentHTML('beforeend',`<div class="faq-item"><div class="faq-q-text" onclick="this.closest('.faq-item').classList.toggle('open')">${f.pregunta}<span class="faq-chevron">▼</span></div><div class="faq-a-body"><div class="faq-a-text" id="${fid}">${f.respuesta}</div><button class="copy-btn" style="position:static;font-size:11px" onclick="copyEl(this,'${fid}')">Copiar respuesta</button></div></div>`);
   });
   const kw = document.getElementById('r-kw'); kw.innerHTML='';
   const kwPalette=[
