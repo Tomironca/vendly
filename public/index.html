@@ -716,7 +716,14 @@ footer span{color:var(--accent2)}
       </div>
     </div>
 
-    <div class="dash-section-title">Historial de auditorías</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div class="dash-section-title" style="margin-bottom:0">Historial de auditorías</div>
+      <div id="dash-sort-btns" style="display:none;gap:5px;display:flex">
+        <button id="dsrt-date" onclick="sortAuditList('date')" style="font-size:11px;padding:3px 10px;border-radius:8px;border:1px solid var(--border);background:var(--accent);color:#fff;cursor:pointer;font-family:inherit">Reciente</button>
+        <button id="dsrt-worst" onclick="sortAuditList('worst')" style="font-size:11px;padding:3px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);cursor:pointer;font-family:inherit">Peor score</button>
+        <button id="dsrt-best" onclick="sortAuditList('best')" style="font-size:11px;padding:3px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);cursor:pointer;font-family:inherit">Mejor score</button>
+      </div>
+    </div>
     <div class="audit-list-dash" id="audit-list-dash">
       <div class="audit-empty"><div class="audit-empty-icon">⏳</div><div>Cargando...</div></div>
     </div>
@@ -1935,6 +1942,32 @@ async function doVerify(email, errId) {
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
+let allAudits = [];
+let currentDashSort = 'date';
+function sortAuditList(mode) {
+  currentDashSort = mode;
+  ['date','worst','best'].forEach(m=>{
+    const b=document.getElementById('dsrt-'+m);
+    if(b) { b.style.background=m===mode?'var(--accent)':'var(--bg3)'; b.style.color=m===mode?'#fff':'var(--muted)'; }
+  });
+  const sorted = [...allAudits];
+  if (mode==='worst') sorted.sort((a,b)=>{ const avgA=Math.round((a.score_conversion+a.score_confianza+a.score_seo)/3); const avgB=Math.round((b.score_conversion+b.score_confianza+b.score_seo)/3); return avgA-avgB; });
+  else if (mode==='best') sorted.sort((a,b)=>{ const avgA=Math.round((a.score_conversion+a.score_confianza+a.score_seo)/3); const avgB=Math.round((b.score_conversion+b.score_confianza+b.score_seo)/3); return avgB-avgA; });
+  renderAuditCards(sorted);
+}
+function renderAuditCards(audits) {
+  const list = document.getElementById('audit-list-dash');
+  list.innerHTML = audits.map((a, i) => {
+    const date = new Date(a.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
+    const avg = Math.round((a.score_conversion+a.score_confianza+a.score_seo)/3);
+    const prevA = i < audits.length-1 ? Math.round((audits[i+1].score_conversion+audits[i+1].score_confianza+audits[i+1].score_seo)/3) : null;
+    const trend = prevA===null?'':avg>prevA?`<span style="color:var(--green);font-size:12px">↑${avg-prevA}</span>`:avg<prevA?`<span style="color:var(--red);font-size:12px">↓${prevA-avg}</span>`:`<span style="color:var(--muted);font-size:12px">→</span>`;
+    const avgColor = avg>=75?'var(--green)':avg>=60?'var(--gold)':'var(--red)';
+    const urgentBadge = avg<55?`<span style="font-size:10px;font-weight:700;color:var(--red);background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:4px;padding:1px 5px;margin-left:5px">⚠ Urgente</span>`:'';
+    const reAuditBtn = a.product_url?`<button style="flex-shrink:0;background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.25);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:600;color:var(--accent2);cursor:pointer;font-family:inherit;white-space:nowrap" onclick="reAudit(event,'${a.product_url.replace(/'/g,"\\'")}')">↻ Re-auditar</button>`:'';
+    return `<div class="audit-item" onclick="loadAuditById(${a.id})"><div class="audit-scores-row"><span class="asp asp-c">${a.score_conversion}</span><span class="asp asp-f">${a.score_confianza}</span><span class="asp asp-s">${a.score_seo}</span></div><div class="audit-info-dash"><div class="audit-name-dash">${a.product_name||a.product_url||'Producto'}${urgentBadge}</div><div class="audit-date-dash">${date} · Promedio: <span style="color:${avgColor};font-weight:600">${avg}/100</span> ${trend}</div></div>${reAuditBtn||'<div style="color:var(--muted);font-size:16px">→</div>'}</div>`;
+  }).join('');
+}
 async function openDashboard() {
   if (!sessionToken) { showLoginModal(); return; }
   document.getElementById('dashboard').classList.add('show');
@@ -1966,7 +1999,8 @@ async function loadDashboard() {
     const hasPaid = sd.plan==='pro' || sd.plan==='basic';
     document.getElementById('dash-upgrade-btn').style.display = hasPaid ? 'none' : '';
     document.getElementById('dash-portal-btn').style.display = hasPaid ? '' : 'none';
-    const audits = ad.audits || [];
+    allAudits = ad.audits || [];
+    const audits = allAudits;
     const stats = ad.stats;
     document.getElementById('dash-total').textContent = audits.length;
     // KPIs de scores promedio
@@ -2010,27 +2044,8 @@ async function loadDashboard() {
     if (audits.length === 0) {
       list.innerHTML = `<div class="audit-empty"><div class="audit-empty-icon">🚀</div><div style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)">Auditá tu primer producto</div><div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5">Pegá la URL de tu producto y obtenés scores de conversión, anuncios y un plan de acción en 30 segundos.</div><button onclick="closeDashboard();setTimeout(()=>{const el=document.getElementById('product-url');if(el){el.focus();el.style.borderColor='rgba(124,92,252,0.6)';el.style.boxShadow='0 0 0 3px rgba(124,92,252,0.15)';setTimeout(()=>{el.style.borderColor='';el.style.boxShadow='';},3000);}},200)" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Auditar ahora →</button></div>`;
     } else {
-      list.innerHTML = audits.map((a, i) => {
-        const date = new Date(a.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'});
-        const avg = Math.round((a.score_conversion+a.score_confianza+a.score_seo)/3);
-        const prevAvg = i < audits.length - 1 ? Math.round((audits[i+1].score_conversion+audits[i+1].score_confianza+audits[i+1].score_seo)/3) : null;
-        const trend = prevAvg === null ? '' : avg > prevAvg ? `<span style="color:var(--green);font-size:12px">↑${avg-prevAvg}</span>` : avg < prevAvg ? `<span style="color:var(--red);font-size:12px">↓${prevAvg-avg}</span>` : `<span style="color:var(--muted);font-size:12px">→</span>`;
-        const avgColor = avg >= 75 ? 'var(--green)' : avg >= 60 ? 'var(--gold)' : 'var(--red)';
-        const urgentBadge = avg < 55 ? `<span style="font-size:10px;font-weight:700;color:var(--red);background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:4px;padding:1px 5px;margin-left:5px">⚠ Urgente</span>` : '';
-        const reAuditBtn = a.product_url ? `<button style="flex-shrink:0;background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.25);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:600;color:var(--accent2);cursor:pointer;font-family:inherit;white-space:nowrap" onclick="reAudit(event,'${a.product_url.replace(/'/g,"\\'")}')">↻ Re-auditar</button>` : '';
-        return `<div class="audit-item" onclick="loadAuditById(${a.id})">
-          <div class="audit-scores-row">
-            <span class="asp asp-c">${a.score_conversion}</span>
-            <span class="asp asp-f">${a.score_confianza}</span>
-            <span class="asp asp-s">${a.score_seo}</span>
-          </div>
-          <div class="audit-info-dash">
-            <div class="audit-name-dash">${a.product_name||a.product_url||'Producto'}${urgentBadge}</div>
-            <div class="audit-date-dash">${date} · Promedio: <span style="color:${avgColor};font-weight:600">${avg}/100</span> ${trend}</div>
-          </div>
-          ${reAuditBtn || '<div style="color:var(--muted);font-size:16px">→</div>'}
-        </div>`;
-      }).join('');
+      if (audits.length > 1) { const sb=document.getElementById('dash-sort-btns'); if(sb) sb.style.display='flex'; }
+      renderAuditCards(audits);
     }
   } catch(e) { document.getElementById('audit-list-dash').innerHTML='<div class="audit-empty">Error cargando historial.</div>'; }
 }
