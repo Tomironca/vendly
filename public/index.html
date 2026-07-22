@@ -954,7 +954,7 @@ footer span{color:var(--accent2)}
         <div class="report-title">📊 Informe de Auditoría Vendly</div>
         <div class="report-date" id="report-date"></div>
       </div>
-      <div class="report-product">Producto: <strong id="rp-name"></strong> <span id="score-delta-badge" style="display:none;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle"></span> <span id="platform-badge" style="display:none;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle;letter-spacing:.03em"></span></div>
+      <div class="report-product" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">Producto: <strong id="rp-name"></strong> <span id="score-delta-badge" style="display:none;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle"></span> <span id="platform-badge" style="display:none;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle;letter-spacing:.03em"></span><a id="ver-en-tienda-link" href="#" target="_blank" rel="noopener" style="display:none;margin-left:auto;font-size:11px;font-weight:600;color:var(--accent3);border:1px solid rgba(124,92,252,0.25);border-radius:6px;padding:2px 10px;text-decoration:none;white-space:nowrap;flex-shrink:0" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='rgba(124,92,252,0.25)'">Ver en tienda ↗</a></div>
       <div class="resumen-text" id="r-resumen"></div>
       <span class="resumen-toggle" id="r-resumen-toggle" onclick="toggleResumen()" style="display:none">Ver más ↓</span>
     </div>
@@ -1550,6 +1550,7 @@ function renderAudit(a, productName, hasComp) {
   const now = new Date();
   document.getElementById('report-date').textContent = now.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
   document.getElementById('rp-name').textContent = productName;
+  (function(){ const lnk=document.getElementById('ver-en-tienda-link'); if(!lnk) return; const u=currentProduct?.url||''; if(u){lnk.href=u;lnk.style.display='inline-flex';}else{lnk.style.display='none';} })();
   (function(){
     const pb = document.getElementById('platform-badge');
     if (!pb) return;
@@ -3024,6 +3025,7 @@ function resetApp(){
   document.getElementById('ganancias-rapidas-wrap').style.display='none';
   ['sd1','sd2','sd3'].forEach(id=>{ const el=document.getElementById(id); if(el)el.textContent=''; });
   const ush = document.getElementById('url-score-hint'); if (ush) ush.style.display='none';
+  const vtl = document.getElementById('ver-en-tienda-link'); if (vtl) vtl.style.display='none';
   hideErr('audit-error');
   hideStickyBar();
   window.scrollTo({top:0,behavior:'smooth'});
