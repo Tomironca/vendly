@@ -1845,7 +1845,8 @@ function renderAudit(a, productName, hasComp) {
     document.getElementById('ai-prompt-btn').style.display='';
     if (window._enableReadProgress) window._enableReadProgress();
     maybeShowFirstReportTip();
-    if (avgScore >= 80) setTimeout(launchConfetti, 800);
+    if (avgScore >= 90) { setTimeout(launchGoldenConfetti, 600); setTimeout(showEliteBanner, 1400); }
+    else if (avgScore >= 80) setTimeout(launchConfetti, 800);
     // Timed upgrade nudge for free users
     const isPaidNow = userPlan==='pro'||userPlan==='basic'||userPlan==='agency';
     if (!isPaidNow && !sessionStorage.getItem('vnd_timed_nudge')) {
@@ -2791,6 +2792,33 @@ function launchConfetti() {
     ],{duration:dur,easing:'cubic-bezier(0.25,0.46,0.45,0.94)',fill:'forwards'}).onfinish = ()=>el.remove();
   }
 }
+function launchGoldenConfetti() {
+  const colors = ['#F5C842','#FFD700','#FFA500','#FFFACD','#F59E0B','#FCD34D','#fff'];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    const size = 5 + Math.random() * 9;
+    el.style.cssText = `position:fixed;top:-10px;left:${Math.random()*100}vw;width:${size}px;height:${Math.random()>0.4?size:size*0.4}px;background:${colors[i%colors.length]};border-radius:${Math.random()>0.6?'50%':'1px'};z-index:9999;pointer-events:none;opacity:1;transform:rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(el);
+    const dur = 2000 + Math.random() * 1600;
+    const tx = (Math.random()-0.5) * 160;
+    el.animate([
+      {transform:`translateY(0) translateX(0) rotate(0deg)`,opacity:1},
+      {transform:`translateY(${70+Math.random()*30}vh) translateX(${tx}px) rotate(${540+Math.random()*540}deg)`,opacity:0}
+    ],{duration:dur,easing:'cubic-bezier(0.23,0.5,0.45,0.94)',fill:'forwards'}).onfinish=()=>el.remove();
+  }
+}
+function showEliteBanner() {
+  const existing = document.getElementById('elite-banner');
+  if (existing) return;
+  const pName = document.getElementById('rp-name')?.textContent || 'tu producto';
+  const banner = document.createElement('div');
+  banner.id = 'elite-banner';
+  banner.style.cssText = 'background:linear-gradient(135deg,rgba(245,200,66,0.12),rgba(255,215,0,0.06));border:1px solid rgba(245,200,66,0.4);border-radius:16px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;animation:fadeUp .5s ease both';
+  banner.innerHTML = `<div style="font-size:28px;flex-shrink:0">🏆</div><div style="flex:1"><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--gold);margin-bottom:2px">¡Producto Élite — Top 5% global!</div><div style="font-size:12px;color:var(--muted);line-height:1.4">"${pName.slice(0,40)}" alcanzó un score excepcional. Compartilo — muy pocos productos llegan a este nivel.</div></div><button onclick="shareOnX()" style="flex-shrink:0;background:rgba(245,200,66,0.15);border:1px solid rgba(245,200,66,0.35);color:var(--gold);font-size:11px;font-weight:700;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap">𝕏 Compartir 🏆</button>`;
+  const scores = document.querySelector('.scores-grid');
+  if (scores) scores.insertAdjacentElement('beforebegin', banner);
+  track('elite_score');
+}
 function maybeShowFirstReportTip() {
   if (localStorage.getItem('vnd_seen_report_tip')) return;
   const t = document.createElement('div');
@@ -2869,6 +2897,7 @@ function resetApp(){
   document.getElementById('story-share-btn').style.display='none';
   document.getElementById('ai-prompt-btn').style.display='none';
   if (window._disableReadProgress) window._disableReadProgress();
+  const eliteBanner = document.getElementById('elite-banner'); if (eliteBanner) eliteBanner.remove();
   document.getElementById('diagnostico-critico-wrap').style.display='none';
   document.getElementById('ganancias-rapidas-wrap').style.display='none';
   hideErr('audit-error');
