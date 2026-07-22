@@ -925,6 +925,10 @@ footer span{color:var(--accent2)}
       <div class="score-card sc-seo" onclick="document.getElementById('r-plan').scrollIntoView({behavior:'smooth',block:'start'})" title="Ver plan de acción" style="cursor:pointer"><div class="score-label">SEO</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc3" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn3">0</div></div><div id="sb3" style="font-size:10px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:4px"></div><div class="score-exp" id="se3"></div></div>
     </div>
     <div id="score-benchmark" style="display:none;font-size:12px;font-weight:600;padding:6px 14px;border-radius:100px;text-align:center;margin-bottom:10px;border:1px solid transparent"></div>
+    <div id="conv-gap-banner" style="display:none;background:linear-gradient(135deg,rgba(248,113,113,0.07),rgba(251,146,60,0.05));border:1px solid rgba(248,113,113,0.22);border-radius:12px;padding:11px 14px;margin-bottom:10px;font-size:12px;line-height:1.6">
+      <div style="font-weight:700;color:var(--red);margin-bottom:3px;font-size:13px" id="conv-gap-title">📉 Oportunidad perdida</div>
+      <div id="conv-gap-msg" style="color:var(--muted)"></div>
+    </div>
     <div class="rc" id="ganancias-rapidas-wrap" style="display:none">
       <div class="rc-head"><div class="rc-ico" style="background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.25);color:var(--gold)">⚡</div><div class="rc-tit">Ganancias rápidas — hacé esto hoy</div></div>
       <div id="r-ganancias" style="display:flex;flex-direction:column;gap:10px"></div>
@@ -1648,6 +1652,21 @@ function renderAudit(a, productName, hasComp) {
     const [,msg,bg,border,color] = tiers.find(([min])=>avgScore>=min);
     bm.textContent = msg;
     bm.style.cssText += `;background:${bg};border-color:${border};color:${color};display:block`;
+  })();
+
+  // Conversion gap banner for low scores
+  (function(){
+    const banner = document.getElementById('conv-gap-banner');
+    const msgEl = document.getElementById('conv-gap-msg');
+    const titleEl = document.getElementById('conv-gap-title');
+    if (!banner || !msgEl) return;
+    if (avgScore >= 70) { banner.style.display='none'; return; }
+    const gap = 100 - avgScore;
+    const potentialLift = avgScore < 50 ? '30–50%' : avgScore < 60 ? '20–35%' : '10–20%';
+    const urgency = avgScore < 50 ? '⚠️ Problema crítico' : '📉 Oportunidad perdida';
+    if (titleEl) titleEl.textContent = urgency;
+    msgEl.innerHTML = `Con un score de <strong>${avgScore}/100</strong>, tu tasa de conversión podría ser <strong>${potentialLift} más baja</strong> que la de los top sellers de tu categoría. Implementá el plan de acción para cerrar esa brecha. <span style="color:var(--accent3);cursor:pointer;font-weight:600" onclick="document.getElementById('r-plan').scrollIntoView({behavior:'smooth',block:'start'})">Ver plan →</span>`;
+    banner.style.display = 'block';
   })();
 
   applyPaywall();
