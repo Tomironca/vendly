@@ -1094,7 +1094,7 @@ footer span{color:var(--accent2)}
         </div>
       </div>
     </div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div><span id="plan-progress" style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500"></span><span id="plan-potential" style="display:none;font-size:11px;color:var(--green);font-weight:600;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:2px 8px"></span><button class="copy-btn" style="position:static;font-size:11px;margin-left:8px" onclick="copyFullPlan(this)">Copiar plan</button></div><div id="plan-prog-bar-wrap" style="display:none;height:4px;background:var(--bg3);border-radius:4px;margin-bottom:10px;overflow:hidden"><div id="plan-prog-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#34D399);border-radius:4px;transition:width .4s ease"></div></div><div class="plan-list-items" id="r-plan"></div>
+    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div><span id="plan-progress" style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500"></span><span id="plan-potential" style="display:none;font-size:11px;color:var(--green);font-weight:600;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:2px 8px"></span><button class="copy-btn" style="position:static;font-size:11px;margin-left:8px" onclick="copyFullPlan(this)">Copiar plan</button><button class="copy-btn" style="position:static;font-size:11px;margin-left:4px" onclick="copyPlanChecklist(this)" title="Copiar como checklist markdown (compatible con Notion, Obsidian)">☑ Checklist</button></div><div id="plan-prog-bar-wrap" style="display:none;height:4px;background:var(--bg3);border-radius:4px;margin-bottom:10px;overflow:hidden"><div id="plan-prog-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#34D399);border-radius:4px;transition:width .4s ease"></div></div><div class="plan-list-items" id="r-plan"></div>
       <div id="weekly-plan-wrap" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div style="font-size:13px;font-weight:600;color:var(--text)">📅 Plan semanal</div>
@@ -2970,6 +2970,30 @@ function copyFullPlan(btn) {
     btn.textContent='✓ Copiado'; setTimeout(()=>btn.textContent='Copiar plan',2000);
   });
 }
+function copyPlanChecklist(btn) {
+  if (!currentAudit) return;
+  const product = document.getElementById('rp-name')?.textContent || '';
+  const planItems = currentAudit.plan_accion || currentAudit.mejoras_recomendadas?.map((m,i) => ({
+    prioridad: i+1, accion: m.titulo, impacto_esperado: m.descripcion, plazo: m.impacto === 'ALTO' ? 'Esta semana' : m.impacto === 'MEDIO' ? 'Próximas 2 semanas' : 'Este mes'
+  })) || [];
+  const planKey = 'vnd_plan_' + btoa(encodeURIComponent(product)).slice(0,24);
+  let planDone = {};
+  try { planDone = JSON.parse(localStorage.getItem(planKey)||'{}'); } catch(e) {}
+  const avgScore = Math.round((currentAudit.scores.conversion + currentAudit.scores.confianza + currentAudit.scores.seo) / 3);
+  const lines = planItems.map((p,i) => {
+    const done = !!planDone[i];
+    const imp = i<2?'ALTO':i===2?'MEDIO':'BAJO';
+    return `- [${done?'x':' '}] ${p.accion} _(${imp})_`;
+  }).join('\n');
+  const text = `# Plan de acción — ${product}\nScore: ${avgScore}/100\n\n${lines}`;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = '☑ Checklist'; }, 2000);
+    showToast('✓ Checklist copiado — pegalo en Notion, Obsidian o donde quieras');
+    track('copy_plan_checklist');
+  });
+}
+
 function copyList(btn, listId, label) {
   const items = [...document.querySelectorAll(`#${listId} li`)].map((li,i)=>`${i+1}. ${li.textContent.replace(/^[✓!→]\s*/,'')}`).join('\n');
   if (!items) return;
