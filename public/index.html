@@ -149,6 +149,8 @@ textarea{min-height:68px;line-height:1.5}
 .ls.active .ls-dot{background:var(--accent);animation:pulse 1s ease infinite}
 .ls.active{color:var(--text);border-color:rgba(124,92,252,0.3)}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+@keyframes auditGlow{0%,100%{box-shadow:0 8px 28px rgba(124,92,252,0.35)}50%{box-shadow:0 8px 40px rgba(124,92,252,0.65),0 0 0 4px rgba(124,92,252,0.15)}}
+.btn-primary.pulse-ready{animation:auditGlow 1.6s ease-in-out infinite}
 
 /* RESULTS */
 .results{display:none}.results.show{display:block}
@@ -832,7 +834,7 @@ footer span{color:var(--accent2)}
       <div class="form-group">
         <label>URL del producto (Tiendanube, Shopify, MercadoShops...)</label>
         <div class="url-row">
-          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre" onkeydown="if(event.key==='Enter'){event.preventDefault();doScrape('product','url-result','url-name','url-desc','scrape-error');}" oninput="autoSelectCountry(this.value)" onfocus="suggestClipboardUrl();showRecentUrls()">
+          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre" onkeydown="if(event.key==='Enter'){event.preventDefault();doScrape('product','url-result','url-name','url-desc','scrape-error');}" oninput="autoSelectCountry(this.value);(function(v){const b=document.getElementById('audit-btn');if(b){if(/^https?:\/\/.{8,}/.test(v.trim()))b.classList.add('pulse-ready');else b.classList.remove('pulse-ready');}})(this.value)" onfocus="suggestClipboardUrl();showRecentUrls()">
           <button class="btn-sm" onclick="doScrape('product','url-result','url-name','url-desc','scrape-error')">Leer →</button>
         </div>
         <div id="clipboard-suggest" style="display:none;margin-top:6px;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.22);border-radius:8px;padding:7px 10px;font-size:12px;display:flex;align-items:center;gap:8px">
@@ -1491,7 +1493,8 @@ async function runAudit() {
   const country = document.getElementById('country').value;
   const tone = document.getElementById('tone').value;
   const competitorProduct = compEnabled ? currentCompetitor : null;
-  document.getElementById('audit-btn').disabled = true;
+  const auditBtn = document.getElementById('audit-btn');
+  auditBtn.disabled = true; auditBtn.classList.remove('pulse-ready');
   document.getElementById('loading').classList.add('show');
   document.getElementById('results').classList.remove('show');
   startLoading();
