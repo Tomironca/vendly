@@ -468,6 +468,8 @@ textarea{min-height:68px;line-height:1.5}
 .srb-btn:hover{border-color:var(--accent);color:var(--accent)}
 .srb-btn-upgrade{background:var(--accent);color:#fff;border:none}
 .srb-btn-upgrade:hover{opacity:.9}
+#read-progress-bar{position:fixed;top:0;left:0;width:0%;height:3px;background:linear-gradient(90deg,var(--accent),#34D399);z-index:9999;transition:width .08s linear;pointer-events:none;opacity:0;transition:width .08s linear,opacity .3s}
+#read-progress-bar.active{opacity:1}
 .upgrade-nudge{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,var(--accent),#5D3FD3);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;z-index:500;transform:translateY(100%);transition:transform .4s ease;box-shadow:0 -4px 32px rgba(124,92,252,0.4)}
 .upgrade-nudge.show{transform:translateY(0)}
 .un-text{font-size:14px;font-weight:500;color:#fff}
@@ -488,7 +490,7 @@ footer span{color:var(--accent2)}
 </style>
 </head>
 <body>
-
+<div id="read-progress-bar"></div>
 <div class="toast" id="toast"></div>
 
 <div class="upgrade-nudge" id="upgrade-nudge">
@@ -1241,6 +1243,20 @@ function hideStickyBar() {
   if (stickyBarObserver) { stickyBarObserver.disconnect(); stickyBarObserver = null; }
   document.getElementById('sticky-report-bar').classList.remove('show');
 }
+
+(function(){
+  const bar = document.getElementById('read-progress-bar');
+  if (!bar) return;
+  let _rpActive = false;
+  window.addEventListener('scroll', () => {
+    if (!_rpActive) return;
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const docH = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (docH > 0 ? Math.min(100, Math.round(scrollTop / docH * 100)) : 0) + '%';
+  }, { passive: true });
+  window._enableReadProgress = () => { _rpActive = true; bar.classList.add('active'); bar.style.width = '0%'; };
+  window._disableReadProgress = () => { _rpActive = false; bar.classList.remove('active'); bar.style.width = '0%'; };
+})();
 function reAudit(e, url) {
   e.stopPropagation();
   document.getElementById('dashboard-modal').style.display = 'none';
@@ -1827,6 +1843,7 @@ function renderAudit(a, productName, hasComp) {
     document.getElementById('wa-share-btn').style.display='';
     document.getElementById('story-share-btn').style.display='';
     document.getElementById('ai-prompt-btn').style.display='';
+    if (window._enableReadProgress) window._enableReadProgress();
     maybeShowFirstReportTip();
     if (avgScore >= 80) setTimeout(launchConfetti, 800);
     // Timed upgrade nudge for free users
@@ -2851,6 +2868,7 @@ function resetApp(){
   document.getElementById('wa-share-btn').style.display='none';
   document.getElementById('story-share-btn').style.display='none';
   document.getElementById('ai-prompt-btn').style.display='none';
+  if (window._disableReadProgress) window._disableReadProgress();
   document.getElementById('diagnostico-critico-wrap').style.display='none';
   document.getElementById('ganancias-rapidas-wrap').style.display='none';
   hideErr('audit-error');
