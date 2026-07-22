@@ -2726,11 +2726,17 @@ function showRecentUrls() {
   let recents = [];
   try { recents = JSON.parse(localStorage.getItem('vnd_recent_urls') || '[]'); } catch(e) {}
   if (!recents.length) return;
+  let scoreHist = {};
+  try { scoreHist = JSON.parse(localStorage.getItem('vnd_score_hist') || '{}'); } catch(e) {}
   wrap.innerHTML = '<div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:.03em">RECIENTES</div>' +
     recents.slice(0, 3).map(u => {
       const short = u.replace(/^https?:\/\//,'').replace(/\/$/, '');
-      const display = short.length > 52 ? short.slice(0, 49) + '…' : short;
-      return `<button onclick="(function(url){const inp=document.getElementById('product-url');inp.value=url;autoSelectCountry(url);document.getElementById('recent-urls-wrap').style.display='none';})(${JSON.stringify(u)})" style="display:block;width:100%;text-align:left;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--text2);cursor:pointer;font-family:inherit;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:border-color .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">↩ ${display}</button>`;
+      const entry = scoreHist[u.slice(0, 80)];
+      const avg = entry ? (typeof entry === 'object' ? entry.avg : entry) : null;
+      const scoreColor = avg === null ? 'var(--muted)' : avg >= 80 ? '#34D399' : avg >= 60 ? '#F5C842' : '#F87171';
+      const scoreBadge = avg !== null ? `<span style="flex-shrink:0;font-size:11px;font-weight:700;color:${scoreColor};background:rgba(0,0,0,0.25);border-radius:6px;padding:1px 7px;margin-left:auto;letter-spacing:0">${avg}</span>` : '';
+      const display = short.length > 44 ? short.slice(0, 41) + '…' : short;
+      return `<button onclick="(function(url){const inp=document.getElementById('product-url');inp.value=url;autoSelectCountry(url);document.getElementById('recent-urls-wrap').style.display='none';showUrlScoreHint(url);})(${JSON.stringify(u)})" style="display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--text2);cursor:pointer;font-family:inherit;margin-bottom:4px;transition:border-color .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">↩ ${display}</span>${scoreBadge}</button>`;
     }).join('');
   wrap.style.display = 'block';
   document.addEventListener('click', function hideRecents(e) {
