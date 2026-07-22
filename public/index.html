@@ -965,9 +965,9 @@ footer span{color:var(--accent2)}
       </div>
     </div>
     <div class="scores-grid">
-      <div class="score-card sc-conv" onclick="document.getElementById('r-plan').scrollIntoView({behavior:'smooth',block:'start'})" title="Ver plan de acción" style="cursor:pointer"><div class="score-label">Conversión</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc1" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn1">0</div></div><div id="sb1" style="font-size:10px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:4px"></div><div class="score-exp" id="se1"></div></div>
-      <div class="score-card sc-conf" onclick="document.getElementById('r-plan').scrollIntoView({behavior:'smooth',block:'start'})" title="Ver plan de acción" style="cursor:pointer"><div class="score-label">Confianza</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc2" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn2">0</div></div><div id="sb2" style="font-size:10px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:4px"></div><div class="score-exp" id="se2"></div></div>
-      <div class="score-card sc-seo" onclick="document.getElementById('r-plan').scrollIntoView({behavior:'smooth',block:'start'})" title="Ver plan de acción" style="cursor:pointer"><div class="score-label">SEO</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc3" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn3">0</div></div><div id="sb3" style="font-size:10px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:4px"></div><div class="score-exp" id="se3"></div></div>
+      <div class="score-card sc-conv" onclick="document.getElementById('r-plan').scrollIntoView({behavior:'smooth',block:'start'})" title="Ver plan de acción" style="cursor:pointer"><div class="score-label">Conversión</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc1" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn1">0</div></div><div id="sb1" style="font-size:10px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:2px"></div><div id="sd1" style="font-size:10px;font-weight:700;text-align:center;margin-bottom:3px;min-height:14px;letter-spacing:.01em"></div><div class="score-exp" id="se1"></div></div>
+      <div class="score-card sc-conf" onclick="document.getElementById('r-plan').scrollIntoView({behavior:'smooth',block:'start'})" title="Ver plan de acción" style="cursor:pointer"><div class="score-label">Confianza</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc2" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn2">0</div></div><div id="sb2" style="font-size:10px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:2px"></div><div id="sd2" style="font-size:10px;font-weight:700;text-align:center;margin-bottom:3px;min-height:14px;letter-spacing:.01em"></div><div class="score-exp" id="se2"></div></div>
+      <div class="score-card sc-seo" onclick="document.getElementById('r-plan').scrollIntoView({behavior:'smooth',block:'start'})" title="Ver plan de acción" style="cursor:pointer"><div class="score-label">SEO</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc3" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn3">0</div></div><div id="sb3" style="font-size:10px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:2px"></div><div id="sd3" style="font-size:10px;font-weight:700;text-align:center;margin-bottom:3px;min-height:14px;letter-spacing:.01em"></div><div class="score-exp" id="se3"></div></div>
     </div>
     <div id="score-benchmark" style="display:none;font-size:12px;font-weight:600;padding:6px 14px;border-radius:100px;text-align:center;margin-bottom:10px;border:1px solid transparent"></div>
     <div id="conv-gap-banner" style="display:none;background:linear-gradient(135deg,rgba(248,113,113,0.07),rgba(251,146,60,0.05));border:1px solid rgba(248,113,113,0.22);border-radius:12px;padding:11px 14px;margin-bottom:10px;font-size:12px;line-height:1.6">
@@ -1838,10 +1838,11 @@ function renderAudit(a, productName, hasComp) {
     let hist = {};
     try { hist = JSON.parse(localStorage.getItem(key)||'{}'); } catch(e){}
     const prev = hist[urlKey];
+    const prevAvg = typeof prev === 'object' ? prev?.avg : prev;
     const badge = document.getElementById('score-delta-badge');
     if (badge) {
-      if (prev !== undefined) {
-        const delta = avgScore - prev;
+      if (prevAvg !== undefined && prevAvg !== null) {
+        const delta = avgScore - prevAvg;
         if (delta > 0) {
           badge.textContent = `▲ +${delta} pts`;
           badge.style.cssText += ';background:rgba(52,211,153,0.15);color:#34D399;display:inline-block';
@@ -1853,7 +1854,22 @@ function renderAudit(a, productName, hasComp) {
         }
       } else { badge.style.display='none'; }
     }
-    hist[urlKey] = avgScore;
+    // Per-dimension deltas
+    const dimData = typeof prev === 'object' && prev ? prev : null;
+    [
+      {id:'sd1', cur:a.scores.conversion, old: dimData?.conv},
+      {id:'sd2', cur:a.scores.confianza,  old: dimData?.conf},
+      {id:'sd3', cur:a.scores.seo,        old: dimData?.seo},
+    ].forEach(({id, cur, old}) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (old === undefined || old === null) { el.textContent=''; return; }
+      const d = cur - old;
+      if (d > 0)      { el.textContent=`▲ +${d} pts`; el.style.color='#34D399'; }
+      else if (d < 0) { el.textContent=`▼ ${d} pts`;  el.style.color='#F87171'; }
+      else            { el.textContent='= igual';       el.style.color='var(--muted)'; }
+    });
+    hist[urlKey] = {avg: avgScore, conv: a.scores.conversion, conf: a.scores.confianza, seo: a.scores.seo, ts: Date.now()};
     // keep at most 200 entries
     const keys = Object.keys(hist);
     if (keys.length > 200) delete hist[keys[0]];
@@ -2948,6 +2964,7 @@ function resetApp(){
   const gcalWrap = document.getElementById('gcal-reminder-wrap'); if (gcalWrap) gcalWrap.style.display='none';
   document.getElementById('diagnostico-critico-wrap').style.display='none';
   document.getElementById('ganancias-rapidas-wrap').style.display='none';
+  ['sd1','sd2','sd3'].forEach(id=>{ const el=document.getElementById(id); if(el)el.textContent=''; });
   hideErr('audit-error');
   hideStickyBar();
   window.scrollTo({top:0,behavior:'smooth'});
