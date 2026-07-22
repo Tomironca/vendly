@@ -1030,7 +1030,16 @@ footer span{color:var(--accent2)}
         </div>
       </div>
     </div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div><span id="plan-progress" style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500"></span><span id="plan-potential" style="display:none;font-size:11px;color:var(--green);font-weight:600;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:2px 8px"></span><button class="copy-btn" style="position:static;font-size:11px;margin-left:8px" onclick="copyFullPlan(this)">Copiar plan</button></div><div id="plan-prog-bar-wrap" style="display:none;height:4px;background:var(--bg3);border-radius:4px;margin-bottom:10px;overflow:hidden"><div id="plan-prog-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#34D399);border-radius:4px;transition:width .4s ease"></div></div><div class="plan-list-items" id="r-plan"></div></div>
+    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div><span id="plan-progress" style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500"></span><span id="plan-potential" style="display:none;font-size:11px;color:var(--green);font-weight:600;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:2px 8px"></span><button class="copy-btn" style="position:static;font-size:11px;margin-left:8px" onclick="copyFullPlan(this)">Copiar plan</button></div><div id="plan-prog-bar-wrap" style="display:none;height:4px;background:var(--bg3);border-radius:4px;margin-bottom:10px;overflow:hidden"><div id="plan-prog-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#34D399);border-radius:4px;transition:width .4s ease"></div></div><div class="plan-list-items" id="r-plan"></div>
+      <div id="weekly-plan-wrap" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">📅 Plan semanal</div>
+          <button id="copy-weekly-btn" class="copy-btn" style="position:static;font-size:11px" onclick="copyWeeklyPlan(this)">Copiar</button>
+        </div>
+        <div id="weekly-plan-days" style="display:flex;flex-direction:column;gap:7px"></div>
+      </div>
+      <button id="toggle-weekly-btn" onclick="toggleWeeklyPlan()" style="display:none;margin-top:10px;background:none;border:1px dashed var(--border);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;width:100%">📅 Ver plan semanal ↓</button>
+    </div>
     <button class="reset-btn" onclick="resetApp()">← Analizar otro producto</button>
   </div>
 </div>
@@ -1589,6 +1598,8 @@ function renderAudit(a, productName, hasComp) {
     pl.insertAdjacentHTML('beforeend',`<div class="plan-item${done?' plan-done':''}" id="pi-${i}"><button class="plan-check" onclick="togglePlanDone(${i},'${planKey}')">${done?'✓':''}</button><div class="plan-n">${p.prioridad}</div><div><div class="plan-t">${p.accion}</div><div class="plan-d">${p.impacto_esperado}</div><span class="plan-pl">${p.plazo}</span><span class="plan-imp ${pl_imp[0]}">${pl_imp[1]}</span><span class="plan-time">${timeEst}</span></div></div>`);
   });
   updatePlanProgress();
+  const wBtn = document.getElementById('toggle-weekly-btn');
+  if (wBtn && planItems.length >= 3) wBtn.style.display='';
   // Score improvement potential
   const avgScore = Math.round((a.scores.conversion + a.scores.confianza + a.scores.seo) / 3);
   const potential = Math.min(avgScore + Math.round(planItems.length * 3.5), 95);
@@ -2426,6 +2437,43 @@ function useClipboardUrl() {
   autoSelectCountry(window._clipboardUrl);
   document.getElementById('clipboard-suggest').style.display = 'none';
   input.focus();
+}
+const DAYS_ES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+function buildWeeklyPlan() {
+  const items = [...document.querySelectorAll('#r-plan .plan-item')].map(el=>({
+    t: el.querySelector('.plan-t')?.textContent||'',
+    imp: el.querySelector('.plan-imp')?.textContent||'',
+    time: el.querySelector('.plan-time')?.textContent||''
+  })).filter(x=>x.t);
+  const today = new Date().getDay(); // 0=Sun
+  const startOffset = today===0?1:today===6?2:0;
+  const startDay = (today + startOffset) % 7;
+  const days = [];
+  let dayIdx = startDay, itemIdx = 0, dayCount = 0;
+  while (itemIdx < items.length && dayCount < 7) {
+    const dayItems = [];
+    dayItems.push(items[itemIdx++]);
+    if (itemIdx < items.length && items[itemIdx-1].imp!=='ALTO') dayItems.push(items[itemIdx++]);
+    days.push({day: DAYS_ES[dayIdx===0?6:dayIdx-1], items: dayItems});
+    dayIdx = (dayIdx % 7) + 1; dayCount++;
+  }
+  return days;
+}
+function toggleWeeklyPlan() {
+  const wrap = document.getElementById('weekly-plan-wrap');
+  const btn = document.getElementById('toggle-weekly-btn');
+  if (wrap.style.display==='none'||!wrap.style.display) {
+    const days = buildWeeklyPlan();
+    const daysEl = document.getElementById('weekly-plan-days');
+    daysEl.innerHTML = days.map(d=>`<div style="display:flex;gap:9px;align-items:flex-start"><div style="min-width:80px;font-size:11px;font-weight:700;color:var(--accent3);padding-top:2px">${d.day}</div><div style="flex:1">${d.items.map(it=>`<div style="font-size:12px;color:var(--text);margin-bottom:3px">· ${it.t} <span style="color:var(--muted);font-size:10px">${it.time}</span></div>`).join('')}</div></div>`).join('');
+    wrap.style.display='block'; btn.textContent='📅 Ocultar plan semanal ↑';
+  } else { wrap.style.display='none'; btn.textContent='📅 Ver plan semanal ↓'; }
+}
+function copyWeeklyPlan(btn) {
+  const days = buildWeeklyPlan();
+  const product = document.getElementById('rp-name')?.textContent||'';
+  const text = `Plan semanal — ${product}\n\n`+days.map(d=>`${d.day}:\n${d.items.map(it=>`  · ${it.t}`).join('\n')}`).join('\n\n');
+  navigator.clipboard.writeText(text).then(()=>{ btn.textContent='✓ Copiado'; setTimeout(()=>btn.textContent='Copiar',2000); });
 }
 function scrollToNewAudit() {
   const input = document.getElementById('product-url');
