@@ -792,8 +792,13 @@ footer span{color:var(--accent2)}
       <div class="form-group">
         <label>URL del producto (Tiendanube, Shopify, MercadoShops...)</label>
         <div class="url-row">
-          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre" onkeydown="if(event.key==='Enter'){event.preventDefault();doScrape('product','url-result','url-name','url-desc','scrape-error');}" oninput="autoSelectCountry(this.value)">
+          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre" onkeydown="if(event.key==='Enter'){event.preventDefault();doScrape('product','url-result','url-name','url-desc','scrape-error');}" oninput="autoSelectCountry(this.value)" onfocus="suggestClipboardUrl()">
           <button class="btn-sm" onclick="doScrape('product','url-result','url-name','url-desc','scrape-error')">Leer →</button>
+        </div>
+        <div id="clipboard-suggest" style="display:none;margin-top:6px;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.22);border-radius:8px;padding:7px 10px;font-size:12px;display:flex;align-items:center;gap:8px">
+          <span style="flex:1;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📋 <span id="clipboard-url-preview"></span></span>
+          <button onclick="useClipboardUrl()" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Usar →</button>
+          <button onclick="document.getElementById('clipboard-suggest').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0 2px">✕</button>
         </div>
       </div>
       <div class="error-msg" id="scrape-error"></div>
@@ -2306,6 +2311,32 @@ function animScore(cId,nId,val) {
   setTimeout(()=>{ c.style.strokeDashoffset=offset; c.style.stroke=col; let cur=0; const step=val/50; const iv=setInterval(()=>{ cur=Math.min(cur+step,val); n.textContent=Math.round(cur); n.style.color=col; if(cur>=val){ clearInterval(iv); const gid=nId.replace('sn','sl'); let g=document.getElementById(gid); if(!g){g=document.createElement('div');g.id=gid;g.className='score-grade';n.parentNode.appendChild(g);} g.textContent=lbl; g.style.color=col; } },20); },400);
 }
 function setText(id,text){ const el=document.getElementById(id); if(el)el.textContent=text||''; }
+let _clipboardSuggestShown = false;
+async function suggestClipboardUrl() {
+  if (_clipboardSuggestShown) return;
+  const input = document.getElementById('product-url');
+  if (!input || input.value.trim()) return;
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text || !/^https?:\/\/.{5,}/.test(text.trim())) return;
+    const url = text.trim();
+    const banner = document.getElementById('clipboard-suggest');
+    const preview = document.getElementById('clipboard-url-preview');
+    if (!banner || !preview) return;
+    preview.textContent = url.length > 55 ? url.slice(0, 52) + '…' : url;
+    banner.style.display = 'flex';
+    _clipboardSuggestShown = true;
+    window._clipboardUrl = url;
+  } catch(e) {}
+}
+function useClipboardUrl() {
+  const input = document.getElementById('product-url');
+  if (!input || !window._clipboardUrl) return;
+  input.value = window._clipboardUrl;
+  autoSelectCountry(window._clipboardUrl);
+  document.getElementById('clipboard-suggest').style.display = 'none';
+  input.focus();
+}
 function autoSelectCountry(url) {
   if (!url || url.length < 10) return;
   const u = url.toLowerCase();
