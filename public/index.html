@@ -1221,10 +1221,16 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   }
   document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
-    if (document.getElementById('login-modal')?.classList.contains('show')) { closeLoginModal(); return; }
-    if (document.getElementById('upgrade-modal')?.classList.contains('show')) { closeUpgradeModal(); return; }
-    if (document.getElementById('dashboard')?.classList.contains('show')) { closeDashboard(); return; }
+    if (e.key === 'Escape') {
+      if (document.getElementById('login-modal')?.classList.contains('show')) { closeLoginModal(); return; }
+      if (document.getElementById('upgrade-modal')?.classList.contains('show')) { closeUpgradeModal(); return; }
+      if (document.getElementById('dashboard')?.classList.contains('show')) { closeDashboard(); return; }
+    }
+    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) {
+      e.preventDefault();
+      const inp = document.getElementById('product-url');
+      if (inp) { inp.focus(); inp.select(); window.scrollTo({top:0,behavior:'smooth'}); }
+    }
   });
 });
 
