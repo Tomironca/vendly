@@ -1103,6 +1103,9 @@ footer span{color:var(--accent2)}
       </div>
       <button id="toggle-weekly-btn" onclick="toggleWeeklyPlan()" style="display:none;margin-top:10px;background:none;border:1px dashed var(--border);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;width:100%">📅 Ver plan semanal ↓</button>
     </div>
+    <div id="gcal-reminder-wrap" style="display:none;margin-top:8px;text-align:center">
+      <a id="gcal-reminder-link" href="#" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px dashed var(--border);border-radius:8px;transition:border-color .15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">📅 Recordame re-auditar en 7 días (Google Calendar)</a>
+    </div>
     <button class="reset-btn" onclick="resetApp()">← Analizar otro producto</button>
   </div>
 </div>
@@ -1859,6 +1862,19 @@ function renderAudit(a, productName, hasComp) {
     document.getElementById('story-share-btn').style.display='';
     document.getElementById('ai-prompt-btn').style.display='';
     if (window._enableReadProgress) window._enableReadProgress();
+    (function(){
+      const wrap = document.getElementById('gcal-reminder-wrap');
+      const link = document.getElementById('gcal-reminder-link');
+      if (!wrap || !link) return;
+      const pName = productName || 'mi producto';
+      const d = new Date(Date.now() + 7*24*60*60*1000);
+      const pad = n => String(n).padStart(2,'0');
+      const dt = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+      const title = encodeURIComponent(`Re-auditar "${pName.slice(0,40)}" en Vendly`);
+      const details = encodeURIComponent(`Hacé una nueva auditoría en vend-ly.store para ver si mejoraron los scores de conversión, confianza y SEO.`);
+      link.href = `https://calendar.google.com/calendar/r/eventedit?text=${title}&dates=${dt}/${dt}&details=${details}`;
+      wrap.style.display = 'block';
+    })();
     maybeShowFirstReportTip();
     if (avgScore >= 90) { setTimeout(launchGoldenConfetti, 600); setTimeout(showEliteBanner, 1400); }
     else if (avgScore >= 80) setTimeout(launchConfetti, 800);
@@ -2914,6 +2930,7 @@ function resetApp(){
   if (window._disableReadProgress) window._disableReadProgress();
   const eliteBanner = document.getElementById('elite-banner'); if (eliteBanner) eliteBanner.remove();
   const csg = document.getElementById('comp-suggest-card'); if (csg) csg.style.display='none';
+  const gcalWrap = document.getElementById('gcal-reminder-wrap'); if (gcalWrap) gcalWrap.style.display='none';
   document.getElementById('diagnostico-critico-wrap').style.display='none';
   document.getElementById('ganancias-rapidas-wrap').style.display='none';
   hideErr('audit-error');
