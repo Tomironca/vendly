@@ -1972,6 +1972,8 @@ async function loadDashboard() {
         const avg = Math.round((a.score_conversion+a.score_confianza+a.score_seo)/3);
         const prevAvg = i < audits.length - 1 ? Math.round((audits[i+1].score_conversion+audits[i+1].score_confianza+audits[i+1].score_seo)/3) : null;
         const trend = prevAvg === null ? '' : avg > prevAvg ? `<span style="color:var(--green);font-size:12px">↑${avg-prevAvg}</span>` : avg < prevAvg ? `<span style="color:var(--red);font-size:12px">↓${prevAvg-avg}</span>` : `<span style="color:var(--muted);font-size:12px">→</span>`;
+        const avgColor = avg >= 75 ? 'var(--green)' : avg >= 60 ? 'var(--gold)' : 'var(--red)';
+        const urgentBadge = avg < 55 ? `<span style="font-size:10px;font-weight:700;color:var(--red);background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:4px;padding:1px 5px;margin-left:5px">⚠ Urgente</span>` : '';
         const reAuditBtn = a.product_url ? `<button style="flex-shrink:0;background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.25);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:600;color:var(--accent2);cursor:pointer;font-family:inherit;white-space:nowrap" onclick="reAudit(event,'${a.product_url.replace(/'/g,"\\'")}')">↻ Re-auditar</button>` : '';
         return `<div class="audit-item" onclick="loadAuditById(${a.id})">
           <div class="audit-scores-row">
@@ -1980,8 +1982,8 @@ async function loadDashboard() {
             <span class="asp asp-s">${a.score_seo}</span>
           </div>
           <div class="audit-info-dash">
-            <div class="audit-name-dash">${a.product_name||a.product_url||'Producto'}</div>
-            <div class="audit-date-dash">${date} · Promedio: ${avg}/100 ${trend}</div>
+            <div class="audit-name-dash">${a.product_name||a.product_url||'Producto'}${urgentBadge}</div>
+            <div class="audit-date-dash">${date} · Promedio: <span style="color:${avgColor};font-weight:600">${avg}/100</span> ${trend}</div>
           </div>
           ${reAuditBtn || '<div style="color:var(--muted);font-size:16px">→</div>'}
         </div>`;
