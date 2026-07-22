@@ -272,6 +272,7 @@ textarea{min-height:68px;line-height:1.5}
 .pi-alto{background:rgba(248,113,113,0.12);color:#F87171;border:1px solid rgba(248,113,113,0.25)}
 .pi-medio{background:rgba(245,200,66,0.1);color:var(--gold);border:1px solid rgba(245,200,66,0.25)}
 .pi-bajo{background:rgba(139,137,160,0.1);color:var(--muted);border:1px solid var(--border)}
+.plan-time{display:inline-block;font-size:10px;font-weight:600;padding:1px 7px;border-radius:100px;margin-left:5px;background:rgba(96,165,250,0.08);color:#60A5FA;border:1px solid rgba(96,165,250,0.2);letter-spacing:.02em}
 .reset-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;margin-top:12px}
 .reset-btn:hover{color:var(--text);border-color:var(--accent)}
 
@@ -1571,7 +1572,8 @@ function renderAudit(a, productName, hasComp) {
   planItems.forEach((p,i)=>{
     const done = !!planDone[i];
     const pl_imp = i<2?['pi-alto','ALTO']:i===2?['pi-medio','MEDIO']:['pi-bajo','BAJO'];
-    pl.insertAdjacentHTML('beforeend',`<div class="plan-item${done?' plan-done':''}" id="pi-${i}"><button class="plan-check" onclick="togglePlanDone(${i},'${planKey}')">${done?'✓':''}</button><div class="plan-n">${p.prioridad}</div><div><div class="plan-t">${p.accion}</div><div class="plan-d">${p.impacto_esperado}</div><span class="plan-pl">${p.plazo}</span><span class="plan-imp ${pl_imp[0]}">${pl_imp[1]}</span></div></div>`);
+    const timeEst = i<2?'⏱ 1-2 días':i===2?'⏱ 3-7 días':i<5?'⏱ 1-2 sem':'⏱ 2-4 sem';
+    pl.insertAdjacentHTML('beforeend',`<div class="plan-item${done?' plan-done':''}" id="pi-${i}"><button class="plan-check" onclick="togglePlanDone(${i},'${planKey}')">${done?'✓':''}</button><div class="plan-n">${p.prioridad}</div><div><div class="plan-t">${p.accion}</div><div class="plan-d">${p.impacto_esperado}</div><span class="plan-pl">${p.plazo}</span><span class="plan-imp ${pl_imp[0]}">${pl_imp[1]}</span><span class="plan-time">${timeEst}</span></div></div>`);
   });
   updatePlanProgress();
   // Score improvement potential
