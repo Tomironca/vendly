@@ -925,6 +925,7 @@ footer span{color:var(--accent2)}
         <button class="btn btn-outline" id="x-share-btn" onclick="shareOnX()" style="background:rgba(0,0,0,0.2);border-color:rgba(255,255,255,0.12);color:var(--muted)">𝕏 Compartir</button>
         <button class="btn btn-outline" id="wa-share-btn" style="display:none;background:rgba(37,211,102,0.08);border-color:rgba(37,211,102,0.3);color:#25D366" onclick="shareWhatsApp()">💬 WhatsApp</button>
         <button class="btn btn-outline" id="story-share-btn" style="display:none;background:linear-gradient(135deg,rgba(124,92,252,0.1),rgba(166,136,250,0.06));border-color:rgba(124,92,252,0.3);color:var(--accent3)" onclick="showStoryCard()">📸 Story</button>
+        <button class="btn btn-outline" id="ai-prompt-btn" style="display:none;background:rgba(251,146,60,0.06);border-color:rgba(251,146,60,0.3);color:#FB923C" onclick="copyAiPrompt(this)">🤖 Prompt IA</button>
       </div>
       <button class="btn-sm" id="reaudit-btn" onclick="reAudit(this)" style="background:rgba(124,92,252,0.12);border-color:rgba(124,92,252,0.35);color:var(--accent3)">🔄 Re-auditar</button>
       <button class="btn-sm" onclick="resetApp()">← Nueva auditoría</button>
@@ -1816,6 +1817,7 @@ function renderAudit(a, productName, hasComp) {
     initStickyBar(productName);
     document.getElementById('wa-share-btn').style.display='';
     document.getElementById('story-share-btn').style.display='';
+    document.getElementById('ai-prompt-btn').style.display='';
     maybeShowFirstReportTip();
     if (avgScore >= 80) setTimeout(launchConfetti, 800);
     // Timed upgrade nudge for free users
@@ -2410,6 +2412,43 @@ function shareWhatsApp() {
   track('share_whatsapp');
 }
 
+function copyAiPrompt(btn) {
+  if (!currentAudit) return;
+  const a = currentAudit;
+  const s = a.scores;
+  const avg = Math.round((s.conversion + s.confianza + s.seo) / 3);
+  const pName = document.getElementById('rp-name')?.textContent || 'mi producto';
+  const topMejoras = (a.mejoras_recomendadas || []).slice(0, 3).map((m, i) => `${i+1}. [${m.impacto}] ${m.titulo}: ${m.descripcion}`).join('\n');
+  const topPlan = (a.plan_de_accion || []).slice(0, 3).map((p, i) => `${i+1}. ${p.accion} — Impacto estimado: ${p.impacto_esperado}`).join('\n');
+  const prompt = `Soy vendedor en e-commerce y acabo de auditar mi producto con Vendly IA. Necesito tu ayuda para implementar las mejoras.
+
+PRODUCTO: "${pName}"
+
+SCORES ACTUALES (de 100):
+- Conversión: ${s.conversion}/100 — ${s.conversion_explicacion || ''}
+- Confianza: ${s.confianza}/100 — ${s.confianza_explicacion || ''}
+- SEO: ${s.seo}/100 — ${s.seo_explicacion || ''}
+- Promedio: ${avg}/100
+
+DIAGNÓSTICO CRÍTICO:
+${a.diagnostico_critico || ''}
+
+MEJORAS PRIORITARIAS:
+${topMejoras || topPlan}
+
+DESCRIPCIÓN OPTIMIZADA QUE GENERÓ LA IA:
+Título SEO: ${a.descripcion_optimizada?.titulo_seo || ''}
+Descripción corta: ${a.descripcion_optimizada?.descripcion_corta || ''}
+
+TAREA: Ayudame a implementar estas mejoras. Empezá por reescribir la descripción del producto usando el título SEO y la descripción corta de arriba como base, manteniendo el tono de la marca y adaptándolo para [PLATAFORMA: MercadoLibre / Tienda Nube / otra]. Luego dame feedback sobre qué más puedo mejorar.`;
+  navigator.clipboard.writeText(prompt).then(() => {
+    btn.textContent = '✓ Prompt copiado';
+    setTimeout(() => { btn.innerHTML = '🤖 Prompt IA'; }, 2000);
+    showToast('✓ Prompt copiado — pegalo en ChatGPT o Claude');
+    track('copy_ai_prompt');
+  });
+}
+
 async function shareReport() {
   if (!currentAudit) return;
   try {
@@ -2780,6 +2819,7 @@ function resetApp(){
   ['url-result','comp-result','share-link'].forEach(id=>document.getElementById(id).classList.remove('show'));
   document.getElementById('wa-share-btn').style.display='none';
   document.getElementById('story-share-btn').style.display='none';
+  document.getElementById('ai-prompt-btn').style.display='none';
   document.getElementById('diagnostico-critico-wrap').style.display='none';
   document.getElementById('ganancias-rapidas-wrap').style.display='none';
   hideErr('audit-error');
