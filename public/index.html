@@ -903,7 +903,7 @@ footer span{color:var(--accent2)}
         <div class="report-title">📊 Informe de Auditoría Vendly</div>
         <div class="report-date" id="report-date"></div>
       </div>
-      <div class="report-product">Producto: <strong id="rp-name"></strong> <span id="score-delta-badge" style="display:none;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle"></span></div>
+      <div class="report-product">Producto: <strong id="rp-name"></strong> <span id="score-delta-badge" style="display:none;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle"></span> <span id="platform-badge" style="display:none;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle;letter-spacing:.03em"></span></div>
       <div class="resumen-text" id="r-resumen"></div>
       <span class="resumen-toggle" id="r-resumen-toggle" onclick="toggleResumen()" style="display:none">Ver más ↓</span>
     </div>
@@ -1422,6 +1422,14 @@ function renderAudit(a, productName, hasComp) {
   const now = new Date();
   document.getElementById('report-date').textContent = now.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
   document.getElementById('rp-name').textContent = productName;
+  (function(){
+    const pb = document.getElementById('platform-badge');
+    if (!pb) return;
+    const auditUrl = currentProduct?.url || localStorage.getItem('vnd_last_url') || '';
+    const plat = detectPlatform(auditUrl);
+    if (plat) { pb.textContent=plat.label; pb.style.background=plat.bg; pb.style.border=`1px solid ${plat.border}`; pb.style.color=plat.color; pb.style.display=''; }
+    else { pb.style.display='none'; }
+  })();
   const resEl=document.getElementById('r-resumen'), resTog=document.getElementById('r-resumen-toggle');
   resEl.classList.remove('expanded'); resTog.style.display='none';
   // Typewriter word-by-word reveal
@@ -2298,6 +2306,19 @@ function animScore(cId,nId,val) {
   setTimeout(()=>{ c.style.strokeDashoffset=offset; c.style.stroke=col; let cur=0; const step=val/50; const iv=setInterval(()=>{ cur=Math.min(cur+step,val); n.textContent=Math.round(cur); n.style.color=col; if(cur>=val){ clearInterval(iv); const gid=nId.replace('sn','sl'); let g=document.getElementById(gid); if(!g){g=document.createElement('div');g.id=gid;g.className='score-grade';n.parentNode.appendChild(g);} g.textContent=lbl; g.style.color=col; } },20); },400);
 }
 function setText(id,text){ const el=document.getElementById(id); if(el)el.textContent=text||''; }
+function detectPlatform(url) {
+  if (!url) return null;
+  const u = url.toLowerCase();
+  if (/mercadolibre|mercadoshops/.test(u)) return {label:'🛒 MercadoLibre', bg:'rgba(255,230,0,0.15)', border:'rgba(255,200,0,0.35)', color:'#B8860B'};
+  if (/tiendanube|mitiendanube/.test(u)) return {label:'☁️ Tienda Nube', bg:'rgba(96,165,250,0.12)', border:'rgba(96,165,250,0.3)', color:'#60A5FA'};
+  if (/shopify/.test(u)) return {label:'🛍️ Shopify', bg:'rgba(52,211,153,0.12)', border:'rgba(52,211,153,0.3)', color:'var(--green)'};
+  if (/amazon\./.test(u)) return {label:'📦 Amazon', bg:'rgba(251,146,60,0.12)', border:'rgba(251,146,60,0.3)', color:'#FB923C'};
+  if (/falabella/.test(u)) return {label:'🏪 Falabella', bg:'rgba(124,92,252,0.1)', border:'rgba(124,92,252,0.28)', color:'var(--accent2)'};
+  if (/linio\./.test(u)) return {label:'📱 Linio', bg:'rgba(96,165,250,0.12)', border:'rgba(96,165,250,0.3)', color:'#60A5FA'};
+  if (/etsy\./.test(u)) return {label:'🎨 Etsy', bg:'rgba(248,113,113,0.1)', border:'rgba(248,113,113,0.28)', color:'#F87171'};
+  if (/wix\./.test(u)) return {label:'✨ Wix', bg:'rgba(245,200,66,0.1)', border:'rgba(245,200,66,0.28)', color:'var(--gold)'};
+  return null;
+}
 function setScoreTip(circleId, text) { const c=document.getElementById(circleId); if(!c||!text) return; const card=c.closest('.score-card'); if(!card) return; let tip=card.querySelector('.sc-tip'); if(!tip){tip=document.createElement('div');tip.className='sc-tip';card.appendChild(tip);} tip.textContent=text; }
 function switchAdTab(i,btn){ document.querySelectorAll('.ad-tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.ad-panel').forEach(p=>p.classList.remove('active')); btn.classList.add('active'); document.getElementById('adp-'+i).classList.add('active'); }
 function toggleIg(i,btn){ const c=document.getElementById('igc-'+i); c.classList.toggle('expanded'); btn.textContent=c.classList.contains('expanded')?'Ver menos ↑':'Ver más ↓'; }
