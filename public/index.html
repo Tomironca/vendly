@@ -1095,7 +1095,7 @@ footer span{color:var(--accent2)}
         </div>
       </div>
     </div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div><span id="plan-progress" style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500"></span><span id="plan-potential" style="display:none;font-size:11px;color:var(--green);font-weight:600;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:2px 8px"></span><button class="copy-btn" style="position:static;font-size:11px;margin-left:8px" onclick="copyFullPlan(this)">Copiar plan</button><button class="copy-btn" style="position:static;font-size:11px;margin-left:4px" onclick="copyPlanChecklist(this)" title="Copiar como checklist markdown (compatible con Notion, Obsidian)">☑ Checklist</button></div><div id="plan-prog-bar-wrap" style="display:none;height:4px;background:var(--bg3);border-radius:4px;margin-bottom:10px;overflow:hidden"><div id="plan-prog-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#34D399);border-radius:4px;transition:width .4s ease"></div></div><div class="plan-list-items" id="r-plan"></div>
+    <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🎯</div><div class="rc-tit">Plan de acción priorizado</div><span id="plan-progress" style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500"></span><span id="plan-potential" style="display:none;font-size:11px;color:var(--green);font-weight:600;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:2px 8px"></span><span id="plan-time-est" style="display:none;font-size:11px;color:var(--muted);font-weight:500;margin-left:6px"></span><button class="copy-btn" style="position:static;font-size:11px;margin-left:8px" onclick="copyFullPlan(this)">Copiar plan</button><button class="copy-btn" style="position:static;font-size:11px;margin-left:4px" onclick="copyPlanChecklist(this)" title="Copiar como checklist markdown (compatible con Notion, Obsidian)">☑ Checklist</button></div><div id="plan-prog-bar-wrap" style="display:none;height:4px;background:var(--bg3);border-radius:4px;margin-bottom:10px;overflow:hidden"><div id="plan-prog-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#34D399);border-radius:4px;transition:width .4s ease"></div></div><div class="plan-list-items" id="r-plan"></div>
       <div id="weekly-plan-wrap" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div style="font-size:13px;font-weight:600;color:var(--text)">📅 Plan semanal</div>
@@ -1740,6 +1740,15 @@ function renderAudit(a, productName, hasComp) {
     pl.insertAdjacentHTML('beforeend',`<div class="plan-item${done?' plan-done':''}" id="pi-${i}"><button class="plan-check" onclick="togglePlanDone(${i},'${planKey}')">${done?'✓':''}</button><div class="plan-n">${p.prioridad}</div><div><div class="plan-t">${p.accion}</div><div class="plan-d">${p.impacto_esperado}</div><span class="plan-pl">${p.plazo}</span><span class="plan-imp ${pl_imp[0]}">${pl_imp[1]}</span><span class="plan-time">${timeEst}</span></div></div>`);
   });
   updatePlanProgress();
+  // Total time estimate
+  (function(){
+    const te = document.getElementById('plan-time-est');
+    if (!te || !planItems.length) return;
+    const days = planItems.reduce((sum,_,i)=>sum+(i<2?1.5:i===2?5:i<5?10:21),0);
+    const label = days<=7?`~${Math.round(days)} días`:days<=21?`~${Math.ceil(days/7)} semanas`:`~${Math.round(days/7)} semanas`;
+    te.textContent = `⏱ ${label} total`;
+    te.style.display='';
+  })();
   // Priority "start here" card
   if (planItems.length > 0) {
     const top = planItems[0];
