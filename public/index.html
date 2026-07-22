@@ -204,6 +204,9 @@ textarea{min-height:68px;line-height:1.5}
 .ci{flex-shrink:0;margin-top:2px;width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
 .ci-g{background:rgba(52,211,153,0.15);color:var(--green)}.ci-r{background:rgba(248,113,113,0.15);color:var(--red)}
 .mejoras{display:flex;flex-direction:column;gap:8px}
+.mej-ftab{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px 11px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.mej-ftab:hover{border-color:rgba(124,92,252,0.4);color:var(--text)}
+.mej-ftab-active{background:rgba(124,92,252,0.12);border-color:rgba(124,92,252,0.35);color:var(--accent3)}
 .mej{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:12px 14px;display:flex;gap:9px;align-items:flex-start}
 .mej-imp{flex-shrink:0;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;margin-top:1px}
 .imp-a{background:rgba(248,113,113,0.1);color:var(--red);border:1px solid rgba(248,113,113,0.2)}
@@ -1001,7 +1004,14 @@ footer span{color:var(--accent2)}
     </div>
     <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">✓</div><div class="rc-tit">Fortalezas</div><div class="rc-ct" id="fort-ct"></div><button class="copy-btn" style="position:static;margin-left:auto;font-size:11px" onclick="copyList(this,'r-fort','Fortalezas')">Copiar</button></div><ul class="check-list" id="r-fort"></ul></div>
     <div class="rc"><div class="rc-head"><div class="rc-ico ico-r">⚠</div><div class="rc-tit">Debilidades</div><div class="rc-ct" id="deb-ct"></div><button class="copy-btn" style="position:static;margin-left:auto;font-size:11px" onclick="copyList(this,'r-deb','Debilidades')">Copiar</button></div><ul class="check-list" id="r-deb"></ul></div>
-    <div class="rc"><div class="rc-head"><div class="rc-ico ico-b">↑</div><div class="rc-tit">Mejoras recomendadas</div></div><div class="mejoras" id="r-mej"></div></div>
+    <div class="rc"><div class="rc-head"><div class="rc-ico ico-b">↑</div><div class="rc-tit">Mejoras recomendadas</div></div>
+      <div id="mej-filter-bar" style="display:none;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="mej-ftab mej-ftab-active" onclick="filterMejoras('TODAS',this)">Todas</button>
+        <button class="mej-ftab" onclick="filterMejoras('ALTO',this)">🔴 ALTO</button>
+        <button class="mej-ftab" onclick="filterMejoras('MEDIO',this)">🟡 MEDIO</button>
+        <button class="mej-ftab" onclick="filterMejoras('BAJO',this)">🔵 BAJO</button>
+      </div>
+      <div class="mejoras" id="r-mej"></div></div>
     <!-- Audiencia ideal — FREE -->
     <div class="rc" id="section-audiencia">
       <div class="rc-head"><div class="rc-ico" style="background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2)">👤</div><div class="rc-tit">Audiencia ideal</div></div>
@@ -1683,11 +1693,18 @@ function renderAudit(a, productName, hasComp) {
     const promptBtn = `<button title="Copiar prompt para IA" onclick="copyMejPrompt(this,'${titEsc}','${descEsc}','${pnEsc}')" style="flex-shrink:0;background:none;border:1px dashed var(--border);border-radius:8px;padding:5px 8px;cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit;margin-left:8px;align-self:flex-start;margin-top:2px;white-space:nowrap;transition:border-color .15s,color .15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">📋</button>`;
     const innerRow = `<span class="mej-imp ${cls}">${m.impacto}</span><div style="flex:1"><div class="mej-tit">${m.titulo}${impEst}</div><div class="mej-desc">${m.descripcion}</div></div>${promptBtn}`;
     if (isTop) {
-      ml.insertAdjacentHTML('beforeend',`<div class="mej" style="flex-direction:column;background:linear-gradient(135deg,rgba(124,92,252,0.07),rgba(248,113,113,0.04));border:1px solid rgba(124,92,252,0.25);border-radius:12px;padding:12px"><div style="font-size:10px;font-weight:800;color:var(--accent2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">✦ Acción del día</div><div style="display:flex;gap:9px;align-items:flex-start">${innerRow}</div></div>`);
+      ml.insertAdjacentHTML('beforeend',`<div class="mej" data-impact="${m.impacto}" style="flex-direction:column;background:linear-gradient(135deg,rgba(124,92,252,0.07),rgba(248,113,113,0.04));border:1px solid rgba(124,92,252,0.25);border-radius:12px;padding:12px"><div style="font-size:10px;font-weight:800;color:var(--accent2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">✦ Acción del día</div><div style="display:flex;gap:9px;align-items:flex-start">${innerRow}</div></div>`);
     } else {
-      ml.insertAdjacentHTML('beforeend',`<div class="mej">${innerRow}</div>`);
+      ml.insertAdjacentHTML('beforeend',`<div class="mej" data-impact="${m.impacto}">${innerRow}</div>`);
     }
   });
+  (function(){
+    const fb = document.getElementById('mej-filter-bar');
+    if (fb && a.mejoras_recomendadas?.length >= 3) {
+      fb.style.display = 'flex';
+      fb.querySelectorAll('.mej-ftab').forEach(t => { t.classList.toggle('mej-ftab-active', t.textContent.trim()==='Todas'); });
+    } else if (fb) { fb.style.display = 'none'; }
+  })();
   const d = a.descripcion_optimizada;
   setText('d-tit', d.titulo_seo); setText('d-cor', d.descripcion_corta); setText('d-lar', d.descripcion_larga);
   updateTitLen();
@@ -3093,6 +3110,15 @@ function copyPlanChecklist(btn) {
   });
 }
 
+function filterMejoras(level, btn) {
+  document.querySelectorAll('#mej-filter-bar .mej-ftab').forEach(t => t.classList.remove('mej-ftab-active'));
+  if (btn) btn.classList.add('mej-ftab-active');
+  document.querySelectorAll('#r-mej .mej').forEach(el => {
+    const imp = el.dataset.impact || '';
+    el.style.display = (level === 'TODAS' || imp === level) ? '' : 'none';
+  });
+  track('filter_mejoras_' + level.toLowerCase());
+}
 function copyMetaInterests(btn) {
   const tags = [...document.querySelectorAll('#aud-intereses .aud-tag')].map(t => t.textContent.trim());
   if (!tags.length) return;
@@ -3181,6 +3207,7 @@ function resetApp(){
   const ush = document.getElementById('url-score-hint'); if (ush) ush.style.display='none';
   const vtl = document.getElementById('ver-en-tienda-link'); if (vtl) vtl.style.display='none';
   const cmib = document.getElementById('copy-meta-interests-btn'); if (cmib) cmib.style.display='none';
+  const mfb = document.getElementById('mej-filter-bar'); if (mfb) { mfb.style.display='none'; filterMejoras('TODAS',null); }
   hideErr('audit-error');
   hideStickyBar();
   window.scrollTo({top:0,behavior:'smooth'});
