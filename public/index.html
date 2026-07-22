@@ -581,6 +581,15 @@ footer span{color:var(--accent2)}
       Score de conversión: <strong id="upgrade-modal-score" style="color:var(--accent3)"></strong>/100.
       Desbloqueá el plan de acción y todos los copies listos para usar.
     </div>
+    <!-- Countdown timer -->
+    <div id="upgrade-countdown" style="display:none;background:linear-gradient(135deg,rgba(248,113,113,0.08),rgba(251,146,60,0.06));border:1px solid rgba(248,113,113,0.25);border-radius:10px;padding:9px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:16px">⏱</span>
+      <div style="flex:1">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(248,113,113,0.9);margin-bottom:2px">Precio especial expira en</div>
+        <div id="upgrade-countdown-timer" style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text);letter-spacing:.04em">24:00:00</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);text-align:right;line-height:1.4">Luego<br>precio regular</div>
+    </div>
     <!-- Lo que se desbloquea -->
     <div style="background:rgba(124,92,252,0.06);border:1px solid rgba(124,92,252,0.2);border-radius:14px;padding:14px 16px;margin-bottom:16px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent3);margin-bottom:10px">Lo que desbloqueás ahora</div>
@@ -1855,6 +1864,29 @@ async function sendForgotPassword() {
 }
 
 // ── UPGRADE ───────────────────────────────────────────────────
+let _cdInterval = null;
+function _startCountdown() {
+  const key = 'vnd_deal_deadline';
+  let deadline = parseInt(localStorage.getItem(key) || '0');
+  if (!deadline || deadline < Date.now()) {
+    deadline = Date.now() + 24 * 60 * 60 * 1000;
+    localStorage.setItem(key, deadline);
+  }
+  const el = document.getElementById('upgrade-countdown-timer');
+  const wrap = document.getElementById('upgrade-countdown');
+  if (!el || !wrap) return;
+  wrap.style.display = 'flex';
+  function tick() {
+    const diff = Math.max(0, deadline - Date.now());
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (diff <= 0) { clearInterval(_cdInterval); wrap.style.display = 'none'; }
+  }
+  tick();
+  _cdInterval = setInterval(tick, 1000);
+}
 function showUpgradeModal() {
   const ctx = document.getElementById('upgrade-modal-product-ctx');
   if (currentAudit) {
@@ -1869,9 +1901,14 @@ function showUpgradeModal() {
   }
   document.getElementById('upgrade-modal').classList.add('show');
   selectPlan('basic');
+  _startCountdown();
   track('upgrade_modal_open');
 }
-function closeUpgradeModal() { document.getElementById('upgrade-modal').classList.remove('show'); hideErr('upgrade-error'); }
+function closeUpgradeModal() {
+  document.getElementById('upgrade-modal').classList.remove('show');
+  hideErr('upgrade-error');
+  if (_cdInterval) { clearInterval(_cdInterval); _cdInterval = null; }
+}
 
 // ── EXIT INTENT ───────────────────────────────────────────────
 function closeExitIntent() { document.getElementById('exit-intent-overlay').style.display='none'; }
