@@ -1736,8 +1736,23 @@ function renderAudit(a, productName, hasComp) {
   if (a.objeciones_principales && a.objeciones_principales.length) {
     a.objeciones_principales.forEach((o,i)=>{
       const id=`obj-resp-${i}`;
-      objList.insertAdjacentHTML('beforeend',`<div class="obj-item"><div class="obj-q">${o.objecion}</div><div class="obj-a" id="${id}">${o.respuesta}<button class="obj-copy" onclick="copyObjResp(this,'${id}')">Copiar</button></div></div>`);
+      const hidden = i > 0 ? ' style="display:none"' : '';
+      objList.insertAdjacentHTML('beforeend',`<div class="obj-item" data-obj-idx="${i}"${hidden}><div class="obj-q">${o.objecion}</div><div class="obj-a" id="${id}">${o.respuesta}<button class="obj-copy" onclick="copyObjResp(this,'${id}')">Copiar</button></div></div>`);
     });
+    const extra = a.objeciones_principales.length - 1;
+    if (extra > 0) {
+      const moreBtn = document.createElement('button');
+      moreBtn.id = 'obj-show-more';
+      moreBtn.style.cssText = 'width:100%;background:none;border:1px dashed var(--border);border-radius:8px;padding:7px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit;margin-top:4px;transition:border-color .15s';
+      moreBtn.textContent = `Ver ${extra} objeción${extra>1?'es':''} más ↓`;
+      moreBtn.onmouseover = () => moreBtn.style.borderColor='var(--accent)';
+      moreBtn.onmouseout = () => moreBtn.style.borderColor='var(--border)';
+      moreBtn.onclick = () => {
+        objList.querySelectorAll('[data-obj-idx]').forEach(el=>el.style.display='');
+        moreBtn.remove();
+      };
+      objList.insertAdjacentElement('afterend', moreBtn);
+    }
     objSec.style.display='';
   } else { objSec.style.display='none'; }
 
