@@ -1493,7 +1493,17 @@ function renderAudit(a, productName, hasComp) {
     fq.insertAdjacentHTML('beforeend',`<div class="faq-item"><div class="faq-q-text">${f.pregunta}</div><div class="faq-a-text" id="${fid}">${f.respuesta}</div><button class="copy-btn" style="position:static;margin-top:5px;font-size:11px" onclick="copyEl(this,'${fid}')">Copiar respuesta</button></div>`);
   });
   const kw = document.getElementById('r-kw'); kw.innerHTML='';
-  (a.keywords_seo||[]).forEach(k=>kw.insertAdjacentHTML('beforeend',`<span class="kw" onclick="copyKw(this,'${k.replace(/'/g,"\\'")}'">${k}</span>`));
+  const kwPalette=[
+    ['rgba(124,92,252,0.1)','rgba(124,92,252,0.3)','var(--accent2)'],
+    ['rgba(96,165,250,0.1)','rgba(96,165,250,0.3)','#60A5FA'],
+    ['rgba(52,211,153,0.08)','rgba(52,211,153,0.28)','var(--green)'],
+    ['rgba(245,200,66,0.08)','rgba(245,200,66,0.28)','var(--gold)'],
+    ['rgba(251,146,60,0.08)','rgba(251,146,60,0.28)','#FB923C'],
+  ];
+  (a.keywords_seo||[]).forEach((k,i)=>{
+    const [bg,bc,col]=kwPalette[i%kwPalette.length];
+    kw.insertAdjacentHTML('beforeend',`<span class="kw" style="background:${bg};border-color:${bc};color:${col}" onclick="copyKw(this,'${k.replace(/'/g,"\\'")}'">${k}</span>`);
+  });
   setText('r-precio', a.estrategia_precio);
   const pl = document.getElementById('r-plan'); pl.innerHTML='';
   const planItems = a.plan_accion || a.mejoras_recomendadas?.map((m,i) => ({
