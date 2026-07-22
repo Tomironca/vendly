@@ -1586,6 +1586,9 @@ function renderAudit(a, productName, hasComp) {
   });
   setText('r-precio', a.estrategia_precio);
   const pl = document.getElementById('r-plan'); pl.innerHTML='';
+  // Remove previous priority card if any
+  const oldPrio = document.getElementById('plan-priority-card');
+  if (oldPrio) oldPrio.remove();
   const planItems = a.plan_accion || a.mejoras_recomendadas?.map((m,i) => ({
     prioridad: i+1, accion: m.titulo, impacto_esperado: m.descripcion, plazo: m.impacto === 'ALTO' ? 'Esta semana' : m.impacto === 'MEDIO' ? 'Próximas 2 semanas' : 'Este mes'
   })) || [];
@@ -1598,6 +1601,15 @@ function renderAudit(a, productName, hasComp) {
     pl.insertAdjacentHTML('beforeend',`<div class="plan-item${done?' plan-done':''}" id="pi-${i}"><button class="plan-check" onclick="togglePlanDone(${i},'${planKey}')">${done?'✓':''}</button><div class="plan-n">${p.prioridad}</div><div><div class="plan-t">${p.accion}</div><div class="plan-d">${p.impacto_esperado}</div><span class="plan-pl">${p.plazo}</span><span class="plan-imp ${pl_imp[0]}">${pl_imp[1]}</span><span class="plan-time">${timeEst}</span></div></div>`);
   });
   updatePlanProgress();
+  // Priority "start here" card
+  if (planItems.length > 0) {
+    const top = planItems[0];
+    const prio = document.createElement('div');
+    prio.id = 'plan-priority-card';
+    prio.style.cssText = 'background:linear-gradient(135deg,rgba(124,92,252,0.1),rgba(93,63,211,0.06));border:1px solid rgba(124,92,252,0.3);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start';
+    prio.innerHTML = `<div style="font-size:20px;flex-shrink:0;margin-top:1px">🚨</div><div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent3);margin-bottom:4px">Empezá por aquí — Acción #1</div><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px">${top.accion}</div><div style="font-size:12px;color:var(--muted);line-height:1.5">${top.impacto_esperado}</div></div>`;
+    pl.insertAdjacentElement('beforebegin', prio);
+  }
   const wBtn = document.getElementById('toggle-weekly-btn');
   if (wBtn && planItems.length >= 3) wBtn.style.display='';
   // Score improvement potential
