@@ -1900,12 +1900,13 @@ function renderAudit(a, productName, hasComp) {
   document.title = `${productName.slice(0,30)} — Score ${avgScore}/100 | Vendly`;
   setTimeout(()=>{
     document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
-    // Animate rc cards on scroll
-    document.querySelectorAll('.results .rc').forEach(el=>{
+    // Animate rc cards on scroll with staggered entrance
+    document.querySelectorAll('.results .rc').forEach((el,i)=>{
+      el.style.transitionDelay = i < 8 ? `${i * 55}ms` : '0ms';
       if(!el.classList.contains('rc-visible')){el.classList.add('rc-hidden');}
     });
     const rcObs = new IntersectionObserver(entries=>{
-      entries.forEach(e=>{ if(e.isIntersecting){e.target.classList.remove('rc-hidden');e.target.classList.add('rc-visible');rcObs.unobserve(e.target);} });
+      entries.forEach(e=>{ if(e.isIntersecting){e.target.classList.remove('rc-hidden');e.target.classList.add('rc-visible');rcObs.unobserve(e.target);setTimeout(()=>e.target.style.transitionDelay='',600);} });
     },{threshold:0.08});
     document.querySelectorAll('.results .rc.rc-hidden').forEach(el=>rcObs.observe(el));
     initStickyBar(productName);
