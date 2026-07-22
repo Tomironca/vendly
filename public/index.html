@@ -834,7 +834,7 @@ footer span{color:var(--accent2)}
       <div class="form-group">
         <label>URL del producto (Tiendanube, Shopify, MercadoShops...)</label>
         <div class="url-row">
-          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre" onkeydown="if(event.key==='Enter'){event.preventDefault();doScrape('product','url-result','url-name','url-desc','scrape-error');}" oninput="autoSelectCountry(this.value);(function(v){const b=document.getElementById('audit-btn');if(b){if(/^https?:\/\/.{8,}/.test(v.trim()))b.classList.add('pulse-ready');else b.classList.remove('pulse-ready');}})(this.value)" onfocus="suggestClipboardUrl();showRecentUrls()">
+          <input type="url" id="product-url" placeholder="https://tutienda.com/producto/nombre" onkeydown="if(event.key==='Enter'){event.preventDefault();doScrape('product','url-result','url-name','url-desc','scrape-error');}" oninput="autoSelectCountry(this.value);(function(v){const b=document.getElementById('audit-btn');if(b){if(/^https?:\/\/.{8,}/.test(v.trim()))b.classList.add('pulse-ready');else b.classList.remove('pulse-ready');}showUrlScoreHint(v);})(this.value)" onfocus="suggestClipboardUrl();showRecentUrls()">
           <button class="btn-sm" onclick="doScrape('product','url-result','url-name','url-desc','scrape-error')">Leer →</button>
         </div>
         <div id="clipboard-suggest" style="display:none;margin-top:6px;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.22);border-radius:8px;padding:7px 10px;font-size:12px;display:flex;align-items:center;gap:8px">
@@ -843,6 +843,7 @@ footer span{color:var(--accent2)}
           <button onclick="document.getElementById('clipboard-suggest').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0 2px">✕</button>
         </div>
         <div id="recent-urls-wrap" style="display:none;margin-top:6px"></div>
+        <div id="url-score-hint" style="display:none;margin-top:5px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px"></div>
       </div>
       <div class="error-msg" id="scrape-error"></div>
       <div class="url-result" id="url-result">
@@ -1206,7 +1207,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => { const el = document.getElementById('product-url'); if (el) el.focus(); }, 300);
   }
   const lastUrl = localStorage.getItem('vnd_last_url');
-  if (lastUrl) { const el = document.getElementById('product-url'); if (el && !el.value) el.value = lastUrl; }
+  if (lastUrl) { const el = document.getElementById('product-url'); if (el && !el.value) { el.value = lastUrl; showUrlScoreHint(lastUrl); } }
   const lastTs = parseInt(localStorage.getItem('vnd_last_audit_ts')||'0');
   if (lastUrl && lastTs) {
     const daysSince = Math.floor((Date.now() - lastTs) / 86400000);
@@ -2626,6 +2627,29 @@ function animScore(cId,nId,val) {
   setTimeout(()=>{ c.style.strokeDashoffset=offset; c.style.stroke=col; let cur=0; const step=val/50; const iv=setInterval(()=>{ cur=Math.min(cur+step,val); n.textContent=Math.round(cur); n.style.color=col; if(cur>=val){ clearInterval(iv); const gid=nId.replace('sn','sl'); let g=document.getElementById(gid); if(!g){g=document.createElement('div');g.id=gid;g.className='score-grade';n.parentNode.appendChild(g);} g.textContent=lbl; g.style.color=col; } },20); },400);
 }
 function setText(id,text){ const el=document.getElementById(id); if(el)el.textContent=text||''; }
+function showUrlScoreHint(url) {
+  const hint = document.getElementById('url-score-hint');
+  if (!hint) return;
+  const v = (url || '').trim();
+  if (!v || !/^https?:\/\/.{4,}/.test(v)) { hint.style.display='none'; return; }
+  let hist = {};
+  try { hist = JSON.parse(localStorage.getItem('vnd_score_hist')||'{}'); } catch(e) {}
+  const key = v.slice(0, 80);
+  const entry = hist[key];
+  if (!entry) { hint.style.display='none'; return; }
+  const avg = typeof entry === 'object' ? entry.avg : entry;
+  const ts = typeof entry === 'object' ? entry.ts : null;
+  const color = avg >= 80 ? '#34D399' : avg >= 60 ? '#F5C842' : '#F87171';
+  const label = avg >= 80 ? 'Excelente' : avg >= 70 ? 'Sólido' : avg >= 60 ? 'En camino' : avg >= 50 ? 'Necesita trabajo' : 'Crítico';
+  let timeStr = '';
+  if (ts) {
+    const days = Math.floor((Date.now() - ts) / 86400000);
+    timeStr = days === 0 ? ' · hoy' : days === 1 ? ' · ayer' : ` · hace ${days} días`;
+  }
+  hint.innerHTML = `<span style="font-size:11px;padding:2px 8px;border-radius:100px;background:${color}22;border:1px solid ${color}44;color:${color};font-weight:700">Score anterior: ${avg}/100 — ${label}</span><span style="color:var(--muted)">${timeStr}</span>`;
+  hint.style.display = 'flex';
+}
+
 function showRecentUrls() {
   const wrap = document.getElementById('recent-urls-wrap');
   const input = document.getElementById('product-url');
@@ -2982,6 +3006,7 @@ function resetApp(){
   document.getElementById('diagnostico-critico-wrap').style.display='none';
   document.getElementById('ganancias-rapidas-wrap').style.display='none';
   ['sd1','sd2','sd3'].forEach(id=>{ const el=document.getElementById(id); if(el)el.textContent=''; });
+  const ush = document.getElementById('url-score-hint'); if (ush) ush.style.display='none';
   hideErr('audit-error');
   hideStickyBar();
   window.scrollTo({top:0,behavior:'smooth'});
