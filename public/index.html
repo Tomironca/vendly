@@ -1013,7 +1013,7 @@ footer span{color:var(--accent2)}
     </div>
     <!-- Objeciones — FREE -->
     <div class="rc" id="section-objeciones">
-      <div class="rc-head"><div class="rc-ico ico-r">💬</div><div class="rc-tit">¿Por qué no compran? Objeciones + respuestas listas</div></div>
+      <div class="rc-head"><div class="rc-ico ico-r">💬</div><div class="rc-tit">¿Por qué no compran? Objeciones + respuestas listas</div><button class="copy-btn" style="position:static;margin-left:auto;font-size:11px" onclick="copyAllObjeciones(this)">Copiar todas</button></div>
       <div class="objeciones-list" id="r-objeciones"></div>
     </div>
     <!-- Impacto en revenue — FREE -->
@@ -3067,6 +3067,20 @@ function copyPlanChecklist(btn) {
     setTimeout(() => { btn.textContent = '☑ Checklist'; }, 2000);
     showToast('✓ Checklist copiado — pegalo en Notion, Obsidian o donde quieras');
     track('copy_plan_checklist');
+  });
+}
+
+function copyAllObjeciones(btn) {
+  if (!currentAudit || !currentAudit.objeciones_principales) return;
+  const product = document.getElementById('rp-name')?.textContent || 'el producto';
+  const text = currentAudit.objeciones_principales.map((o,i) =>
+    `${i+1}. ❓ ${o.objecion}\n✅ ${o.respuesta}`
+  ).join('\n\n');
+  navigator.clipboard.writeText(`Objeciones y respuestas — "${product}"\n\n${text}`).then(() => {
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => btn.textContent = 'Copiar todas', 2000);
+    showToast('✓ Todas las objeciones copiadas');
+    track('copy_objeciones_all');
   });
 }
 
