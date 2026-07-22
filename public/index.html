@@ -1904,17 +1904,20 @@ function renderAudit(a, productName, hasComp) {
 
   applyPaywall();
 
-  // Score history delta badge
+  // Score history delta badge (time-series array, newest first)
   (function() {
     const key = 'vnd_score_hist';
     const urlKey = (currentProduct?.url || productName).slice(0,80);
     let hist = {};
     try { hist = JSON.parse(localStorage.getItem(key)||'{}'); } catch(e){}
-    const prev = hist[urlKey];
-    const prevAvg = typeof prev === 'object' ? prev?.avg : prev;
+    // Normalize existing entry to array
+    const raw = hist[urlKey];
+    const existing = Array.isArray(raw) ? raw : raw ? [typeof raw === 'object' ? raw : {avg: raw}] : [];
+    const prevEntry = existing[0] || null; // most recent previous audit
+    const prevAvg = prevEntry?.avg ?? null;
     const badge = document.getElementById('score-delta-badge');
     if (badge) {
-      if (prevAvg !== undefined && prevAvg !== null) {
+      if (prevAvg !== null) {
         const delta = avgScore - prevAvg;
         if (delta > 0) {
           badge.textContent = `▲ +${delta} pts`;
@@ -1928,11 +1931,10 @@ function renderAudit(a, productName, hasComp) {
       } else { badge.style.display='none'; }
     }
     // Per-dimension deltas
-    const dimData = typeof prev === 'object' && prev ? prev : null;
     [
-      {id:'sd1', cur:a.scores.conversion, old: dimData?.conv},
-      {id:'sd2', cur:a.scores.confianza,  old: dimData?.conf},
-      {id:'sd3', cur:a.scores.seo,        old: dimData?.seo},
+      {id:'sd1', cur:a.scores.conversion, old: prevEntry?.conv},
+      {id:'sd2', cur:a.scores.confianza,  old: prevEntry?.conf},
+      {id:'sd3', cur:a.scores.seo,        old: prevEntry?.seo},
     ].forEach(({id, cur, old}) => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -1942,8 +1944,10 @@ function renderAudit(a, productName, hasComp) {
       else if (d < 0) { el.textContent=`▼ ${d} pts`;  el.style.color='#F87171'; }
       else            { el.textContent='= igual';       el.style.color='var(--muted)'; }
     });
-    hist[urlKey] = {avg: avgScore, conv: a.scores.conversion, conf: a.scores.confianza, seo: a.scores.seo, ts: Date.now()};
-    // keep at most 200 entries
+    // Prepend new entry, keep last 5
+    const newEntry = {avg: avgScore, conv: a.scores.conversion, conf: a.scores.confianza, seo: a.scores.seo, ts: Date.now()};
+    const updated = [newEntry, ...existing].slice(0, 5);
+    hist[urlKey] = updated;
     const keys = Object.keys(hist);
     if (keys.length > 200) delete hist[keys[0]];
     try { localStorage.setItem(key, JSON.stringify(hist)); } catch(e){}
@@ -2721,6 +2725,22 @@ function animScore(cId,nId,val) {
   setTimeout(()=>{ c.style.strokeDashoffset=offset; c.style.stroke=col; let cur=0; const step=val/50; const iv=setInterval(()=>{ cur=Math.min(cur+step,val); n.textContent=Math.round(cur); n.style.color=col; if(cur>=val){ clearInterval(iv); n.animate([{transform:'scale(1)'},{transform:'scale(1.22)'},{transform:'scale(1)'}],{duration:320,easing:'ease-out'}); const gid=nId.replace('sn','sl'); let g=document.getElementById(gid); if(!g){g=document.createElement('div');g.id=gid;g.className='score-grade';n.parentNode.appendChild(g);} g.textContent=lbl; g.style.color=col; }},20); },400);
 }
 function setText(id,text){ const el=document.getElementById(id); if(el)el.textContent=text||''; }
+function scoreHistArr(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'object') return [raw];
+  return [{avg: raw}];
+}
+function scoreSparkline(pts) {
+  if (pts.length < 2) return '';
+  const w = 44, h = 18, mn = Math.min(...pts), mx = Math.max(...pts), rng = mx - mn || 1;
+  const xs = pts.map((_,i) => Math.round(i * (w-2) / (pts.length-1)));
+  const ys = pts.map(p => Math.round(h - 2 - ((p-mn)/rng)*(h-4)));
+  const d = xs.map((x,i) => `${i===0?'M':'L'}${x},${ys[i]}`).join(' ');
+  const trend = pts[pts.length-1] - pts[0];
+  const col = trend > 0 ? '#34D399' : trend < 0 ? '#F87171' : '#8B89A0';
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:inline-block;vertical-align:middle;margin-left:5px;flex-shrink:0"><path d="${d}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${xs[xs.length-1]}" cy="${ys[ys.length-1]}" r="2.5" fill="${col}"/></svg>`;
+}
 function showUrlScoreHint(url) {
   const hint = document.getElementById('url-score-hint');
   if (!hint) return;
@@ -2728,11 +2748,12 @@ function showUrlScoreHint(url) {
   if (!v || !/^https?:\/\/.{4,}/.test(v)) { hint.style.display='none'; return; }
   let hist = {};
   try { hist = JSON.parse(localStorage.getItem('vnd_score_hist')||'{}'); } catch(e) {}
-  const key = v.slice(0, 80);
-  const entry = hist[key];
-  if (!entry) { hint.style.display='none'; return; }
-  const avg = typeof entry === 'object' ? entry.avg : entry;
-  const ts = typeof entry === 'object' ? entry.ts : null;
+  const arr = scoreHistArr(hist[v.slice(0, 80)]);
+  if (!arr.length) { hint.style.display='none'; return; }
+  const latest = arr[0];
+  const avg = latest?.avg ?? null;
+  const ts = latest?.ts ?? null;
+  if (avg === null) { hint.style.display='none'; return; }
   const color = avg >= 80 ? '#34D399' : avg >= 60 ? '#F5C842' : '#F87171';
   const label = avg >= 80 ? 'Excelente' : avg >= 70 ? 'Sólido' : avg >= 60 ? 'En camino' : avg >= 50 ? 'Necesita trabajo' : 'Crítico';
   let timeStr = '';
@@ -2740,7 +2761,9 @@ function showUrlScoreHint(url) {
     const days = Math.floor((Date.now() - ts) / 86400000);
     timeStr = days === 0 ? ' · hoy' : days === 1 ? ' · ayer' : ` · hace ${days} días`;
   }
-  hint.innerHTML = `<span style="font-size:11px;padding:2px 8px;border-radius:100px;background:${color}22;border:1px solid ${color}44;color:${color};font-weight:700">Score anterior: ${avg}/100 — ${label}</span><span style="color:var(--muted)">${timeStr}</span>`;
+  const pts = [...arr].reverse().map(e => e.avg ?? e);
+  const spark = arr.length >= 2 ? scoreSparkline(pts) : '';
+  hint.innerHTML = `<span style="font-size:11px;padding:2px 8px;border-radius:100px;background:${color}22;border:1px solid ${color}44;color:${color};font-weight:700">Score anterior: ${avg}/100 — ${label}</span><span style="color:var(--muted)">${timeStr}</span>${spark}`;
   hint.style.display = 'flex';
 }
 
@@ -2756,8 +2779,8 @@ function showRecentUrls() {
   wrap.innerHTML = '<div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:.03em">RECIENTES</div>' +
     recents.slice(0, 3).map(u => {
       const short = u.replace(/^https?:\/\//,'').replace(/\/$/, '');
-      const entry = scoreHist[u.slice(0, 80)];
-      const avg = entry ? (typeof entry === 'object' ? entry.avg : entry) : null;
+      const arr = scoreHistArr(scoreHist[u.slice(0, 80)]);
+      const avg = arr.length ? (arr[0]?.avg ?? null) : null;
       const scoreColor = avg === null ? 'var(--muted)' : avg >= 80 ? '#34D399' : avg >= 60 ? '#F5C842' : '#F87171';
       const scoreBadge = avg !== null ? `<span style="flex-shrink:0;font-size:11px;font-weight:700;color:${scoreColor};background:rgba(0,0,0,0.25);border-radius:6px;padding:1px 7px;margin-left:auto;letter-spacing:0">${avg}</span>` : '';
       const display = short.length > 44 ? short.slice(0, 41) + '…' : short;
