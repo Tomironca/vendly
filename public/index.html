@@ -2821,6 +2821,20 @@ function copyFullReport(btn) {
   const sc = (id) => document.getElementById(id)?.textContent || '';
   const liText = (id) => [...(document.getElementById(id)?.querySelectorAll('li')||[])].map((li,i)=>`${i+1}. ${li.textContent.replace(/^[✓!→]\s*/,'')}`).join('\n');
   const planItems = [...(document.getElementById('r-plan')?.querySelectorAll('.plan-item')||[])].map((el,i)=>`${i+1}. ${el.querySelector('.plan-t')?.textContent||''}`).join('\n');
+  const diag = document.getElementById('r-diagnostico')?.textContent?.trim();
+  const mejoras = [...(document.getElementById('r-mej')?.querySelectorAll('.mej')||[])].map((el,i)=>{
+    const t = el.querySelector('.mej-tit')?.textContent?.replace(/\s*\d+\%.*$/,'').trim()||'';
+    const d = el.querySelector('.mej-desc')?.textContent?.trim()||'';
+    const imp = el.querySelector('.mej-imp')?.textContent?.trim()||'';
+    return `${i+1}. [${imp}] ${t}\n   ${d}`;
+  }).join('\n\n');
+  const objText = [...(document.getElementById('r-objeciones')?.querySelectorAll('.obj-item')||[])].map((el,i)=>{
+    const q = el.querySelector('.obj-q')?.textContent?.trim()||'';
+    const resp = el.querySelector('.obj-a')?.textContent?.replace(/Copiar\s*$/,'').trim()||'';
+    return `${i+1}. ${q}\n   → ${resp}`;
+  }).join('\n\n');
+  const audDesc = document.getElementById('aud-descripcion')?.textContent?.trim();
+  const audPain = document.getElementById('aud-pain')?.textContent?.trim();
   const lines = [
     `📊 Auditoría Vendly — ${name}`,
     `Fecha: ${document.getElementById('report-date')?.textContent||''}`,
@@ -2832,6 +2846,7 @@ function copyFullReport(btn) {
     '',
     `RESUMEN EJECUTIVO`,
     document.getElementById('r-resumen')?.textContent||'',
+    ...(diag ? ['', `DIAGNÓSTICO CRÍTICO`, diag] : []),
     '',
     `FORTALEZAS`,
     liText('r-fort'),
@@ -2839,8 +2854,13 @@ function copyFullReport(btn) {
     `DEBILIDADES`,
     liText('r-deb'),
     '',
+    `MEJORAS RECOMENDADAS`,
+    mejoras,
+    '',
     `PLAN DE ACCIÓN`,
     planItems,
+    ...(audDesc ? ['', `AUDIENCIA IDEAL`, `Perfil: ${audDesc}`, audPain ? `Dolor: ${audPain}` : ''] : []),
+    ...(objText ? ['', `OBJECIONES Y RESPUESTAS`, objText] : []),
     '',
     '— Generado con Vendly (vend-ly.store)',
   ];
