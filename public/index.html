@@ -1009,7 +1009,13 @@ footer span{color:var(--accent2)}
         <div class="aud-block"><div class="aud-label">Perfil del comprador</div><div class="aud-text" id="aud-descripcion"></div></div>
         <div class="aud-block"><div class="aud-label">Dolor principal</div><div class="aud-text" id="aud-pain"></div></div>
       </div>
-      <div class="aud-block" style="margin-top:10px"><div class="aud-label">Intereses para targeting en Meta Ads</div><div class="aud-tags" id="aud-intereses"></div></div>
+      <div class="aud-block" style="margin-top:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+          <div class="aud-label" style="margin-bottom:0">Intereses para targeting en Meta Ads</div>
+          <button id="copy-meta-interests-btn" onclick="copyMetaInterests(this)" style="flex-shrink:0;background:rgba(96,165,250,0.07);border:1px solid rgba(96,165,250,0.25);color:#60A5FA;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:none" title="Copiar lista de intereses para pegar en Ads Manager">📋 Copiar para Meta</button>
+        </div>
+        <div class="aud-tags" id="aud-intereses"></div>
+      </div>
     </div>
     <!-- Objeciones — FREE -->
     <div class="rc" id="section-objeciones">
@@ -1775,6 +1781,8 @@ function renderAudit(a, productName, hasComp) {
     setText('aud-pain', a.audiencia_ideal.pain_point_principal || '');
     const audTags = document.getElementById('aud-intereses'); audTags.innerHTML='';
     (a.audiencia_ideal.intereses||[]).forEach(i=>audTags.insertAdjacentHTML('beforeend',`<span class="aud-tag">${i}</span>`));
+    const metaBtn = document.getElementById('copy-meta-interests-btn');
+    if (metaBtn) metaBtn.style.display = (a.audiencia_ideal.intereses||[]).length ? '' : 'none';
     audSec.style.display='';
   } else { audSec.style.display='none'; }
 
@@ -3085,6 +3093,21 @@ function copyPlanChecklist(btn) {
   });
 }
 
+function copyMetaInterests(btn) {
+  const tags = [...document.querySelectorAll('#aud-intereses .aud-tag')].map(t => t.textContent.trim());
+  if (!tags.length) return;
+  const product = document.getElementById('rp-name')?.textContent || '';
+  const pain = document.getElementById('aud-pain')?.textContent?.trim() || '';
+  const text = `Intereses Meta Ads — "${product}"\n\n${tags.join(', ')}\n\n${pain ? `Dolor clave: ${pain}` : ''}`.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado';
+    btn.style.background = 'rgba(52,211,153,0.1)'; btn.style.borderColor = 'rgba(52,211,153,0.3)'; btn.style.color = '#34D399';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = 'rgba(96,165,250,0.07)'; btn.style.borderColor = 'rgba(96,165,250,0.25)'; btn.style.color = '#60A5FA'; }, 2000);
+    showToast('✓ Intereses copiados — pegá en Conjuntos de anuncios → Segmentación detallada');
+    track('copy_meta_interests');
+  });
+}
 function copyAllObjeciones(btn) {
   if (!currentAudit || !currentAudit.objeciones_principales) return;
   const product = document.getElementById('rp-name')?.textContent || 'el producto';
@@ -3157,6 +3180,7 @@ function resetApp(){
   document.querySelectorAll('.score-card').forEach(c=>c.style.boxShadow='');
   const ush = document.getElementById('url-score-hint'); if (ush) ush.style.display='none';
   const vtl = document.getElementById('ver-en-tienda-link'); if (vtl) vtl.style.display='none';
+  const cmib = document.getElementById('copy-meta-interests-btn'); if (cmib) cmib.style.display='none';
   hideErr('audit-error');
   hideStickyBar();
   window.scrollTo({top:0,behavior:'smooth'});
