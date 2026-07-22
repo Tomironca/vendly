@@ -844,7 +844,10 @@ footer span{color:var(--accent2)}
       <div class="ls" id="ls5"><div class="ls-dot"></div>Redactando emails de carrito y template de WhatsApp</div>
       <div class="ls" id="ls6"><div class="ls-dot"></div>Armando plan de acción y calculando impacto en revenue</div>
     </div>
-    <div id="loading-tip" style="margin-top:20px;background:rgba(124,92,252,0.07);border:1px solid rgba(124,92,252,0.18);border-radius:12px;padding:12px 16px;font-size:13px;color:var(--muted);line-height:1.5;min-height:44px;transition:opacity .4s"></div>
+    <div style="margin-top:20px;background:var(--bg3);border-radius:100px;overflow:hidden;height:4px;width:100%;max-width:320px;margin-left:auto;margin-right:auto">
+      <div id="audit-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#34D399);border-radius:100px;transition:width .8s ease"></div>
+    </div>
+    <div id="loading-tip" style="margin-top:16px;background:rgba(124,92,252,0.07);border:1px solid rgba(124,92,252,0.18);border-radius:12px;padding:12px 16px;font-size:13px;color:var(--muted);line-height:1.5;min-height:44px;transition:opacity .4s"></div>
   </div>
 
   <div class="results" id="results">
@@ -1299,6 +1302,7 @@ const LOADING_TIPS = [
   '💡 El SEO en el título puede traer tráfico orgánico gratuito de Google Shopping',
 ];
 let loadingTipTimer;
+let auditProgressTimer;
 function startLoading() {
   const steps = ['ls1','ls2','ls3','ls4','ls5','ls6'];
   let i = 0;
@@ -1311,6 +1315,16 @@ function startLoading() {
       document.getElementById(steps[i]).classList.add('active');
     }
   }, 5000);
+  // Fake progress bar: crawls 0→90% over ~28s with exponential slowdown
+  const bar = document.getElementById('audit-progress-bar');
+  if (bar) {
+    bar.style.width = '0%';
+    let pct = 0;
+    auditProgressTimer = setInterval(() => {
+      pct = Math.min(pct + (90 - pct) * 0.04, 90);
+      bar.style.width = pct.toFixed(1) + '%';
+    }, 600);
+  }
   const tipEl = document.getElementById('loading-tip');
   if (tipEl) {
     let ti = 0;
@@ -1322,7 +1336,10 @@ function startLoading() {
 function stopLoading() {
   if (loadingTimer) clearInterval(loadingTimer);
   if (loadingTipTimer) clearInterval(loadingTipTimer);
+  if (auditProgressTimer) clearInterval(auditProgressTimer);
   ['ls1','ls2','ls3','ls4','ls5','ls6'].forEach(s => { const el = document.getElementById(s); if (el) el.className = 'ls done'; });
+  const bar = document.getElementById('audit-progress-bar');
+  if (bar) { bar.style.transition='width .3s ease'; bar.style.width='100%'; }
   const tipEl = document.getElementById('loading-tip'); if (tipEl) tipEl.textContent='';
 }
 
