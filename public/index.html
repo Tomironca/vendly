@@ -2642,7 +2642,7 @@ function animScore(cId,nId,val) {
   const circ=169.6, offset=circ-(val/100)*circ;
   const grades=[[80,'Excelente','var(--green)'],[66,'Sólido','#6EE7B7'],[51,'En camino','var(--gold)'],[31,'Necesita trabajo','#F97316'],[0,'Crítico','var(--red)']];
   const [,lbl,col]=grades.find(([min])=>val>=min);
-  setTimeout(()=>{ c.style.strokeDashoffset=offset; c.style.stroke=col; let cur=0; const step=val/50; const iv=setInterval(()=>{ cur=Math.min(cur+step,val); n.textContent=Math.round(cur); n.style.color=col; if(cur>=val){ clearInterval(iv); const gid=nId.replace('sn','sl'); let g=document.getElementById(gid); if(!g){g=document.createElement('div');g.id=gid;g.className='score-grade';n.parentNode.appendChild(g);} g.textContent=lbl; g.style.color=col; } },20); },400);
+  setTimeout(()=>{ c.style.strokeDashoffset=offset; c.style.stroke=col; let cur=0; const step=val/50; const iv=setInterval(()=>{ cur=Math.min(cur+step,val); n.textContent=Math.round(cur); n.style.color=col; if(cur>=val){ clearInterval(iv); n.animate([{transform:'scale(1)'},{transform:'scale(1.22)'},{transform:'scale(1)'}],{duration:320,easing:'ease-out'}); const gid=nId.replace('sn','sl'); let g=document.getElementById(gid); if(!g){g=document.createElement('div');g.id=gid;g.className='score-grade';n.parentNode.appendChild(g);} g.textContent=lbl; g.style.color=col; }},20); },400);
 }
 function setText(id,text){ const el=document.getElementById(id); if(el)el.textContent=text||''; }
 function showUrlScoreHint(url) {
