@@ -932,6 +932,7 @@ footer span{color:var(--accent2)}
         <button class="btn btn-outline" id="wa-share-btn" style="display:none;background:rgba(37,211,102,0.08);border-color:rgba(37,211,102,0.3);color:#25D366" onclick="shareWhatsApp()">💬 WhatsApp</button>
         <button class="btn btn-outline" id="story-share-btn" style="display:none;background:linear-gradient(135deg,rgba(124,92,252,0.1),rgba(166,136,250,0.06));border-color:rgba(124,92,252,0.3);color:var(--accent3)" onclick="showStoryCard()">📸 Story</button>
         <button class="btn btn-outline" id="ai-prompt-btn" style="display:none;background:rgba(251,146,60,0.06);border-color:rgba(251,146,60,0.3);color:#FB923C" onclick="copyAiPrompt(this)">🤖 Prompt IA</button>
+        <button class="btn btn-outline" id="email-share-btn" style="display:none;background:rgba(96,165,250,0.06);border-color:rgba(96,165,250,0.25);color:#60A5FA" onclick="shareByEmail()">✉ Email</button>
       </div>
       <button class="btn-sm" id="reaudit-btn" onclick="reAudit(this)" style="background:rgba(124,92,252,0.12);border-color:rgba(124,92,252,0.35);color:var(--accent3)">🔄 Re-auditar</button>
       <button class="btn-sm" onclick="resetApp()">← Nueva auditoría</button>
@@ -1917,6 +1918,7 @@ function renderAudit(a, productName, hasComp) {
     document.getElementById('wa-share-btn').style.display='';
     document.getElementById('story-share-btn').style.display='';
     document.getElementById('ai-prompt-btn').style.display='';
+    document.getElementById('email-share-btn').style.display='';
     if (window._enableReadProgress) window._enableReadProgress();
     (function(){
       const wrap = document.getElementById('gcal-reminder-wrap');
@@ -2527,6 +2529,27 @@ function shareWhatsApp() {
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   track('share_whatsapp');
 }
+function shareByEmail() {
+  if (!currentAudit) return;
+  const a = currentAudit;
+  const product = document.getElementById('rp-name')?.textContent || 'mi producto';
+  const s = a.scores;
+  const avg = Math.round((s.conversion + s.confianza + s.seo) / 3);
+  const resumen = document.getElementById('r-resumen')?.textContent?.trim() || '';
+  const shareUrl = document.getElementById('share-url')?.textContent;
+  const top3 = (a.mejoras_recomendadas||[]).slice(0,3).map((m,i)=>`${i+1}. [${m.impacto}] ${m.titulo}`).join('\n');
+  const subject = encodeURIComponent(`Análisis de "${product.slice(0,40)}" — Vendly IA`);
+  const body = encodeURIComponent(
+    `Hola,\n\nCompartimos el análisis de "${product}" generado con Vendly IA.\n\n` +
+    `SCORES:\n• Conversión: ${s.conversion}/100\n• Confianza: ${s.confianza}/100\n• SEO: ${s.seo}/100\n• Promedio: ${avg}/100\n\n` +
+    (resumen ? `RESUMEN:\n${resumen.slice(0,300)}\n\n` : '') +
+    (top3 ? `TOP 3 MEJORAS:\n${top3}\n\n` : '') +
+    (shareUrl ? `Ver informe completo: ${shareUrl}\n\n` : '') +
+    `— Generado con Vendly (vend-ly.store)`
+  );
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  track('share_email');
+}
 
 function copyMejPrompt(btn, titulo, descripcion, pName) {
   const platform = (currentProduct?.platform || 'MercadoLibre');
@@ -3080,6 +3103,7 @@ function resetApp(){
   document.getElementById('wa-share-btn').style.display='none';
   document.getElementById('story-share-btn').style.display='none';
   document.getElementById('ai-prompt-btn').style.display='none';
+  document.getElementById('email-share-btn').style.display='none';
   if (window._disableReadProgress) window._disableReadProgress();
   const eliteBanner = document.getElementById('elite-banner'); if (eliteBanner) eliteBanner.remove();
   const csg = document.getElementById('comp-suggest-card'); if (csg) csg.style.display='none';
