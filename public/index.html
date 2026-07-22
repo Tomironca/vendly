@@ -857,7 +857,7 @@ footer span{color:var(--accent2)}
         <button class="btn btn-outline" onclick="shareReport()">🔗 Compartir</button>
         <button class="btn btn-outline" id="copy-report-btn" onclick="copyFullReport(this)">📋 Copiar reporte</button>
         <button class="btn btn-outline" id="x-share-btn" onclick="shareOnX()" style="background:rgba(0,0,0,0.2);border-color:rgba(255,255,255,0.12);color:var(--muted)">𝕏 Compartir</button>
-        <button class="btn btn-outline" id="wa-share-btn" style="display:none;background:rgba(37,211,102,0.08);border-color:rgba(37,211,102,0.3);color:#25D366" onclick="shareWhatsApp()">WhatsApp</button>
+        <button class="btn btn-outline" id="wa-share-btn" style="display:none;background:rgba(37,211,102,0.08);border-color:rgba(37,211,102,0.3);color:#25D366" onclick="shareWhatsApp()">💬 WhatsApp</button>
       </div>
       <button class="btn-sm" id="reaudit-btn" onclick="reAudit(this)" style="background:rgba(124,92,252,0.12);border-color:rgba(124,92,252,0.35);color:var(--accent3)">🔄 Re-auditar</button>
       <button class="btn-sm" onclick="resetApp()">← Nueva auditoría</button>
@@ -1650,6 +1650,7 @@ function renderAudit(a, productName, hasComp) {
   setTimeout(()=>{
     document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
     initStickyBar(productName);
+    document.getElementById('wa-share-btn').style.display='';
     maybeShowFirstReportTip();
     if (avgScore >= 80) setTimeout(launchConfetti, 800);
     // Timed upgrade nudge for free users
@@ -2148,10 +2149,15 @@ function shareOnX() {
   track('share_x');
 }
 function shareWhatsApp() {
-  const url = document.getElementById('share-url').textContent;
-  const product = document.getElementById('rp-name').textContent;
-  const text = `Mirá el análisis de "${product}" que hice con Vendly — scores de conversión, anuncios para Meta Ads y plan de acción: ${url}`;
+  if (!currentAudit) return;
+  const product = document.getElementById('rp-name')?.textContent || 'mi producto';
+  const s = currentAudit.scores;
+  const avg = Math.round((s.conversion + s.confianza + s.seo) / 3);
+  const shareUrl = document.getElementById('share-url')?.textContent;
+  const link = shareUrl ? `\n🔗 Ver informe completo: ${shareUrl}` : '\n📊 Auditá el tuyo gratis en vend-ly.store';
+  const text = `Audité "${product.slice(0,35)}" con Vendly IA:\n⚡ Conversión: ${s.conversion}/100\n🤝 Confianza: ${s.confianza}/100\n🔍 SEO: ${s.seo}/100\nPromedio: ${avg}/100${link}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  track('share_whatsapp');
 }
 
 async function shareReport() {
