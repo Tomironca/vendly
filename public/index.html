@@ -735,6 +735,10 @@ footer span{color:var(--accent2)}
       </div>
     </div>
 
+    <div id="dash-achievements" style="display:none;margin-bottom:18px">
+      <div class="dash-section-title" style="margin-bottom:10px">Logros</div>
+      <div id="dash-badges-row" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
       <div class="dash-section-title" style="margin-bottom:0">Historial de auditorías</div>
       <div id="dash-sort-btns" style="display:none;gap:5px;display:flex">
@@ -2054,6 +2058,35 @@ function renderAuditCards(audits) {
     const reAuditBtn = a.product_url?`<button style="flex-shrink:0;background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.25);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:600;color:var(--accent2);cursor:pointer;font-family:inherit;white-space:nowrap" onclick="reAudit(event,'${a.product_url.replace(/'/g,"\\'")}')">↻ Re-auditar</button>`:'';
     return `<div class="audit-item" onclick="loadAuditById(${a.id})"><div class="audit-scores-row"><span class="asp asp-c">${a.score_conversion}</span><span class="asp asp-f">${a.score_confianza}</span><span class="asp asp-s">${a.score_seo}</span></div><div class="audit-info-dash"><div class="audit-name-dash">${a.product_name||a.product_url||'Producto'}${urgentBadge}</div><div class="audit-date-dash">${date} · Promedio: <span style="color:${avgColor};font-weight:600">${avg}/100</span> ${trend}</div></div>${reAuditBtn||'<div style="color:var(--muted);font-size:16px">→</div>'}</div>`;
   }).join('');
+  // Achievements
+  (function(){
+    const wrap = document.getElementById('dash-achievements');
+    const row = document.getElementById('dash-badges-row');
+    if (!wrap || !row || !allAudits || allAudits.length === 0) return;
+    const avgs = allAudits.map(a=>Math.round((a.score_conversion+a.score_confianza+a.score_seo)/3));
+    const maxAvg = Math.max(...avgs);
+    const hasPlanDone = Object.keys(localStorage).some(k=>k.startsWith('vnd_plan_')&&Object.keys(JSON.parse(localStorage.getItem(k)||'{}')).length>0);
+    const isImproving = avgs.length>=2 && avgs[0]>avgs[avgs.length-1];
+    const defs = [
+      {icon:'🚀',label:'Primera auditoría',earned:true},
+      {icon:'⚡',label:'Acción tomada',earned:hasPlanDone},
+      {icon:'📈',label:'En mejora',earned:isImproving},
+      {icon:'🏆',label:'Score 80+',earned:maxAvg>=80},
+      {icon:'🌟',label:'Score 90+',earned:maxAvg>=90},
+      {icon:'🔥',label:'5 auditorías',earned:allAudits.length>=5},
+      {icon:'💡',label:'10 auditorías',earned:allAudits.length>=10},
+    ];
+    row.innerHTML = defs.map(d=>{
+      const earned = d.earned;
+      const bg = earned?'rgba(124,92,252,0.1)':'rgba(255,255,255,0.03)';
+      const border = earned?'rgba(124,92,252,0.3)':'var(--border)';
+      const dim = earned?'':'opacity:.4;filter:grayscale(1)';
+      const col = earned?'var(--text)':'var(--muted)';
+      const fw = earned?'600':'400';
+      return `<div title="${d.label}" style="display:flex;align-items:center;gap:5px;background:${bg};border:1px solid ${border};border-radius:100px;padding:4px 11px;font-size:12px;${dim}"><span>${d.icon}</span><span style="color:${col};font-weight:${fw}">${d.label}</span></div>`;
+    }).join('');
+    wrap.style.display='block';
+  })();
   // Render sparkline using allAudits (sorted oldest→newest for trend)
   (function(){
     const card = document.getElementById('dash-trend-card');
