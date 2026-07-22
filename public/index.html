@@ -185,7 +185,9 @@ textarea{min-height:68px;line-height:1.5}
 .sc-conv .snum{color:var(--accent2)}.sc-conf .snum{color:var(--green)}.sc-seo .snum{color:var(--gold)}
 .score-exp{font-size:12px;color:var(--muted);line-height:1.5}
 .score-grade{font-size:10px;font-weight:700;text-align:center;margin-top:3px;letter-spacing:.5px;text-transform:uppercase}
-.rc{background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:11px}
+.rc{background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:11px;transition:opacity .4s ease,transform .4s ease}
+.rc.rc-hidden{opacity:0;transform:translateY(14px)}
+.rc.rc-visible{opacity:1;transform:translateY(0)}
 .rc-head{display:flex;align-items:center;gap:9px;margin-bottom:14px}
 .rc-ico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
 .ico-g{background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2)}
@@ -1654,6 +1656,14 @@ function renderAudit(a, productName, hasComp) {
   document.title = `${productName.slice(0,30)} — Score ${avgScore}/100 | Vendly`;
   setTimeout(()=>{
     document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+    // Animate rc cards on scroll
+    document.querySelectorAll('.results .rc').forEach(el=>{
+      if(!el.classList.contains('rc-visible')){el.classList.add('rc-hidden');}
+    });
+    const rcObs = new IntersectionObserver(entries=>{
+      entries.forEach(e=>{ if(e.isIntersecting){e.target.classList.remove('rc-hidden');e.target.classList.add('rc-visible');rcObs.unobserve(e.target);} });
+    },{threshold:0.08});
+    document.querySelectorAll('.results .rc.rc-hidden').forEach(el=>rcObs.observe(el));
     initStickyBar(productName);
     document.getElementById('wa-share-btn').style.display='';
     maybeShowFirstReportTip();
