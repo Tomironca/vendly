@@ -1010,6 +1010,28 @@ footer span{color:var(--accent2)}
     <div class="rc" id="section-desc">
       <div class="rc-head"><div class="rc-ico ico-p">✦</div><div class="rc-tit">Descripción optimizada</div><button class="copy-btn" style="position:static;margin-left:auto;font-size:11px" onclick="copyListing(this)">Copiar para listing</button></div>
       <div class="desc-sec"><div class="desc-sec-tit">Título SEO <span style="font-size:10px;color:var(--muted);font-weight:400">· editable</span></div><div class="desc-box"><div class="desc-txt" id="d-tit" contenteditable="true" spellcheck="false" style="outline:none;cursor:text;border-bottom:1px dashed rgba(124,92,252,0.3)" oninput="updateTitLen()"></div><div id="d-tit-len" style="font-size:11px;margin-top:4px;font-weight:600"></div><button class="copy-btn" onclick="copyEl(this,'d-tit')">Copiar</button></div></div>
+      <div id="seo-comparison" style="display:none;margin:10px 0 14px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:6px;padding:10px 14px 8px;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;font-weight:700;color:var(--accent3)">📊 Comparación de título</span>
+          <span style="font-size:11px;color:var(--muted);margin-left:auto">Optimización SEO</span>
+        </div>
+        <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Antes</div>
+            <div id="seo-title-before" style="font-size:13px;color:var(--text2);line-height:1.4;padding:8px 10px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.18);border-radius:8px"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="flex:1;height:1px;background:var(--border)"></div>
+            <span style="font-size:18px">↓</span>
+            <div style="flex:1;height:1px;background:var(--border)"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Después (IA)</div>
+            <div id="seo-title-after" style="font-size:13px;color:var(--text);line-height:1.4;padding:8px 10px;background:rgba(52,211,153,0.07);border:1px solid rgba(52,211,153,0.22);border-radius:8px;font-weight:500"></div>
+          </div>
+          <button onclick="(function(btn){const t=document.getElementById('seo-title-after').textContent;navigator.clipboard.writeText(t).then(()=>{btn.textContent='✓ Copiado';setTimeout(()=>btn.textContent='Copiar título optimizado',1800);})})(this)" style="align-self:flex-end;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);color:var(--green);font-size:11px;font-weight:600;padding:5px 12px;border-radius:8px;cursor:pointer">Copiar título optimizado</button>
+        </div>
+      </div>
       <div class="desc-sec"><div class="desc-sec-tit">Descripción corta <span style="font-size:10px;color:var(--muted);font-weight:400">· editable</span></div><div class="desc-box"><div class="desc-txt" id="d-cor" contenteditable="true" spellcheck="false" style="outline:none;cursor:text;border-bottom:1px dashed rgba(124,92,252,0.3)"></div><button class="copy-btn" onclick="copyEl(this,'d-cor')">Copiar</button></div></div>
       <div id="desc-premium-wrap">
         <div class="desc-sec"><div class="desc-sec-tit">Descripción larga <span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 7px;border-radius:100px;margin-left:5px">PRO</span></div><div class="desc-box"><div class="desc-txt" id="d-lar"></div><button class="copy-btn" onclick="copyEl(this,'d-lar')">Copiar</button></div></div>
@@ -1580,6 +1602,15 @@ function renderAudit(a, productName, hasComp) {
   const d = a.descripcion_optimizada;
   setText('d-tit', d.titulo_seo); setText('d-cor', d.descripcion_corta); setText('d-lar', d.descripcion_larga);
   updateTitLen();
+  (function(){
+    const cmp = document.getElementById('seo-comparison');
+    const origTitle = productName || (currentProduct && currentProduct.name) || '';
+    const optTitle = d.titulo_seo || '';
+    if (!cmp || !origTitle || !optTitle || origTitle.trim() === optTitle.trim()) { if(cmp) cmp.style.display='none'; return; }
+    document.getElementById('seo-title-before').textContent = origTitle;
+    document.getElementById('seo-title-after').textContent = optTitle;
+    cmp.style.display = 'block';
+  })();
   const bl = document.getElementById('d-bul'); bl.innerHTML='';
   d.bullet_points.forEach(b=>{ const li=document.createElement('li'); li.textContent=b; bl.appendChild(li); });
   const at = document.getElementById('ads-tabs'), ap = document.getElementById('ads-panels');
