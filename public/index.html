@@ -978,6 +978,7 @@ footer span{color:var(--accent2)}
       <div class="score-card sc-seo" onclick="document.getElementById('r-plan').scrollIntoView({behavior:'smooth',block:'start'})" title="Ver plan de acción" style="cursor:pointer"><div class="score-label">SEO</div><div class="score-circle"><svg class="score-svg" viewBox="0 0 66 66" width="66" height="66"><circle class="sbg" cx="33" cy="33" r="27"/><circle class="sfill" id="sc3" cx="33" cy="33" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="snum" id="sn3">0</div></div><div id="sb3" style="font-size:10px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:2px"></div><div id="sd3" style="font-size:10px;font-weight:700;text-align:center;margin-bottom:3px;min-height:14px;letter-spacing:.01em"></div><div class="score-exp" id="se3"></div></div>
     </div>
     <div id="score-benchmark" style="display:none;font-size:12px;font-weight:600;padding:6px 14px;border-radius:100px;text-align:center;margin-bottom:10px;border:1px solid transparent"></div>
+    <div id="score-history-timeline" style="display:none;margin-bottom:10px"></div>
     <div id="conv-gap-banner" style="display:none;background:linear-gradient(135deg,rgba(248,113,113,0.07),rgba(251,146,60,0.05));border:1px solid rgba(248,113,113,0.22);border-radius:12px;padding:11px 14px;margin-bottom:10px;font-size:12px;line-height:1.6">
       <div style="font-weight:700;color:var(--red);margin-bottom:3px;font-size:13px" id="conv-gap-title">📉 Oportunidad perdida</div>
       <div id="conv-gap-msg" style="color:var(--muted)"></div>
@@ -1970,6 +1971,22 @@ function renderAudit(a, productName, hasComp) {
     const keys = Object.keys(hist);
     if (keys.length > 200) delete hist[keys[0]];
     try { localStorage.setItem(key, JSON.stringify(hist)); } catch(e){}
+    // Score history timeline (show when 2+ entries exist)
+    (function(){
+      const tl = document.getElementById('score-history-timeline');
+      if (!tl || updated.length < 2) { if(tl) tl.style.display='none'; return; }
+      const rows = updated.map((e, i) => {
+        const isNew = i === 0;
+        const col = e.avg >= 80 ? '#34D399' : e.avg >= 60 ? '#F5C842' : '#F87171';
+        const ts = e.ts ? new Date(e.ts) : null;
+        const dateStr = ts ? ts.toLocaleDateString('es', {day:'numeric',month:'short'}) : '—';
+        const delta = i < updated.length-1 ? e.avg - updated[i+1].avg : null;
+        const deltaStr = delta === null ? '' : delta > 0 ? `<span style="color:#34D399;font-size:10px;font-weight:700">▲+${delta}</span>` : delta < 0 ? `<span style="color:#F87171;font-size:10px;font-weight:700">▼${delta}</span>` : '<span style="color:var(--muted);font-size:10px">=</span>';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;${i<updated.length-1?'border-bottom:1px solid rgba(255,255,255,0.04)':''}"><span style="font-size:11px;color:var(--muted);width:52px;flex-shrink:0">${dateStr}</span><span style="font-size:13px;font-weight:800;color:${col};width:36px;flex-shrink:0">${e.avg}</span><div style="flex:1;height:4px;background:var(--bg2);border-radius:2px;overflow:hidden"><div style="height:100%;width:${e.avg}%;background:${col};border-radius:2px;transition:width .6s ease"></div></div>${deltaStr}${isNew?'<span style="font-size:9px;font-weight:700;color:var(--accent3);background:rgba(124,92,252,0.15);border-radius:4px;padding:1px 5px;flex-shrink:0">HOY</span>':''}</div>`;
+      }).join('');
+      tl.innerHTML = `<details style="background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.12);border-radius:12px;padding:10px 14px"><summary style="font-size:11px;font-weight:700;color:var(--accent3);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px">📈 Historial de scores <span style="color:var(--muted);font-weight:400">(${updated.length} auditorías)</span></summary><div style="margin-top:10px">${rows}</div></details>`;
+      tl.style.display = '';
+    })();
   })();
 
   document.getElementById('results').classList.add('show');
