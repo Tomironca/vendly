@@ -513,7 +513,10 @@ footer span{color:var(--accent2)}
   <span id="srb-score-chip" style="display:none;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);border-radius:8px;padding:4px 10px;white-space:nowrap;flex-shrink:0"></span>
   <div style="display:flex;flex-direction:column;flex:1;min-width:0;gap:1px">
     <div class="srb-product" id="srb-product-name"></div>
-    <div id="srb-free-hint" style="display:none;font-size:10px;color:var(--accent3);white-space:nowrap">✦ 7 secciones bloqueadas — Ver planes</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div id="srb-audit-age" style="display:none;font-size:10px;color:var(--muted);white-space:nowrap"></div>
+      <div id="srb-free-hint" style="display:none;font-size:10px;color:var(--accent3);white-space:nowrap">✦ 7 secciones bloqueadas — Ver planes</div>
+    </div>
   </div>
   <div class="srb-actions">
     <button class="srb-btn" onclick="scrollToNewAudit()" title="Auditar otro producto" style="flex-shrink:0">＋ Nuevo</button>
@@ -1271,6 +1274,15 @@ function initStickyBar(productName) {
     scoreChip.style.borderColor = bord;
     scoreChip.style.display = '';
   }
+  (function(){
+    const ageEl = document.getElementById('srb-audit-age');
+    if (!ageEl) return;
+    const ts = currentAudit?.created_at ? new Date(currentAudit.created_at).getTime() : Date.now();
+    const mins = Math.floor((Date.now() - ts) / 60000);
+    const label = mins < 2 ? '📅 Justo ahora' : mins < 60 ? `📅 Hace ${mins} min` : mins < 1440 ? `📅 Hace ${Math.floor(mins/60)}h` : mins < 2880 ? '📅 Ayer' : `📅 Hace ${Math.floor(mins/1440)} días`;
+    ageEl.textContent = label;
+    ageEl.style.display = '';
+  })();
   if (stickyBarObserver) stickyBarObserver.disconnect();
   if (!actionBar) return;
   stickyBarObserver = new IntersectionObserver(([entry]) => {
@@ -3255,6 +3267,7 @@ function resetApp(){
   const vtl = document.getElementById('ver-en-tienda-link'); if (vtl) vtl.style.display='none';
   const cmib = document.getElementById('copy-meta-interests-btn'); if (cmib) cmib.style.display='none';
   const mfb = document.getElementById('mej-filter-bar'); if (mfb) { mfb.style.display='none'; filterMejoras('TODAS',null); }
+  const saa = document.getElementById('srb-audit-age'); if (saa) saa.style.display='none';
   hideErr('audit-error');
   hideStickyBar();
   window.scrollTo({top:0,behavior:'smooth'});
