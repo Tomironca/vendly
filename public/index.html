@@ -1091,7 +1091,7 @@ footer span{color:var(--accent2)}
       <div class="rc"><div class="rc-head"><div class="rc-ico ico-b">❓</div><div class="rc-tit">Preguntas frecuentes optimizadas</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div><div class="faq-list" id="r-faq"></div></div>
     </div>
     <div class="premium-section" id="section-kw">
-      <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🔍</div><div class="rc-tit">Keywords SEO</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div><div class="kw-grid" id="r-kw"></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px"><div class="kw-hint">Click para copiar</div><button class="copy-btn" style="position:static;font-size:11px" onclick="copyAllKeywords(this)">Copiar todas</button></div></div>
+      <div class="rc"><div class="rc-head"><div class="rc-ico ico-g">🔍</div><div class="rc-tit">Keywords SEO</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div><div class="kw-grid" id="r-kw"></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px"><div class="kw-hint">Click para copiar</div><div style="display:flex;gap:6px"><button class="copy-btn" style="position:static;font-size:11px" onclick="copyAllKeywords(this)">Copiar todas</button><button class="copy-btn" style="position:static;font-size:11px;border-color:rgba(52,211,153,0.3);color:var(--green)" onclick="exportKwCSV()">⬇ CSV</button></div></div></div>
     </div>
     <div class="premium-section" id="section-precio">
       <div class="rc"><div class="rc-head"><div class="rc-ico ico-o">💰</div><div class="rc-tit">Estrategia de precio</div><span style="font-size:10px;background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;padding:1px 9px;border-radius:100px;margin-left:auto">PRO</span></div><div class="precio-box" id="r-precio"></div></div>
@@ -3233,6 +3233,19 @@ function copyAllKeywords(btn) {
   const kws = [...document.querySelectorAll('#r-kw .kw')].map(k=>k.textContent).join(', ');
   if (!kws) return;
   navigator.clipboard.writeText(kws).then(()=>{ btn.textContent='✓ Copiadas'; setTimeout(()=>btn.textContent='Copiar todas',2000); });
+}
+function exportKwCSV() {
+  const kws = [...document.querySelectorAll('#r-kw .kw')].map(k=>k.textContent.trim());
+  if (!kws.length) return;
+  const product = document.getElementById('rp-name')?.textContent?.trim() || 'producto';
+  const rows = [['#','keyword','producto']].concat(kws.map((k,i)=>[i+1, k, product]));
+  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('﻿' + csv);
+  a.download = `keywords-vendly-${product.slice(0,20).replace(/\s+/g,'-').toLowerCase()}.csv`;
+  a.click();
+  showToast('✓ CSV descargado — abrilo en Google Sheets o Excel');
+  track('export_kw_csv');
 }
 function copyBullets(btn){ const items=[...document.querySelectorAll('#d-bul li')].map(li=>li.textContent).join('\n'); navigator.clipboard.writeText(items).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar todos'; btn.classList.remove('copied'); },2000); }); }
 function copyIgCaption(btn,i){ const el=document.getElementById('igc-'+i); if(!el) return; const text=el.innerText||el.textContent; navigator.clipboard.writeText(text).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='Copiar'; btn.classList.remove('copied'); },2000); }); }
