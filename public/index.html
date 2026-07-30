@@ -295,6 +295,9 @@ textarea{min-height:68px;line-height:1.5}
 .premium-lock-sub{font-size:13px;color:var(--muted);line-height:1.5;max-width:260px;margin-bottom:6px}
 .premium-lock-btn{background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;border:none;padding:11px 28px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
 .premium-lock-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,92,252,0.4)}
+.billing-toggle{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;gap:2px;margin-bottom:14px}
+.billing-tab{flex:1;padding:6px 10px;border-radius:16px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;background:none;color:var(--muted);transition:all .18s;text-align:center;line-height:1.3}
+.billing-tab.active{background:var(--accent);color:#fff}
 .premium-overlay:hover .premium-lock-btn{box-shadow:0 8px 28px rgba(124,92,252,0.5);transform:translateY(-1px)}
 .desc-lock-wrap{position:relative;border-radius:10px;overflow:hidden;margin-bottom:11px}
 .desc-lock-blur{filter:blur(5px);pointer-events:none;user-select:none;opacity:0.5}
@@ -660,10 +663,14 @@ footer span{color:var(--accent2)}
         <div style="color:var(--muted);font-size:11px;margin-top:4px">🇨🇴 Andrea M. · dropshipper en Bogotá</div>
       </div>
     </div>
+    <div class="billing-toggle">
+      <button class="billing-tab active" id="btab-monthly" onclick="toggleBilling('monthly',this)">Mensual</button>
+      <button class="billing-tab" id="btab-annual" onclick="toggleBilling('annual',this)">Anual <span style="background:rgba(52,211,153,0.18);color:#34D399;font-size:10px;padding:1px 5px;border-radius:8px;margin-left:2px">-20%</span></button>
+    </div>
     <div class="plans-grid">
       <div class="plan-card selected" id="pc-starter" onclick="selectPlan('basic')">
         <div class="plan-name">Starter</div>
-        <div class="plan-price">USD 9 <span>/mes</span></div>
+        <div class="plan-price" id="price-starter">USD 9 <span>/mes</span></div>
         <ul class="plan-features">
           <li>30 auditorías/mes</li>
           <li>Todo desbloqueado</li>
@@ -675,7 +682,7 @@ footer span{color:var(--accent2)}
       <div class="plan-card popular" id="pc-pro" onclick="selectPlan('pro')">
         <div class="popular-badge">✦ MÁS POPULAR</div>
         <div class="plan-name">Pro</div>
-        <div class="plan-price">USD 19 <span>/mes</span></div>
+        <div class="plan-price" id="price-pro">USD 19 <span>/mes</span></div>
         <ul class="plan-features">
           <li>Auditorías ilimitadas</li>
           <li>Todo lo de Starter</li>
@@ -1163,7 +1170,7 @@ footer span{color:var(--accent2)}
 <script>
 // ── STATE ─────────────────────────────────────────────────────
 let sessionToken = localStorage.getItem('v_session') || null;
-let userPlan = 'free', userEmail = '', selectedPlan = 'basic';
+let userPlan = 'free', userEmail = '', selectedPlan = 'basic', selectedBilling = 'monthly';
 let currentProduct = null, currentCompetitor = null, currentAudit = null;
 let activeTab = 'url', compEnabled = false, loadingTimer = null;
 
@@ -2298,6 +2305,7 @@ function closeUpgradeModal() {
   document.getElementById('upgrade-modal').classList.remove('show');
   hideErr('upgrade-error');
   if (_cdInterval) { clearInterval(_cdInterval); _cdInterval = null; }
+  toggleBilling('monthly', document.getElementById('btab-monthly'));
 }
 
 // ── EXIT INTENT ───────────────────────────────────────────────
@@ -2322,7 +2330,21 @@ function selectPlan(plan) {
   selectedPlan = plan;
   document.getElementById('pc-starter').classList.toggle('selected', plan==='basic');
   document.getElementById('pc-pro').classList.toggle('selected', plan==='pro');
-  document.getElementById('checkout-btn').textContent = plan==='pro' ? 'Suscribirme al Plan Pro →' : 'Suscribirme al Plan Starter →';
+  const annual = selectedBilling === 'annual';
+  const label = plan==='pro' ? (annual ? 'Suscribirme al Plan Pro Anual →' : 'Suscribirme al Plan Pro →') : (annual ? 'Suscribirme al Plan Starter Anual →' : 'Suscribirme al Plan Starter →');
+  document.getElementById('checkout-btn').textContent = label;
+}
+function toggleBilling(billing, btn) {
+  selectedBilling = billing;
+  document.querySelectorAll('.billing-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const annual = billing === 'annual';
+  const ps = document.getElementById('price-starter');
+  const pp = document.getElementById('price-pro');
+  if (ps) ps.innerHTML = annual ? 'USD 7.2 <span>/mes · facturado anual</span>' : 'USD 9 <span>/mes</span>';
+  if (pp) pp.innerHTML = annual ? 'USD 15.2 <span>/mes · facturado anual</span>' : 'USD 19 <span>/mes</span>';
+  selectPlan(selectedPlan);
+  track('billing_toggle_' + billing);
 }
 async function goToCheckout() {
   const email = userEmail || document.getElementById('upgrade-email').value.trim();
@@ -2332,7 +2354,7 @@ async function goToCheckout() {
     const res = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan: selectedPlan, email })
+      body: JSON.stringify({ plan: selectedPlan, email, billing: selectedBilling })
     });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
