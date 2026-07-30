@@ -295,6 +295,7 @@ textarea{min-height:68px;line-height:1.5}
 .premium-lock-sub{font-size:13px;color:var(--muted);line-height:1.5;max-width:260px;margin-bottom:6px}
 .premium-lock-btn{background:linear-gradient(135deg,var(--accent),#5D3FD3);color:#fff;border:none;padding:11px 28px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
 .premium-lock-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,92,252,0.4)}
+.premium-overlay:hover .premium-lock-btn{box-shadow:0 8px 28px rgba(124,92,252,0.5);transform:translateY(-1px)}
 .desc-lock-wrap{position:relative;border-radius:10px;overflow:hidden;margin-bottom:11px}
 .desc-lock-blur{filter:blur(5px);pointer-events:none;user-select:none;opacity:0.5}
 .desc-lock-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(7,7,14,0.8);border-radius:10px;z-index:5}
@@ -2078,7 +2079,9 @@ function applyPaywall() {
       const {title, sub} = sectionMeta[id];
       const overlay = document.createElement('div');
       overlay.className='premium-overlay';
-      overlay.innerHTML=`<div class="premium-lock-badge">✦ STARTER / PRO</div><div class="premium-lock-title">${title}</div><div class="premium-lock-sub">${sub}</div><button class="premium-lock-btn" onclick="showUpgradeModal()">Desbloquear desde $9/mes →</button>`;
+      overlay.style.cursor='pointer';
+      overlay.onclick = (e) => { if (!e.target.closest('.premium-lock-btn')) showUpgradeModal(); };
+      overlay.innerHTML=`<div class="premium-lock-badge">✦ STARTER / PRO</div><div class="premium-lock-title">${title}</div><div class="premium-lock-sub">${sub}</div><button class="premium-lock-btn" onclick="event.stopPropagation();showUpgradeModal()">Desbloquear desde $9/mes →</button>`;
       el.appendChild(overlay);
     }
   });
