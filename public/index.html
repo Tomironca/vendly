@@ -465,6 +465,8 @@ textarea{min-height:68px;line-height:1.5}
 .first-report-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#13132A;border:1px solid rgba(124,92,252,0.4);border-radius:16px;padding:18px 22px;max-width:340px;width:90%;z-index:600;box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:toastIn .4s ease}
 .first-report-toast h4{margin:0 0 10px;font-size:15px;color:#F0EEF8}.first-report-toast ul{margin:0 0 14px;padding-left:18px;color:#8B89A0;font-size:13px;line-height:1.8}.first-report-toast ul li{color:#8B89A0}.first-report-toast button{width:100%;padding:10px;background:#7C5CFC;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes ufPulse{0%,100%{box-shadow:0 4px 20px rgba(124,92,252,.42)}50%{box-shadow:0 6px 32px rgba(124,92,252,.72);transform:translateY(-3px)}}
+#upgrade-fab{position:fixed;bottom:80px;right:16px;z-index:998;align-items:center;gap:10px;background:linear-gradient(135deg,#7C5CFC,#5D3FD3);color:#fff;border-radius:24px;padding:11px 16px;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;animation:ufPulse 2.8s ease-in-out infinite;line-height:1.25;user-select:none}
 .sticky-report-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(15,15,26,0.95);backdrop-filter:blur(12px);border-top:1px solid rgba(124,92,252,0.2);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;z-index:490;transform:translateY(100%);transition:transform .35s ease;box-shadow:0 -4px 24px rgba(0,0,0,0.4)}
 .sticky-report-bar.show{transform:translateY(0)}
 .srb-product{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;flex:1;min-width:0}
@@ -2076,6 +2078,25 @@ function applyPaywall() {
     const planEl = document.getElementById('r-plan');
     if (planEl && planEl.parentNode) planEl.parentNode.insertAdjacentElement('afterend', pu);
   }
+  // Floating upgrade FAB for free users
+  const existFab = document.getElementById('upgrade-fab');
+  if (existFab) { existFab.remove(); if(window._fabScrollH){window.removeEventListener('scroll',window._fabScrollH);window._fabScrollH=null;} }
+  if (!isPaid) {
+    const fab = document.createElement('div');
+    fab.id = 'upgrade-fab';
+    fab.style.display = 'none';
+    fab.innerHTML = `<span style="font-size:18px;line-height:1">🔓</span><div><div>Desbloquear todo</div><div style="font-size:11px;font-weight:400;opacity:0.82">desde $9/mes · 7 secciones</div></div><button onclick="event.stopPropagation();document.getElementById('upgrade-fab').remove();if(window._fabScrollH){window.removeEventListener('scroll',window._fabScrollH);window._fabScrollH=null;}" style="background:none;border:none;color:rgba(255,255,255,0.55);font-size:15px;cursor:pointer;padding:0;margin-left:4px;line-height:1;flex-shrink:0" title="Cerrar">✕</button>`;
+    fab.onclick = () => { showUpgradeModal(); track('fab_upgrade_click'); };
+    document.body.appendChild(fab);
+    const showFab = () => {
+      const f = document.getElementById('upgrade-fab');
+      if (!f) { if(window._fabScrollH){window.removeEventListener('scroll',window._fabScrollH);window._fabScrollH=null;} return; }
+      const paid = userPlan==='pro'||userPlan==='basic'||userPlan==='agency';
+      f.style.display = (!paid && window.scrollY > 500) ? 'flex' : 'none';
+    };
+    window._fabScrollH = showFab;
+    window.addEventListener('scroll', showFab, {passive: true});
+  }
   // Bloquear desc larga + bullets
   const descPremium = document.getElementById('desc-premium-wrap');
   if (descPremium) {
@@ -3298,6 +3319,7 @@ function resetApp(){
   const cmib = document.getElementById('copy-meta-interests-btn'); if (cmib) cmib.style.display='none';
   const mfb = document.getElementById('mej-filter-bar'); if (mfb) { mfb.style.display='none'; filterMejoras('TODAS',null); }
   const saa = document.getElementById('srb-audit-age'); if (saa) saa.style.display='none';
+  const ufab = document.getElementById('upgrade-fab'); if (ufab) { ufab.remove(); if(window._fabScrollH){window.removeEventListener('scroll',window._fabScrollH);window._fabScrollH=null;} }
   hideErr('audit-error');
   hideStickyBar();
   window.scrollTo({top:0,behavior:'smooth'});
