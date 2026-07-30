@@ -1299,10 +1299,21 @@ function initStickyBar(productName) {
     const s = currentAudit.scores;
     const avg = Math.round((s.conversion + s.confianza + s.seo) / 3);
     const [col, bord] = avg >= 80 ? ['#34D399','rgba(52,211,153,0.3)'] : avg >= 60 ? ['#F5C842','rgba(245,200,66,0.3)'] : ['#F87171','rgba(248,113,113,0.3)'];
-    scoreChip.textContent = `${avg}/100`;
     scoreChip.style.color = col;
     scoreChip.style.borderColor = bord;
     scoreChip.style.display = '';
+    let deltaHtml = '';
+    try {
+      const hist = JSON.parse(localStorage.getItem('vnd_score_hist')||'{}');
+      const urlKey = (currentProduct?.url || productName).slice(0,80);
+      const arr = hist[urlKey];
+      if (Array.isArray(arr) && arr.length >= 2) {
+        const delta = avg - arr[1].avg;
+        if (delta > 0) deltaHtml = `<span style="font-size:10px;color:#34D399;margin-left:4px">▲+${delta}</span>`;
+        else if (delta < 0) deltaHtml = `<span style="font-size:10px;color:#F87171;margin-left:4px">▼${delta}</span>`;
+      }
+    } catch(e){}
+    scoreChip.innerHTML = `${avg}/100${deltaHtml}`;
   }
   (function(){
     const ageEl = document.getElementById('srb-audit-age');
