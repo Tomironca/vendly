@@ -1041,6 +1041,7 @@ footer span{color:var(--accent2)}
         <button class="mej-ftab" onclick="filterMejoras('ALTO',this)">🔴 ALTO</button>
         <button class="mej-ftab" onclick="filterMejoras('MEDIO',this)">🟡 MEDIO</button>
         <button class="mej-ftab" onclick="filterMejoras('BAJO',this)">🔵 BAJO</button>
+        <button class="mej-ftab" id="mej-ftab-pending" onclick="filterMejoras('PENDIENTES',this)">⬜ Pendientes</button>
       </div>
       <div class="mejoras" id="r-mej"></div></div>
     <!-- Audiencia ideal — FREE -->
@@ -3364,6 +3365,8 @@ function toggleMejDone(btn) {
   if (mejEl) mejEl.classList.toggle('mej-done', nowDone);
   const total = document.querySelectorAll('#r-mej .mej').length;
   updateMejProgress(doneKey, total);
+  const pendingActive = document.querySelector('#mej-filter-bar .mej-ftab-active')?.id === 'mej-ftab-pending';
+  if (pendingActive && mejEl) mejEl.style.display = nowDone ? 'none' : '';
   if (nowDone) {
     let done2 = {};
     try { done2 = JSON.parse(localStorage.getItem(doneKey)||'{}'); } catch(e){}
@@ -3380,7 +3383,9 @@ function filterMejoras(level, btn) {
   if (btn) btn.classList.add('mej-ftab-active');
   document.querySelectorAll('#r-mej .mej').forEach(el => {
     const imp = el.dataset.impact || '';
-    el.style.display = (level === 'TODAS' || imp === level) ? '' : 'none';
+    const isDone = el.classList.contains('mej-done');
+    const show = level === 'TODAS' ? true : level === 'PENDIENTES' ? !isDone : imp === level;
+    el.style.display = show ? '' : 'none';
   });
   track('filter_mejoras_' + level.toLowerCase());
 }
