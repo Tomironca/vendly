@@ -1281,16 +1281,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  document.addEventListener('mouseleave', e => {
-    if (e.clientY > 8) return;
-    if (!currentAudit) return;
-    const isPaid = userPlan==='pro'||userPlan==='basic'||userPlan==='agency';
-    if (isPaid) return;
-    if (sessionStorage.getItem('vnd_exit_intent')) return;
-    if (document.getElementById('upgrade-modal')?.classList.contains('show')) return;
-    sessionStorage.setItem('vnd_exit_intent','1');
-    setTimeout(() => { showUpgradeModal(); track('exit_intent'); }, 180);
-  });
 });
 
 // ── STICKY REPORT BAR ─────────────────────────────────────────
@@ -1336,6 +1326,7 @@ function initStickyBar(productName) {
     const btns = [...nav.querySelectorAll('.rjn-btn')];
     const sectionIds = ['scores-grid-anchor','ganancias-rapidas-wrap','r-plan','section-ads','section-ig','section-kw','section-carrito'];
     let ticking = false;
+    let lastBest = -1;
     const update = () => {
       const threshold = window.innerHeight * 0.35;
       let best = 0;
@@ -1345,6 +1336,14 @@ function initStickyBar(productName) {
         if (el.getBoundingClientRect().top <= threshold) best = i;
       });
       btns.forEach((b, i) => b.classList.toggle('rjn-btn-active', i === best));
+      if (best !== lastBest) {
+        lastBest = best;
+        const activeBtn = btns[best];
+        if (nav && activeBtn) {
+          const target = activeBtn.offsetLeft - (nav.offsetWidth - activeBtn.offsetWidth) / 2;
+          nav.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+        }
+      }
     };
     const handler = () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { update(); ticking = false; }); } };
     window.addEventListener('scroll', handler, { passive: true });
