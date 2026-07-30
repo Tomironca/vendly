@@ -3230,12 +3230,23 @@ function updateMejProgress(doneKey, total) {
   let done = {};
   try { done = JSON.parse(localStorage.getItem(doneKey)||'{}'); } catch(e){}
   const doneCount = Object.values(done).filter(Boolean).length;
+  const allDone = doneCount === total && total > 0;
   if (doneCount === 0) { prog.style.display='none'; if(barWrap) barWrap.style.display='none'; return; }
-  prog.textContent = `${doneCount}/${total} hechas`;
+  prog.textContent = allDone ? '✅ ¡Todas completadas!' : `${doneCount}/${total} hechas`;
   prog.style.display = '';
   if (barWrap && bar) {
     barWrap.style.display = '';
     bar.style.width = Math.round(doneCount / total * 100) + '%';
+  }
+  const existingCel = document.getElementById('mej-alldone-cta');
+  if (allDone && !existingCel) {
+    const cel = document.createElement('div');
+    cel.id = 'mej-alldone-cta';
+    cel.style.cssText = 'margin-top:10px;background:linear-gradient(135deg,rgba(52,211,153,0.08),rgba(52,211,153,0.04));border:1px solid rgba(52,211,153,0.25);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
+    cel.innerHTML = `<div style="font-size:20px">🏆</div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:#34D399;margin-bottom:2px">¡Implementaste todas las mejoras!</div><div style="font-size:12px;color:var(--muted)">Re-auditá para ver cuánto subió tu score.</div></div><button onclick="reAudit(document.getElementById('reaudit-btn'))" style="flex-shrink:0;background:linear-gradient(135deg,#34D399,#3ECF8E);color:#000;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Re-auditar →</button>`;
+    if (barWrap) barWrap.insertAdjacentElement('afterend', cel);
+  } else if (!allDone && existingCel) {
+    existingCel.remove();
   }
 }
 function toggleMejDone(btn) {
@@ -3252,6 +3263,15 @@ function toggleMejDone(btn) {
   if (mejEl) mejEl.classList.toggle('mej-done', nowDone);
   const total = document.querySelectorAll('#r-mej .mej').length;
   updateMejProgress(doneKey, total);
+  if (nowDone) {
+    let done2 = {};
+    try { done2 = JSON.parse(localStorage.getItem(doneKey)||'{}'); } catch(e){}
+    if (Object.values(done2).filter(Boolean).length === total) {
+      launchConfetti();
+      showToast('🏆 ¡Todas las mejoras completadas! Re-auditá para confirmar tu progreso');
+      track('mej_all_done');
+    }
+  }
   track('mej_done_' + (nowDone ? 'check' : 'uncheck'));
 }
 function filterMejoras(level, btn) {
@@ -3367,6 +3387,7 @@ function resetApp(){
   const mfb = document.getElementById('mej-filter-bar'); if (mfb) { mfb.style.display='none'; filterMejoras('TODAS',null); }
   const mp = document.getElementById('mej-progress'); if (mp) mp.style.display='none';
   const mpbw = document.getElementById('mej-progress-bar-wrap'); if (mpbw) mpbw.style.display='none';
+  const mac = document.getElementById('mej-alldone-cta'); if (mac) mac.remove();
   const saa = document.getElementById('srb-audit-age'); if (saa) saa.style.display='none';
   const ufab = document.getElementById('upgrade-fab'); if (ufab) { ufab.remove(); if(window._fabScrollH){window.removeEventListener('scroll',window._fabScrollH);window._fabScrollH=null;} }
   hideErr('audit-error');
