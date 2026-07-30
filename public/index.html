@@ -1280,6 +1280,17 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (inp) { inp.focus(); inp.select(); window.scrollTo({top:0,behavior:'smooth'}); }
     }
   });
+
+  document.addEventListener('mouseleave', e => {
+    if (e.clientY > 8) return;
+    if (!currentAudit) return;
+    const isPaid = userPlan==='pro'||userPlan==='basic'||userPlan==='agency';
+    if (isPaid) return;
+    if (sessionStorage.getItem('vnd_exit_intent')) return;
+    if (document.getElementById('upgrade-modal')?.classList.contains('show')) return;
+    sessionStorage.setItem('vnd_exit_intent','1');
+    setTimeout(() => { showUpgradeModal(); track('exit_intent'); }, 180);
+  });
 });
 
 // ── STICKY REPORT BAR ─────────────────────────────────────────
